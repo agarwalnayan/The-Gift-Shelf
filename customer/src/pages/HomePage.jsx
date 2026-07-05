@@ -1,0 +1,57 @@
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { getProductsApi } from '../api/productApi.js';
+import ProductGrid from '../components/product/ProductGrid.jsx';
+import Loader from '../components/common/Loader.jsx';
+
+const HomePage = () => {
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeatured = async () => {
+      try {
+        const { data } = await getProductsApi({ featured: true, limit: 8 });
+        setFeaturedProducts(data.data.products);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchFeatured();
+  }, []);
+
+  return (
+    <div>
+      <section className="border-b border-charcoal/10 bg-primary-50">
+        <div className="container-tgs grid items-center gap-10 py-20 md:grid-cols-2 md:py-28">
+          <div>
+            <p className="text-sm font-medium uppercase tracking-widest text-primary-600">Curated with care</p>
+            <h1 className="mt-4 font-display text-4xl font-semibold leading-tight text-charcoal md:text-5xl">
+              Gifts that say what words can't.
+            </h1>
+            <p className="mt-5 max-w-md text-base text-charcoal/70">
+              Discover thoughtfully sourced gifts for every relationship, milestone, and moment worth celebrating.
+            </p>
+            <Link to="/products" className="btn-primary mt-8 inline-flex">
+              Shop the collection
+            </Link>
+          </div>
+          <div className="aspect-[4/3] w-full rounded-3xl bg-primary-100" />
+        </div>
+      </section>
+
+      <section className="container-tgs py-16">
+        <div className="mb-10 flex items-end justify-between">
+          <h2 className="font-display text-2xl font-semibold text-charcoal">Featured Gifts</h2>
+          <Link to="/products" className="text-sm font-medium text-primary-600 hover:underline">
+            View all
+          </Link>
+        </div>
+
+        {isLoading ? <Loader fullScreen /> : <ProductGrid products={featuredProducts} />}
+      </section>
+    </div>
+  );
+};
+
+export default HomePage;

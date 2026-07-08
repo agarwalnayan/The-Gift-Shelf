@@ -1,7 +1,7 @@
 const CartSummary = ({ items, onCheckout, isLoading }) => {
   const itemsPrice = items.reduce((sum, item) => {
-    const price = item.product.discountPrice > 0 ? item.product.discountPrice : item.product.price;
-    return sum + price * item.quantity;
+    const unitPrice = item.priceAtAddition + (item.customizationPrice || 0);
+    return sum + unitPrice * item.quantity;
   }, 0);
 
   const shipping = itemsPrice > 999 ? 0 : 49;

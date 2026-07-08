@@ -9,6 +9,17 @@ import { createRazorpayOrder, verifyRazorpaySignature } from '../services/razorp
 const SHIPPING_FLAT_RATE = 49;
 const TAX_RATE = 0.05;
 
+const decrementStock = async (item) => {
+  if (item.variantSku) {
+    await Product.updateOne(
+      { _id: item.product, 'variants.sku': item.variantSku },
+      { $inc: { 'variants.$.stock': -item.quantity } }
+    );
+  } else {
+    await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity } });
+  }
+};
+
 export const createOrder = asyncHandler(async (req, res) => {
   const { shippingAddress, paymentMethod } = req.body;
 
@@ -19,11 +30,17 @@ export const createOrder = asyncHandler(async (req, res) => {
     product: item.product._id,
     name: item.product.name,
     image: item.product.images[0]?.url,
+    variantSku: item.variantSku || null,
     quantity: item.quantity,
-    price: item.product.finalPrice,
+    price: item.priceAtAddition,
+    customizations: item.customizations,
+    customizationPrice: item.customizationPrice,
   }));
 
-  const itemsPrice = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const itemsPrice = orderItems.reduce(
+    (sum, item) => sum + (item.price + item.customizationPrice) * item.quantity,
+    0
+  );
   const shippingPrice = itemsPrice > 999 ? 0 : SHIPPING_FLAT_RATE;
   const taxPrice = Number((itemsPrice * TAX_RATE).toFixed(2));
   const totalPrice = Number((itemsPrice + shippingPrice + taxPrice).toFixed(2));
@@ -50,7 +67,7 @@ export const createOrder = asyncHandler(async (req, res) => {
   }
 
   for (const item of orderItems) {
-    await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity } });
+    await decrementStock(item);
   }
 
   cart.items = [];
@@ -80,7 +97,7 @@ export const verifyPayment = asyncHandler(async (req, res) => {
   await order.save();
 
   for (const item of order.orderItems) {
-    await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity } });
+    await decrementStock(item);
   }
 
   const cart = await Cart.findOne({ user: order.user });

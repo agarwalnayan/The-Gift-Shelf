@@ -7,6 +7,7 @@ import ProductsPage from '../pages/ProductsPage.jsx';
 import ProductFormPage from '../pages/ProductFormPage.jsx';
 import CategoriesPage from '../pages/CategoriesPage.jsx';
 import OrdersPage from '../pages/OrdersPage.jsx';
+import OrderDetailPage from '../pages/OrderDetailPage.jsx';
 import UsersPage from '../pages/UsersPage.jsx';
 import NotFoundPage from '../pages/NotFoundPage.jsx';
 
@@ -23,6 +24,7 @@ const AppRoutes = () => {
           <Route path="products/:id/edit" element={<ProductFormPage />} />
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="orders" element={<OrdersPage />} />
+          <Route path="orders/:id" element={<OrderDetailPage />} />
           <Route path="users" element={<UsersPage />} />
         </Route>
       </Route>

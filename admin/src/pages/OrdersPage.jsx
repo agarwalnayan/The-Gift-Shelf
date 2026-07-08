@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { getAllOrdersApi, updateOrderStatusApi } from '../api/orderApi.js';
 import Loader from '../components/common/Loader.jsx';
@@ -66,7 +67,11 @@ const OrdersPage = () => {
             <tbody>
               {orders.map((order) => (
                 <tr key={order._id}>
-                  <td className="font-mono text-xs">{order._id.slice(-8).toUpperCase()}</td>
+                  <td className="font-mono text-xs">
+                    <Link to={`/orders/${order._id}`} className="text-primary-600 hover:underline">
+                      {order._id.slice(-8).toUpperCase()}
+                    </Link>
+                  </td>
                   <td>{order.user?.name}</td>
                   <td>{order.orderItems.length}</td>
                   <td>₹{order.totalPrice}</td>

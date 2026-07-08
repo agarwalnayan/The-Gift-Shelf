@@ -19,6 +19,8 @@ export const createCategorySchema = Joi.object({
   isFeatured: Joi.boolean(),
   showOnHomepage: Joi.boolean(),
   seo: Joi.string().allow('', null),
+  image: Joi.any().optional(),
+  banner: Joi.any().optional(),
 }).unknown(false);
 
 export const updateCategorySchema = Joi.object({
@@ -37,6 +39,8 @@ export const updateCategorySchema = Joi.object({
   isFeatured: Joi.boolean(),
   showOnHomepage: Joi.boolean(),
   seo: Joi.string().allow('', null),
+  image: Joi.any().optional(),
+  banner: Joi.any().optional(),
 }).unknown(false);
 
 export const statusSchema = Joi.object({

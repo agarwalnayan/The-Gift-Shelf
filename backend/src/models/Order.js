@@ -1,5 +1,16 @@
 import mongoose from 'mongoose';
 
+const orderItemCustomizationSchema = new mongoose.Schema(
+  {
+    key: { type: String, required: true },
+    label: { type: String, required: true },
+    type: { type: String, required: true },
+    value: { type: mongoose.Schema.Types.Mixed, required: true },
+    additionalPrice: { type: Number, default: 0 },
+  },
+  { _id: false }
+);
+
 const orderItemSchema = new mongoose.Schema(
   {
     product: {
@@ -9,8 +20,14 @@ const orderItemSchema = new mongoose.Schema(
     },
     name: { type: String, required: true },
     image: { type: String, required: true },
+    variantSku: { type: String, default: null },
     quantity: { type: Number, required: true, min: 1 },
     price: { type: Number, required: true },
+    customizations: {
+      type: [orderItemCustomizationSchema],
+      default: [],
+    },
+    customizationPrice: { type: Number, default: 0 },
   },
   { _id: false }
 );

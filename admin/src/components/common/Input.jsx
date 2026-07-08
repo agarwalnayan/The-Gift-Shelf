@@ -1,4 +1,6 @@
-const Input = ({ label, id, error, className = '', ...props }) => {
+import { forwardRef } from 'react';
+
+const Input = forwardRef(function Input({ label, id, error, className = '', ...props }, ref) {
   return (
     <div className="w-full">
       {label && (
@@ -6,10 +8,12 @@ const Input = ({ label, id, error, className = '', ...props }) => {
           {label}
         </label>
       )}
-      <input id={id} className={`input-field ${className}`.trim()} {...props} />
+      <input ref={ref} id={id} className={`input-field ${className}`.trim()} {...props} />
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   );
-};
+});
+
+Input.displayName = 'Input';
 
 export default Input;

@@ -6,11 +6,9 @@ export const getCategoryTreeApi = () => axiosInstance.get('/categories/tree');
 
 export const getCategoryByIdApi = (id) => axiosInstance.get(`/categories/${id}`);
 
-export const createCategoryApi = (formData) =>
-  axiosInstance.post('/categories', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const createCategoryApi = (formData) => axiosInstance.post('/categories', formData);
 
-export const updateCategoryApi = (id, formData) =>
-  axiosInstance.put(`/categories/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const updateCategoryApi = (id, formData) => axiosInstance.put(`/categories/${id}`, formData);
 
 export const updateCategoryStatusApi = (id, isActive) => axiosInstance.patch(`/categories/${id}/status`, { isActive });
 

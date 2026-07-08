@@ -30,19 +30,20 @@ export const CartProvider = ({ children }) => {
     refreshCart();
   }, [refreshCart]);
 
-  const addItem = async (productId, quantity = 1) => {
-    const { data } = await addToCartApi({ productId, quantity });
+  const addItem = async (productId, quantity = 1, options = {}) => {
+    const { variantSku = null, customizations = [] } = options;
+    const { data } = await addToCartApi({ productId, quantity, variantSku, customizations });
     setCart(data.data.cart);
     toast.success('Added to cart');
   };
 
-  const updateItem = async (productId, quantity) => {
-    const { data } = await updateCartItemApi({ productId, quantity });
+  const updateItem = async (itemId, quantity) => {
+    const { data } = await updateCartItemApi({ itemId, quantity });
     setCart(data.data.cart);
   };
 
-  const removeItem = async (productId) => {
-    const { data } = await removeFromCartApi(productId);
+  const removeItem = async (itemId) => {
+    const { data } = await removeFromCartApi(itemId);
     setCart(data.data.cart);
     toast.success('Removed from cart');
   };

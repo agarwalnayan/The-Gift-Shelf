@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { HiChevronRight, HiOutlineMinus, HiOutlinePlus, HiOutlineCloudArrowUp } from 'react-icons/hi2';
 import { getProductBySlugApi, uploadCustomizationImageApi } from '../api/productApi.js';
 import { useCart } from '../context/CartContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import Loader from '../components/common/Loader.jsx';
 import Button from '../components/common/Button.jsx';
+import Accordion from '../components/common/Accordion.jsx';
 
 const hasValue = (value) => {
   if (value === undefined || value === null) return false;
@@ -33,6 +35,8 @@ const ProductDetailPage = () => {
     setCustomizationValues({});
     setValidationErrors({});
     setSelectedVariantSku('');
+    setActiveImage(0);
+    setQuantity(1);
     getProductBySlugApi(slug)
       .then(({ data }) => {
         const productData = data.data.product;
@@ -57,6 +61,17 @@ const ProductDetailPage = () => {
 
   const basePrice = product?.discountPrice > 0 ? product?.discountPrice : product?.price;
   const displayPrice = activeVariant?.price ?? basePrice;
+  const hasDiscount = product?.discountPrice > 0 && product?.discountPrice < product?.price && !activeVariant?.price;
+
+  const customizationSurcharge = useMemo(() => {
+    return customizationOptions.reduce((sum, option) => {
+      const value = customizationValues[option.key];
+      if (!hasValue(value)) return sum;
+      return sum + (option.additionalPrice || 0);
+    }, 0);
+  }, [customizationOptions, customizationValues]);
+
+  const estimatedUnitPrice = (displayPrice || 0) + customizationSurcharge;
 
   const updateCustomizationValue = (optionKey, value) => {
     setCustomizationValues((prev) => ({ ...prev, [optionKey]: value }));
@@ -189,56 +204,179 @@ const ProductDetailPage = () => {
   if (isLoading) return <Loader fullScreen />;
   if (!product) return null;
 
+  // Structured description sections built only from data already present on the product.
+  const specRows = [
+    product.category?.name && { label: 'Category', value: product.category.name },
+    activeVariant?.sku && { label: 'SKU', value: activeVariant.sku },
+    !activeVariant?.sku && product.sku && { label: 'SKU', value: product.sku },
+    { label: 'Availability', value: product.stock > 0 ? 'In stock' : 'Out of stock' },
+    variants.length > 0 && { label: 'Variants available', value: `${variants.length}` },
+  ].filter(Boolean);
+
+  const variantAttributeRows = (activeVariant?.attributes || []).map((attribute) => ({
+    label: attribute.name,
+    value: attribute.value,
+  }));
+
+  const accordionItems = [
+    {
+      key: 'about',
+      title: 'About this Gift',
+      content: <p className="whitespace-pre-line">{product.description}</p>,
+    },
+    customizationOptions.length > 0 && {
+      key: 'features',
+      title: 'Features',
+      content: (
+        <ul className="list-disc space-y-1.5 pl-4">
+          {product.category?.name && <li>Part of our {product.category.name} collection</li>}
+          <li>{customizationOptions.length} personalization option{customizationOptions.length > 1 ? 's' : ''} available</li>
+          {variants.length > 0 && <li>{variants.length} variant{variants.length > 1 ? 's' : ''} to choose from</li>}
+          <li>Carefully packaged and quality checked before dispatch</li>
+        </ul>
+      ),
+    },
+    (specRows.length > 0 || variantAttributeRows.length > 0) && {
+      key: 'specifications',
+      title: 'Specifications',
+      content: (
+        <dl className="divide-y divide-charcoal/10">
+          {[...specRows, ...variantAttributeRows].map((row) => (
+            <div key={row.label} className="flex justify-between gap-4 py-2 first:pt-0">
+              <dt className="text-charcoal/50">{row.label}</dt>
+              <dd className="text-right font-medium text-charcoal">{row.value}</dd>
+            </div>
+          ))}
+        </dl>
+      ),
+    },
+    {
+      key: 'delivery',
+      title: 'Delivery Information',
+      content: (
+        <div className="space-y-2">
+          <p>Standard delivery typically takes 4–7 business days across India.</p>
+          {customizationOptions.length > 0 && (
+            <p>Personalized items are handcrafted to order, so please allow extra time for production before dispatch.</p>
+          )}
+          <p>You'll receive tracking details by email as soon as your order ships.</p>
+        </div>
+      ),
+    },
+    {
+      key: 'returns',
+      title: 'Return Policy',
+      content: (
+        <div className="space-y-2">
+          <p>We want you to love your gift. Unpersonalized items in original condition can be returned within 7 days of delivery.</p>
+          {customizationOptions.length > 0 && (
+            <p>Because personalized items are made specifically for you, they can only be returned if they arrive damaged or defective.</p>
+          )}
+          <p>Reach out to our support team to start a return or exchange.</p>
+        </div>
+      ),
+    },
+  ].filter(Boolean);
+
   return (
-    <div className="container-tgs py-12">
-      <div className="grid gap-12 md:grid-cols-2">
-        <div>
-          <div className="aspect-square overflow-hidden rounded-3xl bg-white">
-            <img src={product.images[activeImage]?.url} alt={product.name} className="h-full w-full object-cover" />
+    <div className="container-tgs py-8 sm:py-12">
+      {/* Breadcrumbs */}
+      <nav className="mb-6 flex items-center gap-1.5 text-xs text-charcoal/50 sm:text-sm">
+        <Link to="/" className="hover:text-primary-600">Home</Link>
+        <HiChevronRight size={14} />
+        <Link to="/products" className="hover:text-primary-600">Shop</Link>
+        {product.category?.name && (
+          <>
+            <HiChevronRight size={14} />
+            <Link to={`/products?category=${product.category._id}`} className="hover:text-primary-600">
+              {product.category.name}
+            </Link>
+          </>
+        )}
+        <HiChevronRight size={14} />
+        <span className="truncate text-charcoal/70">{product.name}</span>
+      </nav>
+
+      <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
+        {/* Gallery */}
+        <div className="lg:sticky lg:top-28 lg:self-start">
+          <div className="aspect-square overflow-hidden rounded-3xl bg-white shadow-sm">
+            <img
+              src={product.images[activeImage]?.url}
+              alt={product.name}
+              className="h-full w-full object-cover"
+            />
           </div>
-          <div className="mt-4 flex gap-3">
-            {product.images.map((img, index) => (
-              <button
-                key={img.publicId}
-                onClick={() => setActiveImage(index)}
-                className={`h-16 w-16 overflow-hidden rounded-xl border-2 ${
-                  activeImage === index ? 'border-primary-600' : 'border-transparent'
-                }`}
-              >
-                <img src={img.url} alt="" className="h-full w-full object-cover" />
-              </button>
-            ))}
-          </div>
+          {product.images.length > 1 && (
+            <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
+              {product.images.map((img, index) => (
+                <button
+                  key={img.publicId}
+                  onClick={() => setActiveImage(index)}
+                  className={`h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition-colors ${
+                    activeImage === index ? 'border-primary-600' : 'border-transparent hover:border-charcoal/15'
+                  }`}
+                >
+                  <img src={img.url} alt="" className="h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
+        {/* Details */}
         <div>
-          <p className="text-sm font-medium uppercase tracking-widest text-primary-600">{product.category?.name}</p>
-          <h1 className="mt-2 font-display text-3xl font-semibold text-charcoal">{product.name}</h1>
+          {product.category?.name && (
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary-600 sm:text-sm">
+              {product.category.name}
+            </p>
+          )}
+          <h1 className="mt-2 font-display text-2xl font-semibold leading-tight text-charcoal sm:text-3xl lg:text-4xl">
+            {product.name}
+          </h1>
 
-          <div className="mt-4 flex items-center gap-3">
-            <span className="text-2xl font-semibold text-charcoal">₹{displayPrice}</span>
-            {product.discountPrice > 0 && (
-              <span className="text-lg text-charcoal/40 line-through">₹{product.price}</span>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <span className="text-2xl font-semibold text-charcoal sm:text-3xl">
+              ₹{estimatedUnitPrice.toFixed(2)}
+            </span>
+            {hasDiscount && (
+              <span className="text-base text-charcoal/40 line-through sm:text-lg">₹{product.price}</span>
+            )}
+            {customizationSurcharge > 0 && (
+              <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700">
+                incl. ₹{customizationSurcharge} personalization
+              </span>
             )}
           </div>
+          <p className="mt-1 text-xs text-charcoal/50">Inclusive of all taxes</p>
 
-          <p className="mt-6 leading-relaxed text-charcoal/70">{product.description}</p>
+          {product.stock === 0 ? (
+            <span className="mt-4 inline-flex w-fit items-center rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-600">
+              Out of stock
+            </span>
+          ) : product.stock <= 5 ? (
+            <span className="mt-4 inline-flex w-fit items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+              Only {product.stock} left in stock
+            </span>
+          ) : null}
 
+          {/* Variant selector */}
           {variants.length > 0 && (
             <div className="mt-8 rounded-2xl border border-charcoal/10 bg-white p-5">
               <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-charcoal/70">Select Variant</h3>
-              <div className="mt-4 flex flex-wrap gap-3">
+              <div className="mt-4 flex flex-wrap gap-2.5">
                 {variants.map((variant) => {
                   const variantLabel = variant.attributes?.map((attribute) => `${attribute.name}: ${attribute.value}`).join(' • ');
+                  const isSelected = selectedVariantSku === variant.sku;
                   return (
                     <button
                       key={variant.sku}
                       type="button"
                       onClick={() => setSelectedVariantSku(variant.sku)}
-                      className={`rounded-full border px-4 py-2 text-sm ${
-                        selectedVariantSku === variant.sku
-                          ? 'border-primary-600 bg-primary-600 text-white'
-                          : 'border-charcoal/20 bg-white text-charcoal'
+                      className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+                        isSelected
+                          ? 'border-primary-600 bg-primary-600 text-white shadow-sm'
+                          : 'border-charcoal/20 bg-white text-charcoal hover:border-charcoal/40'
                       }`}
                     >
                       {variantLabel || variant.sku}
@@ -249,10 +387,16 @@ const ProductDetailPage = () => {
             </div>
           )}
 
+          {/* Personalization */}
           {customizationOptions.length > 0 && (
             <div className="mt-8 rounded-2xl border border-charcoal/10 bg-white p-5">
-              <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-charcoal/70">Personalize Your Gift</h3>
-              <div className="mt-4 space-y-5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-charcoal/70">Personalize Your Gift</h3>
+                <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700">
+                  {customizationOptions.length} option{customizationOptions.length > 1 ? 's' : ''}
+                </span>
+              </div>
+              <div className="mt-5 space-y-5">
                 {customizationOptions.map((option) => {
                   const currentValue = customizationValues[option.key];
                   const error = validationErrors[option.key];
@@ -261,23 +405,28 @@ const ProductDetailPage = () => {
                     if (option.type === 'image_upload' || option.type === 'multi_image_upload') {
                       return (
                         <div className="space-y-3">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            multiple={option.type === 'multi_image_upload'}
-                            onChange={(event) => handleImageUpload(option, event.target.files)}
-                            className="w-full rounded-xl border border-charcoal/15 px-3 py-2 text-sm"
-                          />
-                          {uploadingOptions[option.key] && <p className="text-sm text-primary-600">Uploading image…</p>}
+                          <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-charcoal/20 px-4 py-6 text-center transition-colors hover:border-primary-400 hover:bg-primary-50/40">
+                            <HiOutlineCloudArrowUp size={24} className="text-charcoal/40" />
+                            <span className="text-sm text-charcoal/60">
+                              {uploadingOptions[option.key] ? 'Uploading…' : 'Click to upload or drag an image here'}
+                            </span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple={option.type === 'multi_image_upload'}
+                              onChange={(event) => handleImageUpload(option, event.target.files)}
+                              className="hidden"
+                            />
+                          </label>
                           {option.type === 'multi_image_upload' && Array.isArray(currentValue) && currentValue.length > 0 && (
                             <div className="flex flex-wrap gap-2">
                               {currentValue.map((url) => (
-                                <img key={url} src={url} alt="" className="h-16 w-16 rounded-lg object-cover" />
+                                <img key={url} src={url} alt="" className="h-16 w-16 rounded-lg border border-charcoal/10 object-cover" />
                               ))}
                             </div>
                           )}
                           {option.type === 'image_upload' && typeof currentValue === 'string' && currentValue && (
-                            <img src={currentValue} alt="" className="h-16 w-16 rounded-lg object-cover" />
+                            <img src={currentValue} alt="" className="h-16 w-16 rounded-lg border border-charcoal/10 object-cover" />
                           )}
                         </div>
                       );
@@ -296,7 +445,7 @@ const ProductDetailPage = () => {
                                   nextValues[index] = event.target.value;
                                   updateCustomizationValue(option.key, nextValues);
                                 }}
-                                className="w-full rounded-xl border border-charcoal/15 px-3 py-2 text-sm"
+                                className="input-field"
                                 placeholder={`Entry ${index + 1}`}
                               />
                               <button
@@ -305,7 +454,7 @@ const ProductDetailPage = () => {
                                   const nextValues = values.filter((_, itemIndex) => itemIndex !== index);
                                   updateCustomizationValue(option.key, nextValues);
                                 }}
-                                className="text-sm text-charcoal/60"
+                                className="text-sm text-charcoal/60 hover:text-red-600"
                               >
                                 Remove
                               </button>
@@ -314,7 +463,7 @@ const ProductDetailPage = () => {
                           <button
                             type="button"
                             onClick={() => updateCustomizationValue(option.key, [...values, ''])}
-                            className="text-sm font-medium text-primary-600"
+                            className="text-sm font-medium text-primary-600 hover:text-primary-700"
                           >
                             + Add another
                           </button>
@@ -328,7 +477,7 @@ const ProductDetailPage = () => {
                           type="date"
                           value={currentValue || ''}
                           onChange={(event) => updateCustomizationValue(option.key, event.target.value)}
-                          className="w-full rounded-xl border border-charcoal/15 px-3 py-2 text-sm"
+                          className="input-field"
                         />
                       );
                     }
@@ -340,7 +489,7 @@ const ProductDetailPage = () => {
                             type="color"
                             value={currentValue || '#000000'}
                             onChange={(event) => updateCustomizationValue(option.key, event.target.value)}
-                            className="h-10 w-16 rounded-lg border border-charcoal/15"
+                            className="h-10 w-16 cursor-pointer rounded-lg border border-charcoal/15"
                           />
                           <span className="text-sm text-charcoal/60">{currentValue || '#000000'}</span>
                         </div>
@@ -352,7 +501,7 @@ const ProductDetailPage = () => {
                         <select
                           value={currentValue || ''}
                           onChange={(event) => updateCustomizationValue(option.key, event.target.value)}
-                          className="w-full rounded-xl border border-charcoal/15 px-3 py-2 text-sm"
+                          className="input-field"
                         >
                           <option value="">Select an option</option>
                           {option.choices?.map((choice) => (
@@ -372,7 +521,7 @@ const ProductDetailPage = () => {
                           rows={3}
                           maxLength={option.validation?.maxLength || 500}
                           placeholder={option.placeholder || ''}
-                          className="w-full rounded-xl border border-charcoal/15 px-3 py-2 text-sm"
+                          className="input-field resize-none"
                         />
                       );
                     }
@@ -384,17 +533,17 @@ const ProductDetailPage = () => {
                         onChange={(event) => updateCustomizationValue(option.key, event.target.value)}
                         maxLength={option.validation?.maxLength || 100}
                         placeholder={option.placeholder || ''}
-                        className="w-full rounded-xl border border-charcoal/15 px-3 py-2 text-sm"
+                        className="input-field"
                       />
                     );
                   };
 
                   return (
-                    <div key={option.key}>
+                    <div key={option.key} className={error ? 'rounded-xl ring-1 ring-red-200' : ''}>
                       <div className="flex items-center justify-between gap-2">
                         <label className="text-sm font-medium text-charcoal">
                           {option.label}
-                          {option.isRequired ? ' *' : ''}
+                          {option.isRequired ? <span className="text-primary-600"> *</span> : null}
                         </label>
                         {option.additionalPrice > 0 && (
                           <span className="text-xs font-medium text-primary-600">+ ₹{option.additionalPrice}</span>
@@ -413,22 +562,39 @@ const ProductDetailPage = () => {
             </div>
           )}
 
-          <div className="mt-8 flex items-center gap-4">
-            <div className="flex items-center gap-3 rounded-full border border-charcoal/20 px-4 py-2">
-              <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))}>
-                -
+          {/* Quantity + Add to cart */}
+          <div className="sticky bottom-0 z-10 -mx-4 mt-8 flex items-center gap-4 border-t border-charcoal/10 bg-cream/95 px-4 py-4 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none">
+            <div className="flex items-center gap-3 rounded-full border border-charcoal/20 bg-white px-2 py-1.5">
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                aria-label="Decrease quantity"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-charcoal/70 hover:bg-charcoal/5"
+              >
+                <HiOutlineMinus size={14} />
               </button>
-              <span className="w-6 text-center">{quantity}</span>
-              <button type="button" onClick={() => setQuantity((q) => q + 1)}>
-                +
+              <span className="w-6 text-center text-sm font-medium">{quantity}</span>
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => q + 1)}
+                aria-label="Increase quantity"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-charcoal/70 hover:bg-charcoal/5"
+              >
+                <HiOutlinePlus size={14} />
               </button>
             </div>
 
-            <Button onClick={handleAddToCart} isLoading={isAdding} disabled={product.stock === 0}>
-              {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+            <Button onClick={handleAddToCart} isLoading={isAdding} disabled={product.stock === 0} className="flex-1 sm:flex-none">
+              {product.stock === 0 ? 'Out of Stock' : `Add to Cart · ₹${(estimatedUnitPrice * quantity).toFixed(2)}`}
             </Button>
           </div>
         </div>
+      </div>
+
+      {/* Structured description */}
+      <div className="mt-14 max-w-3xl sm:mt-20">
+        <h2 className="mb-4 font-display text-xl font-semibold text-charcoal sm:text-2xl">Product Details</h2>
+        <Accordion items={accordionItems} />
       </div>
     </div>
   );

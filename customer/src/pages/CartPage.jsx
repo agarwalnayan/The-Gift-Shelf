@@ -1,4 +1,5 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { HiArrowLeft } from 'react-icons/hi2';
 import { useCart } from '../context/CartContext.jsx';
 import CartItem from '../components/cart/CartItem.jsx';
 import CartSummary from '../components/cart/CartSummary.jsx';
@@ -17,21 +18,34 @@ const CartPage = () => {
       <div className="container-tgs py-16">
         <EmptyState
           title="Your cart is empty"
-          description="Looks like you haven't added anything yet."
+          description="Looks like you haven't added anything yet. Explore our collection to find the perfect gift."
           action={<Button onClick={() => navigate('/products')}>Continue Shopping</Button>}
         />
       </div>
     );
   }
 
-  return (
-    <div className="container-tgs py-12">
-      <h1 className="mb-8 font-display text-3xl font-semibold text-charcoal">Your Cart</h1>
+  const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
-      <div className="grid gap-10 md:grid-cols-3">
-        <div className="md:col-span-2">
+  return (
+    <div className="container-tgs py-8 sm:py-12">
+      <Link
+        to="/products"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-charcoal/60 transition-colors hover:text-primary-600"
+      >
+        <HiArrowLeft size={16} />
+        Continue shopping
+      </Link>
+
+      <h1 className="mb-1 font-display text-2xl font-semibold text-charcoal sm:text-3xl">Your Cart</h1>
+      <p className="mb-8 text-sm text-charcoal/60">
+        {itemCount} {itemCount === 1 ? 'item' : 'items'}
+      </p>
+
+      <div className="grid gap-8 md:grid-cols-3 md:gap-10">
+        <div className="rounded-2xl border border-charcoal/10 bg-white px-5 md:col-span-2">
           {cart.items.map((item) => (
-            <CartItem key={item.product._id} item={item} />
+            <CartItem key={item._id || item.product._id} item={item} />
           ))}
         </div>
 

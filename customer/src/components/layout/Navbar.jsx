@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { HiOutlineShoppingBag, HiOutlineUser, HiOutlineHeart } from 'react-icons/hi2';
+import { HiOutlineShoppingBag, HiOutlineUser, HiOutlineHeart, HiBars3, HiXMark } from 'react-icons/hi2';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useCart } from '../../context/CartContext.jsx';
 
@@ -12,11 +13,20 @@ const navLinks = [
 const Navbar = () => {
   const { user } = useAuth();
   const { itemCount } = useCart();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 border-b border-charcoal/10 bg-cream/95 backdrop-blur">
-      <div className="container-tgs flex h-20 items-center justify-between">
-        <Link to="/" className="font-display text-2xl font-semibold tracking-tight text-charcoal">
+      <div className="container-tgs flex h-16 items-center justify-between sm:h-20">
+        <button
+          onClick={() => setIsMenuOpen((open) => !open)}
+          className="flex h-9 w-9 items-center justify-center text-charcoal/70 md:hidden"
+          aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+        >
+          {isMenuOpen ? <HiXMark size={22} /> : <HiBars3 size={22} />}
+        </button>
+
+        <Link to="/" className="font-display text-xl font-semibold tracking-tight text-charcoal sm:text-2xl">
           The Gift Shelf
         </Link>
 
@@ -36,8 +46,12 @@ const Navbar = () => {
           ))}
         </nav>
 
-        <div className="flex items-center gap-5">
-          <Link to="/wishlist" className="text-charcoal/70 transition-colors hover:text-primary-600" aria-label="Wishlist">
+        <div className="flex items-center gap-4 sm:gap-5">
+          <Link
+            to="/wishlist"
+            className="hidden text-charcoal/70 transition-colors hover:text-primary-600 sm:block"
+            aria-label="Wishlist"
+          >
             <HiOutlineHeart size={22} />
           </Link>
 
@@ -59,6 +73,34 @@ const Navbar = () => {
           </Link>
         </div>
       </div>
+
+      {isMenuOpen && (
+        <nav className="border-t border-charcoal/10 bg-cream md:hidden">
+          <div className="container-tgs flex flex-col py-3">
+            {navLinks.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                onClick={() => setIsMenuOpen(false)}
+                className={({ isActive }) =>
+                  `border-b border-charcoal/5 py-3 text-sm font-medium last:border-0 ${
+                    isActive ? 'text-primary-600' : 'text-charcoal/70'
+                  }`
+                }
+              >
+                {link.label}
+              </NavLink>
+            ))}
+            <Link
+              to="/wishlist"
+              onClick={() => setIsMenuOpen(false)}
+              className="border-b border-charcoal/5 py-3 text-sm font-medium text-charcoal/70 last:border-0"
+            >
+              Wishlist
+            </Link>
+          </div>
+        </nav>
+      )}
     </header>
   );
 };

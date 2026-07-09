@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { HiChevronRight, HiOutlineMinus, HiOutlinePlus, HiOutlineCloudArrowUp } from 'react-icons/hi2';
-import { getProductBySlugApi, uploadCustomizationImageApi } from '../api/productApi.js';
+import { HiChevronRight, HiOutlineMinus, HiOutlinePlus, HiOutlineCloudArrowUp, HiOutlineShieldCheck, HiOutlineGiftTop, HiOutlineSparkles, HiOutlineTruck, HiOutlineCheckBadge } from 'react-icons/hi2';
+import { getProductBySlugApi, uploadCustomizationImageApi, getProductsApi } from '../api/productApi.js';
 import { useCart } from '../context/CartContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import Loader from '../components/common/Loader.jsx';
 import Button from '../components/common/Button.jsx';
 import Accordion from '../components/common/Accordion.jsx';
+import ProductGrid from '../components/product/ProductGrid.jsx';
 
 const hasValue = (value) => {
   if (value === undefined || value === null) return false;
@@ -29,6 +30,7 @@ const ProductDetailPage = () => {
   const [uploadingOptions, setUploadingOptions] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
+  const [recommended, setRecommended] = useState([]);
 
   useEffect(() => {
     setIsLoading(true);
@@ -47,6 +49,18 @@ const ProductDetailPage = () => {
       })
       .finally(() => setIsLoading(false));
   }, [slug]);
+
+  useEffect(() => {
+    if (!product?.category?._id) {
+      setRecommended([]);
+      return;
+    }
+    getProductsApi({ category: product.category._id, limit: 8 })
+      .then(({ data }) => {
+        setRecommended((data.data.products || []).filter((item) => item._id !== product._id));
+      })
+      .catch(() => setRecommended([]));
+  }, [product]);
 
   const variants = useMemo(() => (product?.variants || []).filter((variant) => variant.isActive !== false), [product]);
   const customizationOptions = useMemo(() => {
@@ -317,7 +331,7 @@ const ProductDetailPage = () => {
                     activeImage === index ? 'border-primary-600' : 'border-transparent hover:border-charcoal/15'
                   }`}
                 >
-                  <img src={img.url} alt={`Product thumbnail ${index + 1}`} className="h-full w-full object-cover" />
+                  <img src={img.url} alt="" className="h-full w-full object-cover" />
                 </button>
               ))}
             </div>
@@ -420,13 +434,13 @@ const ProductDetailPage = () => {
                           </label>
                           {option.type === 'multi_image_upload' && Array.isArray(currentValue) && currentValue.length > 0 && (
                             <div className="flex flex-wrap gap-2">
-                              {currentValue.map((url, index) => (
-                                <img key={url} src={url} alt={`Uploaded reference ${index + 1}`} className="h-16 w-16 rounded-lg border border-charcoal/10 object-cover" />
+                              {currentValue.map((url) => (
+                                <img key={url} src={url} alt="" className="h-16 w-16 rounded-lg border border-charcoal/10 object-cover" />
                               ))}
                             </div>
                           )}
                           {option.type === 'image_upload' && typeof currentValue === 'string' && currentValue && (
-                            <img src={currentValue} alt="Uploaded reference" className="h-16 w-16 rounded-lg border border-charcoal/10 object-cover" />
+                            <img src={currentValue} alt="" className="h-16 w-16 rounded-lg border border-charcoal/10 object-cover" />
                           )}
                         </div>
                       );
@@ -563,7 +577,7 @@ const ProductDetailPage = () => {
           )}
 
           {/* Quantity + Add to cart */}
-          <div className="sticky bottom-0 z-10 -mx-4 mt-8 flex items-center gap-4 border-t border-charcoal/10 bg-cream/95 px-4 py-4 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none">
+          <div className="sticky bottom-16 z-10 -mx-4 mt-8 flex items-center gap-4 border-t border-charcoal/10 bg-cream/95 px-4 py-4 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none md:bottom-0">
             <div className="flex items-center gap-3 rounded-full border border-charcoal/20 bg-white px-2 py-1.5">
               <button
                 type="button"
@@ -588,6 +602,21 @@ const ProductDetailPage = () => {
               {product.stock === 0 ? 'Out of Stock' : `Add to Cart · ₹${(estimatedUnitPrice * quantity).toFixed(2)}`}
             </Button>
           </div>
+
+          <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-3 sm:flex sm:flex-wrap sm:gap-x-6">
+            {[
+              { icon: HiOutlineShieldCheck, label: 'Secure Payments' },
+              { icon: HiOutlineGiftTop, label: 'Premium Packaging' },
+              { icon: HiOutlineSparkles, label: 'Personalization Included' },
+              { icon: HiOutlineTruck, label: 'Fast Delivery' },
+              { icon: HiOutlineCheckBadge, label: 'Quality Checked' },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center gap-1.5 text-xs text-charcoal/60">
+                <item.icon size={16} className="shrink-0 text-primary-600" />
+                {item.label}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -596,6 +625,13 @@ const ProductDetailPage = () => {
         <h2 className="mb-4 font-display text-xl font-semibold text-charcoal sm:text-2xl">Product Details</h2>
         <Accordion items={accordionItems} />
       </div>
+
+      {recommended.length > 0 && (
+        <div className="mt-14 sm:mt-20">
+          <h2 className="mb-6 font-display text-xl font-semibold text-charcoal sm:text-2xl">You May Also Like</h2>
+          <ProductGrid products={recommended.slice(0, 4)} />
+        </div>
+      )}
     </div>
   );
 };

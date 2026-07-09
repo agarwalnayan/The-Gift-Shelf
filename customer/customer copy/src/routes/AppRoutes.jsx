@@ -1,0 +1,42 @@
+import { Routes, Route } from 'react-router-dom';
+import MainLayout from '../components/layout/MainLayout.jsx';
+import ProtectedRoute from '../components/layout/ProtectedRoute.jsx';
+import HomePage from '../pages/HomePage.jsx';
+import ProductListingPage from '../pages/ProductListingPage.jsx';
+import ProductDetailPage from '../pages/ProductDetailPage.jsx';
+import CategoriesPage from '../pages/CategoriesPage.jsx';
+import CartPage from '../pages/CartPage.jsx';
+import CheckoutPage from '../pages/CheckoutPage.jsx';
+import LoginPage from '../pages/LoginPage.jsx';
+import RegisterPage from '../pages/RegisterPage.jsx';
+import AccountPage from '../pages/AccountPage.jsx';
+import OrdersPage from '../pages/OrdersPage.jsx';
+import OrderDetailPage from '../pages/OrderDetailPage.jsx';
+import NotFoundPage from '../pages/NotFoundPage.jsx';
+
+const AppRoutes = () => {
+  return (
+    <Routes>
+      <Route element={<MainLayout />}>
+        <Route index element={<HomePage />} />
+        <Route path="products" element={<ProductListingPage />} />
+        <Route path="products/:slug" element={<ProductDetailPage />} />
+        <Route path="categories" element={<CategoriesPage />} />
+        <Route path="cart" element={<CartPage />} />
+        <Route path="login" element={<LoginPage />} />
+        <Route path="register" element={<RegisterPage />} />
+
+        <Route element={<ProtectedRoute />}>
+          <Route path="checkout" element={<CheckoutPage />} />
+          <Route path="account" element={<AccountPage />} />
+          <Route path="account/orders" element={<OrdersPage />} />
+          <Route path="account/orders/:id" element={<OrderDetailPage />} />
+        </Route>
+
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
+    </Routes>
+  );
+};
+
+export default AppRoutes;

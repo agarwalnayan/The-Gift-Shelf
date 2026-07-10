@@ -7,6 +7,6 @@ export const getProductBySlugApi = (slug) => axiosInstance.get(`/products/${slug
 export const uploadCustomizationImageApi = (productId, formData) =>
   axiosInstance.post(`/products/${productId}/customization-image`, formData);
 
-export const getCategoriesApi = () => axiosInstance.get('/categories');
+export const getCategoriesApi = (params) => axiosInstance.get('/categories', { params });
 
 export const getCategoryBySlugApi = (slug) => axiosInstance.get(`/categories/${slug}`);

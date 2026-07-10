@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
   HiOutlinePencilSquare,
   HiOutlineTrash,
   HiOutlineArrowUturnLeft,
   HiOutlineXCircle,
+  HiOutlineDocumentDuplicate,
 } from 'react-icons/hi2';
 import {
   getProductsApi,
@@ -27,7 +28,7 @@ import { TableSkeleton } from '../components/common/Skeleton.jsx';
 import ProductFilters from '../components/product/ProductFilters.jsx';
 import ProductBulkActionsBar from '../components/product/ProductBulkActionsBar.jsx';
 
-const initialFilters = {
+const baseFilters = {
   search: '',
   category: '',
   isActive: '',
@@ -38,11 +39,18 @@ const initialFilters = {
 };
 
 const ProductsPage = () => {
+  const [searchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [filters, setFilters] = useState(initialFilters);
+  // Supports deep links like /products?publishStatus=draft (used by the
+  // Dashboard's "Review drafts" banner) by seeding the initial filter state
+  // from the URL on first load.
+  const [filters, setFilters] = useState(() => ({
+    ...baseFilters,
+    publishStatus: searchParams.get('publishStatus') || '',
+  }));
   const [selectedIds, setSelectedIds] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -288,9 +296,18 @@ const ProductsPage = () => {
                             <HiOutlineArrowUturnLeft size={18} />
                           </button>
                         ) : (
-                          <Link to={`/products/${product._id}/edit`} className="text-ink/50 hover:text-primary-600" title="Edit">
-                            <HiOutlinePencilSquare size={18} />
-                          </Link>
+                          <>
+                            <Link to={`/products/${product._id}/edit`} className="text-ink/50 hover:text-primary-600" title="Edit">
+                              <HiOutlinePencilSquare size={18} />
+                            </Link>
+                            <Link
+                              to={`/products/new?duplicateFrom=${product._id}`}
+                              className="text-ink/50 hover:text-primary-600"
+                              title="Duplicate"
+                            >
+                              <HiOutlineDocumentDuplicate size={18} />
+                            </Link>
+                          </>
                         )}
 
                         {product.isDeleted ? (

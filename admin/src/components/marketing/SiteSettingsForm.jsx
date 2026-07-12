@@ -33,6 +33,7 @@ const SiteSettingsForm = ({ settings, onSaved }) => {
   const [isSavingBar, setIsSavingBar] = useState(false);
   const [isSavingPopup, setIsSavingPopup] = useState(false);
   const [popupImageFile, setPopupImageFile] = useState(null);
+  const [removePopupImage, setRemovePopupImage] = useState(false);
 
   const barForm = useForm({ defaultValues: announcementDefaults });
   const popupForm = useForm({ defaultValues: popupDefaults });
@@ -40,6 +41,7 @@ const SiteSettingsForm = ({ settings, onSaved }) => {
   useEffect(() => {
     if (settings?.announcementBar) barForm.reset(settings.announcementBar);
     if (settings?.welcomePopup) popupForm.reset(settings.welcomePopup);
+    setRemovePopupImage(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings]);
 
@@ -60,13 +62,21 @@ const SiteSettingsForm = ({ settings, onSaved }) => {
     setIsSavingPopup(true);
     try {
       const formData = new FormData();
-      Object.entries(values).forEach(([key, value]) => formData.append(key, value));
+      formData.append('enabled', values.enabled);
+      formData.append('title', values.title || '');
+      formData.append('description', values.description || '');
+      formData.append('ctaText', values.ctaText || '');
+      formData.append('ctaLink', values.ctaLink || '');
+      formData.append('delaySeconds', values.delaySeconds || 0);
+      formData.append('showOncePerSession', values.showOncePerSession);
       if (popupImageFile) formData.append('image', popupImageFile);
+      if (removePopupImage && !popupImageFile) formData.append('removeImage', true);
 
       const { data } = await updateWelcomePopupApi(formData);
       toast.success('Welcome popup updated');
       onSaved?.({ ...settings, welcomePopup: data.data.welcomePopup });
       setPopupImageFile(null);
+      setRemovePopupImage(false);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update welcome popup');
     } finally {
@@ -138,11 +148,26 @@ const SiteSettingsForm = ({ settings, onSaved }) => {
           <input
             type="file"
             accept="image/*"
-            onChange={(e) => setPopupImageFile(e.target.files[0])}
+            onChange={(e) => {
+              setPopupImageFile(e.target.files[0]);
+              setRemovePopupImage(false);
+            }}
             className="input-field"
           />
-          {settings?.welcomePopup?.image?.url && !popupImageFile && (
-            <img src={settings.welcomePopup.image.url} alt="" className="mt-2 h-16 w-16 rounded-lg object-cover" />
+          {settings?.welcomePopup?.image?.url && !popupImageFile && !removePopupImage && (
+            <div className="mt-2 flex items-center gap-3">
+              <img src={settings.welcomePopup.image.url} alt="" className="h-16 w-16 rounded-lg object-cover" />
+              <button
+                type="button"
+                onClick={() => setRemovePopupImage(true)}
+                className="text-xs font-medium text-red-600 hover:underline"
+              >
+                Remove image
+              </button>
+            </div>
+          )}
+          {removePopupImage && !popupImageFile && (
+            <p className="mt-2 text-xs text-ink/50">Image will be removed on save.</p>
           )}
         </div>
 

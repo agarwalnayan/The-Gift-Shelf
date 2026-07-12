@@ -2,109 +2,116 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { HiChevronLeft, HiChevronRight } from 'react-icons/hi2';
 
-// Replaces the previously static hero section with an auto-rotating slider
-// driven by admin-managed Hero Banners. Falls back to the original static
-// copy when no banners are configured, so the homepage never looks broken
-// before an admin has set anything up.
-const HeroSlider = ({ banners }) => {
+/**
+ * Full-width ecommerce hero banner slider (premium gifting site style).
+ * - No split left/right layout: every slide is a single edge-to-edge image.
+ * - Only admin-uploaded images are ever shown (desktop `image`, optional
+ *   mobile `mobileImage` via <picture>) — no illustrative/stock fallback.
+ * - `isLoading` (from MarketingContext, true until the homepage bundle has
+ *   actually returned) gates everything: while loading, only a skeleton is
+ *   shown. The old bug rendered a fallback hero immediately, then swapped
+ *   to real banners once the fetch resolved, causing a visible flicker.
+ *   Now nothing "final" renders until data is ready, so there's exactly one
+ *   paint of the real content and no flicker.
+ */
+const HeroSlider = ({ banners, isLoading }) => {
   const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [banners]);
 
   useEffect(() => {
     if (banners.length <= 1) return undefined;
     const timer = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % banners.length);
-    }, 6000);
+    }, 5000);
     return () => clearInterval(timer);
   }, [banners.length]);
 
-  if (banners.length === 0) {
+  const heightClasses = 'h-[220px] sm:h-[340px] md:h-[440px] lg:h-[520px]';
+
+  if (isLoading) {
     return (
-      <section className="border-b border-charcoal/10 bg-primary-50">
-        <div className="container-tgs grid items-center gap-10 py-14 sm:py-20 md:grid-cols-2 md:py-28">
-          <div>
-            <p className="text-sm font-medium uppercase tracking-widest text-primary-600">Curated with care</p>
-            <h1 className="mt-4 font-display text-3xl font-semibold leading-tight text-charcoal sm:text-4xl md:text-5xl">
-              Gifts that say what words can't.
-            </h1>
-            <p className="mt-5 max-w-md text-base text-charcoal/70">
-              Discover thoughtfully sourced gifts for every relationship, milestone, and moment worth celebrating.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/products" className="btn-primary inline-flex">
-                Shop the collection
-              </Link>
-              <Link to="/categories" className="btn-secondary inline-flex">
-                Browse categories
-              </Link>
-            </div>
-          </div>
-          <div className="aspect-[4/3] w-full rounded-3xl bg-primary-100" />
-        </div>
+      <section className={`relative w-full overflow-hidden bg-primary-50 ${heightClasses}`}>
+        <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-primary-100 via-primary-50 to-primary-100" />
       </section>
     );
   }
 
-  const banner = banners[activeIndex];
-  const isExternal = /^https?:\/\//.test(banner.ctaLink || '');
+  if (!banners || banners.length === 0) {
+    return null;
+  }
+
+  const goTo = (index) => setActiveIndex((index + banners.length) % banners.length);
 
   return (
-    <section className="relative overflow-hidden border-b border-charcoal/10 bg-primary-50">
-      <div className="container-tgs grid items-center gap-10 py-14 sm:py-20 md:grid-cols-2 md:py-28">
-        <div>
-          {banner.subtitle && (
-            <p className="text-sm font-medium uppercase tracking-widest text-primary-600">{banner.subtitle}</p>
-          )}
-          {banner.title && (
-            <h1 className="mt-4 font-display text-3xl font-semibold leading-tight text-charcoal sm:text-4xl md:text-5xl">
-              {banner.title}
-            </h1>
-          )}
-          {banner.description && <p className="mt-5 max-w-md text-base text-charcoal/70">{banner.description}</p>}
-          {banner.ctaText && banner.ctaLink && (
-            <div className="mt-8 flex flex-wrap gap-3">
-              {isExternal ? (
-                <a href={banner.ctaLink} className="btn-primary inline-flex" target="_blank" rel="noreferrer">
-                  {banner.ctaText}
-                </a>
-              ) : (
-                <Link to={banner.ctaLink} className="btn-primary inline-flex">
-                  {banner.ctaText}
-                </Link>
+    <section className={`relative w-full overflow-hidden bg-charcoal/5 ${heightClasses}`}>
+      {banners.map((banner, index) => {
+        const isExternal = /^https?:\/\//.test(banner.ctaLink || '');
+        const isActive = index === activeIndex;
+
+        return (
+          <div
+            key={banner._id}
+            aria-hidden={!isActive}
+            className={`absolute inset-0 transition-opacity duration-700 ${
+              isActive ? 'opacity-100' : 'pointer-events-none opacity-0'
+            }`}
+          >
+            <picture>
+              {banner.mobileImage?.url && <source media="(max-width: 767px)" srcSet={banner.mobileImage.url} />}
+              {banner.image?.url && (
+                <img
+                  src={banner.image.url}
+                  alt={banner.title || 'Promotional banner'}
+                  className="h-full w-full object-cover"
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                />
               )}
-            </div>
-          )}
-        </div>
-        <div className="aspect-[4/3] w-full overflow-hidden rounded-3xl bg-primary-100">
-          {banner.image?.url && (
-            <img src={banner.image.url} alt={banner.title || ''} className="h-full w-full object-cover" />
-          )}
-        </div>
-      </div>
+            </picture>
+
+            {banner.ctaText && banner.ctaLink && (
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 sm:bottom-10 sm:left-10 sm:translate-x-0">
+                {isExternal ? (
+                  <a href={banner.ctaLink} target="_blank" rel="noreferrer" className="btn-primary inline-flex shadow-lg">
+                    {banner.ctaText}
+                  </a>
+                ) : (
+                  <Link to={banner.ctaLink} className="btn-primary inline-flex shadow-lg">
+                    {banner.ctaText}
+                  </Link>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
 
       {banners.length > 1 && (
         <>
           <button
-            onClick={() => setActiveIndex((prev) => (prev - 1 + banners.length) % banners.length)}
+            onClick={() => goTo(activeIndex - 1)}
             aria-label="Previous slide"
-            className="absolute left-4 top-1/2 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-charcoal shadow hover:bg-white sm:flex"
+            className="absolute left-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-charcoal shadow hover:bg-white sm:left-4 sm:h-10 sm:w-10"
           >
-            <HiChevronLeft size={20} />
+            <HiChevronLeft size={18} />
           </button>
           <button
-            onClick={() => setActiveIndex((prev) => (prev + 1) % banners.length)}
+            onClick={() => goTo(activeIndex + 1)}
             aria-label="Next slide"
-            className="absolute right-4 top-1/2 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-charcoal shadow hover:bg-white sm:flex"
+            className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-charcoal shadow hover:bg-white sm:right-4 sm:h-10 sm:w-10"
           >
-            <HiChevronRight size={20} />
+            <HiChevronRight size={18} />
           </button>
-          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
-            {banners.map((_, index) => (
+          <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-2 sm:bottom-4">
+            {banners.map((banner, index) => (
               <button
-                key={index}
-                onClick={() => setActiveIndex(index)}
+                key={banner._id}
+                onClick={() => goTo(index)}
                 aria-label={`Go to slide ${index + 1}`}
-                className={`h-2 w-2 rounded-full transition-all ${
-                  index === activeIndex ? 'w-6 bg-primary-600' : 'bg-primary-600/30'
+                className={`h-1.5 rounded-full transition-all ${
+                  index === activeIndex ? 'w-6 bg-white' : 'w-1.5 bg-white/50'
                 }`}
               />
             ))}

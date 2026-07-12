@@ -25,6 +25,8 @@ const BannerFormModal = ({ isOpen, onClose, onSubmit, banner, bannerType, isSubm
   const isEditMode = Boolean(banner);
   const [imageFile, setImageFile] = useState(null);
   const [mobileImageFile, setMobileImageFile] = useState(null);
+  const [removeImage, setRemoveImage] = useState(false);
+  const [removeMobileImage, setRemoveMobileImage] = useState(false);
 
   const {
     register,
@@ -56,6 +58,8 @@ const BannerFormModal = ({ isOpen, onClose, onSubmit, banner, bannerType, isSubm
 
     setImageFile(null);
     setMobileImageFile(null);
+    setRemoveImage(false);
+    setRemoveMobileImage(false);
   }, [isOpen, banner, reset]);
 
   if (!isOpen) return null;
@@ -76,6 +80,8 @@ const BannerFormModal = ({ isOpen, onClose, onSubmit, banner, bannerType, isSubm
     if (values.endDate) formData.append('endDate', values.endDate);
     if (imageFile) formData.append('image', imageFile);
     if (mobileImageFile) formData.append('mobileImage', mobileImageFile);
+    if (removeImage && !imageFile) formData.append('removeImage', true);
+    if (removeMobileImage && !mobileImageFile) formData.append('removeMobileImage', true);
 
     onSubmit(formData);
   };
@@ -112,23 +118,51 @@ const BannerFormModal = ({ isOpen, onClose, onSubmit, banner, bannerType, isSubm
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => setImageFile(e.target.files[0])}
+                onChange={(e) => {
+                  setImageFile(e.target.files[0]);
+                  setRemoveImage(false);
+                }}
                 className="input-field"
               />
-              {banner?.image?.url && !imageFile && (
-                <img src={banner.image.url} alt="" className="mt-2 h-16 w-28 rounded-lg object-cover" />
+              {banner?.image?.url && !imageFile && !removeImage && (
+                <div className="mt-2 flex items-center gap-3">
+                  <img src={banner.image.url} alt="" className="h-16 w-28 rounded-lg object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setRemoveImage(true)}
+                    className="text-xs font-medium text-red-600 hover:underline"
+                  >
+                    Remove image
+                  </button>
+                </div>
               )}
+              {removeImage && !imageFile && <p className="mt-2 text-xs text-ink/50">Image will be removed on save.</p>}
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-ink/80">Mobile Image (optional)</label>
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => setMobileImageFile(e.target.files[0])}
+                onChange={(e) => {
+                  setMobileImageFile(e.target.files[0]);
+                  setRemoveMobileImage(false);
+                }}
                 className="input-field"
               />
-              {banner?.mobileImage?.url && !mobileImageFile && (
-                <img src={banner.mobileImage.url} alt="" className="mt-2 h-16 w-28 rounded-lg object-cover" />
+              {banner?.mobileImage?.url && !mobileImageFile && !removeMobileImage && (
+                <div className="mt-2 flex items-center gap-3">
+                  <img src={banner.mobileImage.url} alt="" className="h-16 w-28 rounded-lg object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setRemoveMobileImage(true)}
+                    className="text-xs font-medium text-red-600 hover:underline"
+                  >
+                    Remove image
+                  </button>
+                </div>
+              )}
+              {removeMobileImage && !mobileImageFile && (
+                <p className="mt-2 text-xs text-ink/50">Image will be removed on save.</p>
               )}
             </div>
           </div>

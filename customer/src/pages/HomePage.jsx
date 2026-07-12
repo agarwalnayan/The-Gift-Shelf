@@ -15,7 +15,14 @@ import BudgetCollections from '../components/home/BudgetCollections.jsx';
 import { useMarketing } from '../context/MarketingContext.jsx';
 
 const HomePage = () => {
-  const { heroBanners, promoBanners, featuredRecipients, featuredOccasions, budgetCollections } = useMarketing();
+  const {
+    heroBanners,
+    promoBanners,
+    featuredRecipients,
+    featuredOccasions,
+    budgetCollections,
+    isLoading: isMarketingLoading,
+  } = useMarketing();
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [newArrivals, setNewArrivals] = useState([]);
   const [bestSellers, setBestSellers] = useState([]);
@@ -71,7 +78,7 @@ const HomePage = () => {
 
   return (
     <div>
-      <HeroSlider banners={heroBanners} />
+      <HeroSlider banners={heroBanners} isLoading={isMarketingLoading} />
 
       <FeaturedCategories categories={categories} />
 

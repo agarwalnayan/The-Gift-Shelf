@@ -66,16 +66,23 @@ export const updateBanner = asyncHandler(async (req, res) => {
   const banner = await Banner.findOne({ _id: req.params.id, isDeleted: { $ne: true } });
   if (!banner) throw new ApiError(404, 'Banner not found');
 
-  const { type, title, subtitle, description, ctaText, ctaLink, displayOrder, isActive, startDate, endDate } =
+  const { type, title, subtitle, description, ctaText, ctaLink, displayOrder, isActive, startDate, endDate, removeImage, removeMobileImage } =
     req.body;
 
   if (req.files?.image?.[0]) {
     await deleteImage(banner.image?.publicId);
     banner.image = await uploadImage(req.files.image[0].buffer, 'tgs/marketing/banners');
+  } else if (removeImage === true || removeImage === 'true') {
+    await deleteImage(banner.image?.publicId);
+    banner.image = { url: '', publicId: '' };
   }
+
   if (req.files?.mobileImage?.[0]) {
     await deleteImage(banner.mobileImage?.publicId);
     banner.mobileImage = await uploadImage(req.files.mobileImage[0].buffer, 'tgs/marketing/banners');
+  } else if (removeMobileImage === true || removeMobileImage === 'true') {
+    await deleteImage(banner.mobileImage?.publicId);
+    banner.mobileImage = { url: '', publicId: '' };
   }
 
   if (type !== undefined) banner.type = type;
@@ -341,14 +348,23 @@ export const updateAnnouncementBar = asyncHandler(async (req, res) => {
 
 export const updateWelcomePopup = asyncHandler(async (req, res) => {
   const settings = await SiteSettings.getSingleton();
+  const { enabled, title, description, ctaText, ctaLink, delaySeconds, showOncePerSession, removeImage } = req.body;
 
   if (req.files?.image?.[0]) {
     await deleteImage(settings.welcomePopup.image?.publicId);
-    const image = await uploadImage(req.files.image[0].buffer, 'tgs/marketing/popup');
-    settings.welcomePopup = { ...settings.welcomePopup.toObject(), ...req.body, image };
-  } else {
-    settings.welcomePopup = { ...settings.welcomePopup.toObject(), ...req.body };
+    settings.welcomePopup.image = await uploadImage(req.files.image[0].buffer, 'tgs/marketing/popup');
+  } else if (removeImage === true || removeImage === 'true') {
+    await deleteImage(settings.welcomePopup.image?.publicId);
+    settings.welcomePopup.image = { url: '', publicId: '' };
   }
+
+  if (enabled !== undefined) settings.welcomePopup.enabled = enabled;
+  if (title !== undefined) settings.welcomePopup.title = title;
+  if (description !== undefined) settings.welcomePopup.description = description;
+  if (ctaText !== undefined) settings.welcomePopup.ctaText = ctaText;
+  if (ctaLink !== undefined) settings.welcomePopup.ctaLink = ctaLink;
+  if (delaySeconds !== undefined) settings.welcomePopup.delaySeconds = delaySeconds;
+  if (showOncePerSession !== undefined) settings.welcomePopup.showOncePerSession = showOncePerSession;
 
   settings.updatedBy = req.user._id;
   await settings.save();

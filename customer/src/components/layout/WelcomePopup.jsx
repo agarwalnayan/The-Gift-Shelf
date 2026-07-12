@@ -9,7 +9,9 @@ const SESSION_KEY = 'tgs_welcome_popup_shown';
 // when `showOncePerSession` is on — only once per browser session so it
 // doesn't nag the customer on every page. Content and enabled/disabled
 // state come from the shared MarketingContext (no extra network request).
-const WelcomePopup = () => {
+// `firstName` is the only piece of this popup NOT sourced from Admin — it's
+// the saved (or logged-in) name, used purely to greet the customer.
+const WelcomePopup = ({ firstName }) => {
   const { welcomePopup, isLoading } = useMarketing();
   const [isVisible, setIsVisible] = useState(false);
 
@@ -54,6 +56,9 @@ const WelcomePopup = () => {
         )}
 
         <div className="p-6 text-center">
+          {firstName && (
+            <p className="mb-1 text-sm font-medium text-primary-600">Hi {firstName} 👋</p>
+          )}
           {welcomePopup.title && (
             <h2 className="font-display text-xl font-semibold text-charcoal">{welcomePopup.title}</h2>
           )}

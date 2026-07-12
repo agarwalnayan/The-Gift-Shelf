@@ -12,6 +12,7 @@ import RegisterPage from '../pages/RegisterPage.jsx';
 import AccountPage from '../pages/AccountPage.jsx';
 import OrdersPage from '../pages/OrdersPage.jsx';
 import OrderDetailPage from '../pages/OrderDetailPage.jsx';
+import StaticInfoPage from '../pages/StaticInfoPage.jsx';
 import NotFoundPage from '../pages/NotFoundPage.jsx';
 
 const AppRoutes = () => {
@@ -25,6 +26,12 @@ const AppRoutes = () => {
         <Route path="cart" element={<CartPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
+
+        <Route path="about" element={<StaticInfoPage slug="about" />} />
+        <Route path="contact" element={<StaticInfoPage slug="contact" />} />
+        <Route path="privacy-policy" element={<StaticInfoPage slug="privacy-policy" />} />
+        <Route path="shipping-policy" element={<StaticInfoPage slug="shipping-policy" />} />
+        <Route path="returns" element={<StaticInfoPage slug="returns" />} />
 
         <Route element={<ProtectedRoute />}>
           <Route path="checkout" element={<CheckoutPage />} />

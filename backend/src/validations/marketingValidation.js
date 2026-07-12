@@ -31,6 +31,8 @@ export const updateBannerSchema = Joi.object({
   endDate: Joi.date().allow('', null),
   image: Joi.any().optional(),
   mobileImage: Joi.any().optional(),
+  removeImage: Joi.boolean(),
+  removeMobileImage: Joi.boolean(),
 }).unknown(false);
 
 // ---- Featured items (recipient + occasion) ----
@@ -104,4 +106,5 @@ export const welcomePopupSchema = Joi.object({
   delaySeconds: Joi.number().min(0).max(60),
   showOncePerSession: Joi.boolean(),
   image: Joi.any().optional(),
+  removeImage: Joi.boolean(),
 }).unknown(false);

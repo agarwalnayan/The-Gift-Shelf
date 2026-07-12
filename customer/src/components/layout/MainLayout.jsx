@@ -3,6 +3,7 @@ import AnnouncementBar from './AnnouncementBar.jsx';
 import Navbar from './Navbar.jsx';
 import Footer from './Footer.jsx';
 import MobileBottomNav from './MobileBottomNav.jsx';
+import WelcomePopup from './WelcomePopup.jsx';
 
 const MainLayout = () => {
   return (
@@ -14,6 +15,7 @@ const MainLayout = () => {
       </main>
       <Footer />
       <MobileBottomNav />
+      <WelcomePopup />
     </div>
   );
 };

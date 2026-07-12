@@ -7,8 +7,15 @@ import FeaturedCategories from '../components/home/FeaturedCategories.jsx';
 import PersonalizationProcess from '../components/home/PersonalizationProcess.jsx';
 import WhyChooseSection from '../components/home/WhyChooseSection.jsx';
 import TrustSection from '../components/home/TrustSection.jsx';
+import HeroSlider from '../components/home/HeroSlider.jsx';
+import PromoBannerSection from '../components/home/PromoBannerSection.jsx';
+import FeaturedRecipients from '../components/home/FeaturedRecipients.jsx';
+import FeaturedOccasions from '../components/home/FeaturedOccasions.jsx';
+import BudgetCollections from '../components/home/BudgetCollections.jsx';
+import { useMarketing } from '../context/MarketingContext.jsx';
 
 const HomePage = () => {
+  const { heroBanners, promoBanners, featuredRecipients, featuredOccasions, budgetCollections } = useMarketing();
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [newArrivals, setNewArrivals] = useState([]);
   const [bestSellers, setBestSellers] = useState([]);
@@ -64,30 +71,14 @@ const HomePage = () => {
 
   return (
     <div>
-      <section className="border-b border-charcoal/10 bg-primary-50">
-        <div className="container-tgs grid items-center gap-10 py-14 sm:py-20 md:grid-cols-2 md:py-28">
-          <div>
-            <p className="text-sm font-medium uppercase tracking-widest text-primary-600">Curated with care</p>
-            <h1 className="mt-4 font-display text-3xl font-semibold leading-tight text-charcoal sm:text-4xl md:text-5xl">
-              Gifts that say what words can't.
-            </h1>
-            <p className="mt-5 max-w-md text-base text-charcoal/70">
-              Discover thoughtfully sourced gifts for every relationship, milestone, and moment worth celebrating.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/products" className="btn-primary inline-flex">
-                Shop the collection
-              </Link>
-              <Link to="/categories" className="btn-secondary inline-flex">
-                Browse categories
-              </Link>
-            </div>
-          </div>
-          <div className="aspect-[4/3] w-full rounded-3xl bg-primary-100" />
-        </div>
-      </section>
+      <HeroSlider banners={heroBanners} />
 
       <FeaturedCategories categories={categories} />
+
+      <FeaturedRecipients items={featuredRecipients} />
+      <FeaturedOccasions items={featuredOccasions} />
+      <BudgetCollections collections={budgetCollections} />
+      <PromoBannerSection banners={promoBanners} />
 
       <section className="container-tgs py-14 sm:py-16">
         <div className="mb-8 flex items-end justify-between sm:mb-10">

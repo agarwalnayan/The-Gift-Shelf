@@ -5,6 +5,7 @@ import {
   HiOutlineTag,
   HiOutlineClipboardDocumentList,
   HiOutlineUsers,
+  HiOutlineMegaphone,
   HiXMark,
 } from 'react-icons/hi2';
 
@@ -12,6 +13,7 @@ const navItems = [
   { label: 'Dashboard', to: '/', icon: HiOutlineSquares2X2 },
   { label: 'Products', to: '/products', icon: HiOutlineShoppingBag },
   { label: 'Categories', to: '/categories', icon: HiOutlineTag },
+  { label: 'Marketing', to: '/marketing', icon: HiOutlineMegaphone },
   { label: 'Orders', to: '/orders', icon: HiOutlineClipboardDocumentList },
   { label: 'Users', to: '/users', icon: HiOutlineUsers },
 ];

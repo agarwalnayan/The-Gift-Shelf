@@ -41,8 +41,15 @@ const Navbar = () => {
           {isMenuOpen ? <HiXMark size={22} /> : <HiBars3 size={22} />}
         </button>
 
-        <Link to="/" className="font-display text-xl font-semibold tracking-tight text-charcoal sm:text-2xl">
-          The Gift Shelf
+        <Link to="/" className="flex items-center gap-2 sm:gap-2.5">
+          <img
+            src="/logo.png"
+            alt="The Gift Shelf logo"
+            className="h-9 w-9 shrink-0 rounded-full object-contain sm:h-11 sm:w-11"
+          />
+          <span className="font-display text-xl font-semibold tracking-tight text-charcoal sm:text-2xl">
+            The Gift Shelf
+          </span>
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">

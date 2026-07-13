@@ -88,8 +88,12 @@ export const createOrder = asyncHandler(async (req, res) => {
       .json(new ApiResponse(201, { order, razorpayOrder }, 'Order created, proceed to payment'));
   }
 
-  // WhatsApp orders are confirmed manually over chat — place immediately,
-  // reserve stock, and hand back a wa.me deep link for the client to open.
+  // WhatsApp orders are confirmed manually over chat — the order is already
+  // created in the database (admin sees it immediately, exactly like a
+  // Razorpay order) before we ever redirect the customer. Stock is reserved
+  // and the cart is cleared now because, like COD, placing the order IS the
+  // successful action here — there's no separate online payment step left
+  // to fail or be cancelled.
   for (const item of orderItems) {
     await decrementStock(item);
   }
@@ -98,9 +102,43 @@ export const createOrder = asyncHandler(async (req, res) => {
   cart.couponCode = null;
   await cart.save();
 
-  const whatsappMessage = encodeURIComponent(
-    `Hi! I'd like to confirm my order #${order._id.toString().slice(-8).toUpperCase()} for ₹${totalPrice}.`
-  );
+  const orderNumber = order._id.toString().slice(-8).toUpperCase();
+
+  const itemLines = orderItems
+    .map((item) => {
+      const personalization = item.customizations?.length
+        ? ` (${item.customizations
+          .map((c) => `${c.label}: ${Array.isArray(c.value) ? c.value.join(', ') : c.value}`)
+          .join('; ')})`
+        : '';
+      return `- ${item.name} x${item.quantity}${personalization}`;
+    })
+    .join('\n');
+
+  const addressLine = [
+    shippingAddress.line1,
+    shippingAddress.line2,
+    `${shippingAddress.city}, ${shippingAddress.state} ${shippingAddress.postalCode}`,
+    shippingAddress.country,
+  ]
+    .filter(Boolean)
+    .join(', ');
+
+  const whatsappText = [
+    'Hi! I would like to confirm my order.',
+    '',
+    `Order ID: #${orderNumber}`,
+    `Name: ${shippingAddress.fullName}`,
+    `Phone: ${shippingAddress.phone}`,
+    `Address: ${addressLine}`,
+    '',
+    'Items:',
+    itemLines,
+    '',
+    `Total: ₹${totalPrice}`,
+  ].join('\n');
+
+  const whatsappMessage = encodeURIComponent(whatsappText);
   const whatsappLink = settings.commerce.whatsappNumber
     ? `https://wa.me/${settings.commerce.whatsappNumber.replace(/\D/g, '')}?text=${whatsappMessage}`
     : null;
@@ -186,4 +224,50 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
   await order.save();
 
   res.status(200).json(new ApiResponse(200, { order }, 'Order status updated successfully'));
+});
+
+export const updatePaymentStatus = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id);
+  if (!order) throw new ApiError(404, 'Order not found');
+
+  const { paymentStatus } = req.body;
+  if (!['pending', 'paid', 'failed', 'refunded'].includes(paymentStatus)) {
+    throw new ApiError(400, 'Please provide a valid payment status');
+  }
+
+  order.paymentStatus = paymentStatus;
+  // Keep the existing boolean in sync so older views relying on it stay accurate.
+  order.isPaid = paymentStatus === 'paid';
+  if (paymentStatus === 'paid' && !order.paidAt) order.paidAt = new Date();
+
+  await order.save();
+
+  res.status(200).json(new ApiResponse(200, { order }, 'Payment status updated successfully'));
+});
+
+export const updateOrderTracking = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id);
+  if (!order) throw new ApiError(404, 'Order not found');
+
+  const { courierName, trackingId, trackingUrl, internalNotes } = req.body;
+
+  order.courier = {
+    name: courierName !== undefined ? courierName : order.courier?.name || '',
+    trackingId: trackingId !== undefined ? trackingId : order.courier?.trackingId || '',
+    trackingUrl: trackingUrl !== undefined ? trackingUrl : order.courier?.trackingUrl || '',
+  };
+  if (internalNotes !== undefined) order.internalNotes = internalNotes;
+
+  await order.save();
+
+  res.status(200).json(new ApiResponse(200, { order }, 'Order tracking updated successfully'));
+});
+
+export const deleteOrder = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id);
+  if (!order) throw new ApiError(404, 'Order not found');
+
+  await order.deleteOne();
+
+  res.status(200).json(new ApiResponse(200, null, 'Order deleted successfully'));
 });

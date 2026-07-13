@@ -158,6 +158,9 @@ const CheckoutPage = () => {
       };
 
       const razorpayCheckout = new window.Razorpay(options);
+      razorpayCheckout.on('payment.failed', () => {
+        toast.error('Payment failed. Your cart has been preserved — please try again.');
+      });
       razorpayCheckout.open();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to place order');

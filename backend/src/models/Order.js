@@ -46,6 +46,18 @@ const shippingAddressSchema = new mongoose.Schema(
   { _id: false }
 );
 
+// Fulfillment/shipping details the admin fills in once an order is handed
+// to a courier. Kept as a simple embedded object (not its own collection)
+// since it only ever applies to the single order it lives on.
+const courierSchema = new mongoose.Schema(
+  {
+    name: { type: String, trim: true, default: '' },
+    trackingId: { type: String, trim: true, default: '' },
+    trackingUrl: { type: String, trim: true, default: '' },
+  },
+  { _id: false }
+);
+
 const orderSchema = new mongoose.Schema(
   {
     user: {
@@ -87,11 +99,24 @@ const orderSchema = new mongoose.Schema(
     totalPrice: { type: Number, required: true, default: 0 },
     isPaid: { type: Boolean, default: false },
     paidAt: { type: Date },
+    // Granular admin-controlled payment state. `isPaid` is kept in sync
+    // (true only when paymentStatus === 'paid') so existing views that
+    // already read the boolean keep working without changes.
+    paymentStatus: {
+      type: String,
+      enum: ['pending', 'paid', 'failed', 'refunded'],
+      default: 'pending',
+    },
     orderStatus: {
       type: String,
       enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
       default: 'pending',
     },
+    courier: {
+      type: courierSchema,
+      default: () => ({}),
+    },
+    internalNotes: { type: String, trim: true, maxlength: 1000, default: '' },
     deliveredAt: { type: Date },
     cancelledAt: { type: Date },
     cancelReason: { type: String },

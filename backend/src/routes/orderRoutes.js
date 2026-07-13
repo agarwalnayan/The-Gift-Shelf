@@ -6,6 +6,9 @@ import {
   getOrderById,
   getAllOrders,
   updateOrderStatus,
+  updatePaymentStatus,
+  updateOrderTracking,
+  deleteOrder,
 } from '../controllers/orderController.js';
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 
@@ -20,5 +23,8 @@ router.get('/:id', getOrderById);
 
 router.get('/', authorizeRoles('admin', 'superadmin'), getAllOrders);
 router.patch('/:id/status', authorizeRoles('admin', 'superadmin'), updateOrderStatus);
+router.patch('/:id/payment-status', authorizeRoles('admin', 'superadmin'), updatePaymentStatus);
+router.patch('/:id/tracking', authorizeRoles('admin', 'superadmin'), updateOrderTracking);
+router.delete('/:id', authorizeRoles('admin', 'superadmin'), deleteOrder);
 
 export default router;

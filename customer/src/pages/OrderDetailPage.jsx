@@ -97,6 +97,36 @@ const OrderDetailPage = () => {
               )}
             </div>
           )}
+
+          {(order.courier?.name || order.courier?.trackingId || order.courier?.trackingUrl) && (
+            <div className="mt-6 border-t border-charcoal/10 pt-4 text-sm">
+              <p className="text-xs font-semibold uppercase tracking-wide text-charcoal/40">Shipment</p>
+              <div className="mt-2 space-y-1 text-charcoal/70">
+                {order.courier?.name && (
+                  <p>
+                    <span className="font-medium text-charcoal">Courier: </span>
+                    {order.courier.name}
+                  </p>
+                )}
+                {order.courier?.trackingId && (
+                  <p>
+                    <span className="font-medium text-charcoal">Tracking ID: </span>
+                    {order.courier.trackingId}
+                  </p>
+                )}
+              </div>
+              {order.courier?.trackingUrl && (
+                <a
+                  href={order.courier.trackingUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-primary mt-4 inline-flex w-full items-center justify-center"
+                >
+                  Track Order
+                </a>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -2,6 +2,7 @@ import express from 'express';
 import {
   updateProfile,
   addAddress,
+  updateAddress,
   deleteAddress,
   toggleWishlist,
   getAllUsers,
@@ -15,6 +16,7 @@ router.use(protect);
 
 router.patch('/profile', updateProfile);
 router.post('/addresses', addAddress);
+router.put('/addresses/:addressId', updateAddress);
 router.delete('/addresses/:addressId', deleteAddress);
 router.patch('/wishlist/:productId', toggleWishlist);
 

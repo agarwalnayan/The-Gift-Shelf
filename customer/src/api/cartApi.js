@@ -9,3 +9,7 @@ export const updateCartItemApi = (payload) => axiosInstance.patch('/cart', paylo
 export const removeFromCartApi = (itemId) => axiosInstance.delete(`/cart/${itemId}`);
 
 export const clearCartApi = () => axiosInstance.delete('/cart');
+
+export const applyCouponApi = (code) => axiosInstance.post('/cart/coupon', { code });
+
+export const removeCouponApi = () => axiosInstance.delete('/cart/coupon');

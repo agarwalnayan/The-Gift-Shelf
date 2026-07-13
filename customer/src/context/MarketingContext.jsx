@@ -11,6 +11,16 @@ const emptyContent = {
   budgetCollections: [],
   announcementBar: { enabled: false },
   welcomePopup: { enabled: false },
+  commerce: {
+    freeShippingThreshold: 999,
+    shippingCharge: 49,
+    whatsappCharge: 50,
+    whatsappNumber: '',
+    checkoutMessage: '',
+    paymentOptions: { razorpay: true, whatsapp: true },
+    returnPolicy: '',
+    replacementPolicy: '',
+  },
 };
 
 // Module-level (not component-level) cache + in-flight promise. This is the

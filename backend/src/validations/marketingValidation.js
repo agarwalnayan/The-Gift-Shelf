@@ -97,6 +97,21 @@ export const announcementBarSchema = Joi.object({
   dismissible: Joi.boolean(),
 }).unknown(false);
 
+// ---- Commerce / checkout settings ----
+export const commerceSettingsSchema = Joi.object({
+  freeShippingThreshold: Joi.number().min(0),
+  shippingCharge: Joi.number().min(0),
+  whatsappCharge: Joi.number().min(0),
+  whatsappNumber: Joi.string().trim().max(20).allow('', null),
+  checkoutMessage: Joi.string().trim().max(240).allow('', null),
+  paymentOptions: Joi.object({
+    razorpay: Joi.boolean(),
+    whatsapp: Joi.boolean(),
+  }),
+  returnPolicy: Joi.string().trim().max(4000).allow('', null),
+  replacementPolicy: Joi.string().trim().max(4000).allow('', null),
+}).unknown(false);
+
 export const welcomePopupSchema = Joi.object({
   enabled: Joi.boolean(),
   title: Joi.string().trim().max(120).allow('', null),

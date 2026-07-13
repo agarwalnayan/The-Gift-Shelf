@@ -4,6 +4,7 @@ import asyncHandler from '../utils/asyncHandler.js';
 import ApiError from '../utils/ApiError.js';
 import ApiResponse from '../utils/ApiResponse.js';
 import { validateCustomizationSelections } from '../utils/validateCustomizations.js';
+import { validateCouponForSubtotal } from './couponController.js';
 
 const CART_POPULATE_FIELDS = 'name images price discountPrice stock variants';
 
@@ -116,6 +117,34 @@ export const removeFromCart = asyncHandler(async (req, res) => {
   await cart.save();
 
   res.status(200).json(new ApiResponse(200, { cart }, 'Item removed from cart'));
+});
+
+const cartSubtotal = (cart) =>
+  cart.items.reduce((sum, item) => sum + (item.priceAtAddition + (item.customizationPrice || 0)) * item.quantity, 0);
+
+export const applyCoupon = asyncHandler(async (req, res) => {
+  const { code } = req.body;
+  if (!code) throw new ApiError(400, 'Coupon code is required');
+
+  const cart = await Cart.findOne({ user: req.user._id }).populate('items.product', CART_POPULATE_FIELDS);
+  if (!cart || cart.items.length === 0) throw new ApiError(400, 'Your cart is empty');
+
+  const { coupon, discount } = await validateCouponForSubtotal(code, cartSubtotal(cart));
+
+  cart.couponCode = coupon.code;
+  await cart.save();
+
+  res.status(200).json(new ApiResponse(200, { cart, discount, couponCode: coupon.code }, 'Coupon applied successfully'));
+});
+
+export const removeCoupon = asyncHandler(async (req, res) => {
+  const cart = await Cart.findOne({ user: req.user._id }).populate('items.product', CART_POPULATE_FIELDS);
+  if (!cart) throw new ApiError(404, 'Cart not found');
+
+  cart.couponCode = null;
+  await cart.save();
+
+  res.status(200).json(new ApiResponse(200, { cart, discount: 0 }, 'Coupon removed'));
 });
 
 export const clearCart = asyncHandler(async (req, res) => {

@@ -6,6 +6,7 @@ import Footer from './Footer.jsx';
 import MobileBottomNav from './MobileBottomNav.jsx';
 import FirstVisitWelcomeScreen from './FirstVisitWelcomeScreen.jsx';
 import WelcomePopup from './WelcomePopup.jsx';
+import CartDrawer from '../cart/CartDrawer.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 const FIRST_NAME_KEY = 'tgs_first_name';
@@ -57,6 +58,7 @@ const MainLayout = () => {
       </main>
       <Footer />
       <MobileBottomNav />
+      <CartDrawer />
 
       {showFirstVisitScreen && <FirstVisitWelcomeScreen onComplete={handleNameCaptured} />}
       {isNameReady && <WelcomePopup firstName={firstName} />}

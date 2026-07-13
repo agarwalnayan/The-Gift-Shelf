@@ -38,6 +38,27 @@ const welcomePopupSchema = new mongoose.Schema(
   { _id: false }
 );
 
+// Store-wide checkout/commerce configuration — everything the Premium
+// Cart & Checkout experience needs from Admin so nothing is hardcoded on
+// the storefront (shipping, WhatsApp ordering charge, payment options,
+// checkout banner message, and the return/replacement policy copy).
+const commerceSettingsSchema = new mongoose.Schema(
+  {
+    freeShippingThreshold: { type: Number, default: 999, min: 0 },
+    shippingCharge: { type: Number, default: 49, min: 0 },
+    whatsappCharge: { type: Number, default: 50, min: 0 },
+    whatsappNumber: { type: String, trim: true, default: '' },
+    checkoutMessage: { type: String, trim: true, maxlength: 240, default: '' },
+    paymentOptions: {
+      razorpay: { type: Boolean, default: true },
+      whatsapp: { type: Boolean, default: true },
+    },
+    returnPolicy: { type: String, trim: true, default: '' },
+    replacementPolicy: { type: String, trim: true, default: '' },
+  },
+  { _id: false }
+);
+
 const siteSettingsSchema = new mongoose.Schema(
   {
     singletonKey: {
@@ -51,6 +72,10 @@ const siteSettingsSchema = new mongoose.Schema(
     },
     welcomePopup: {
       type: welcomePopupSchema,
+      default: () => ({}),
+    },
+    commerce: {
+      type: commerceSettingsSchema,
       default: () => ({}),
     },
     updatedBy: {

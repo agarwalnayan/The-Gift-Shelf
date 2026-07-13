@@ -1,13 +1,12 @@
 import Order from '../models/Order.js';
 import Cart from '../models/Cart.js';
 import Product from '../models/Product.js';
+import SiteSettings from '../models/SiteSettings.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import ApiError from '../utils/ApiError.js';
 import ApiResponse from '../utils/ApiResponse.js';
 import { createRazorpayOrder, verifyRazorpaySignature } from '../services/razorpayService.js';
-
-const SHIPPING_FLAT_RATE = 49;
-const TAX_RATE = 0.05;
+import { validateCouponForSubtotal } from './couponController.js';
 
 const decrementStock = async (item) => {
   if (item.variantSku) {
@@ -21,10 +20,24 @@ const decrementStock = async (item) => {
 };
 
 export const createOrder = asyncHandler(async (req, res) => {
-  const { shippingAddress, paymentMethod } = req.body;
+  const { shippingAddress, paymentMethod, giftMessage = '', orderNotes = '' } = req.body;
+
+  if (!['razorpay', 'whatsapp'].includes(paymentMethod)) {
+    throw new ApiError(400, 'Please select a valid payment method');
+  }
 
   const cart = await Cart.findOne({ user: req.user._id }).populate('items.product');
   if (!cart || cart.items.length === 0) throw new ApiError(400, 'Your cart is empty');
+
+  const settings = await SiteSettings.getSingleton();
+  const { freeShippingThreshold, shippingCharge, whatsappCharge, paymentOptions } = settings.commerce;
+
+  if (paymentMethod === 'whatsapp' && !paymentOptions.whatsapp) {
+    throw new ApiError(400, 'WhatsApp ordering is currently unavailable');
+  }
+  if (paymentMethod === 'razorpay' && !paymentOptions.razorpay) {
+    throw new ApiError(400, 'Online payment is currently unavailable');
+  }
 
   const orderItems = cart.items.map((item) => ({
     product: item.product._id,
@@ -41,18 +54,27 @@ export const createOrder = asyncHandler(async (req, res) => {
     (sum, item) => sum + (item.price + item.customizationPrice) * item.quantity,
     0
   );
-  const shippingPrice = itemsPrice > 999 ? 0 : SHIPPING_FLAT_RATE;
-  const taxPrice = Number((itemsPrice * TAX_RATE).toFixed(2));
-  const totalPrice = Number((itemsPrice + shippingPrice + taxPrice).toFixed(2));
+
+  const { coupon, discount: discountPrice } = await validateCouponForSubtotal(cart.couponCode, itemsPrice);
+
+  const shippingPrice = itemsPrice - discountPrice >= freeShippingThreshold ? 0 : shippingCharge;
+  const whatsappSurcharge = paymentMethod === 'whatsapp' ? whatsappCharge : 0;
+  // GST removed store-wide — no tax component in the total.
+  const totalPrice = Number((itemsPrice - discountPrice + shippingPrice + whatsappSurcharge).toFixed(2));
 
   const order = await Order.create({
     user: req.user._id,
     orderItems,
     shippingAddress,
     paymentMethod,
+    giftMessage,
+    orderNotes,
+    couponCode: coupon?.code || null,
     itemsPrice,
     shippingPrice,
-    taxPrice,
+    discountPrice,
+    whatsappCharge: whatsappSurcharge,
+    taxPrice: 0,
     totalPrice,
   });
 
@@ -66,14 +88,24 @@ export const createOrder = asyncHandler(async (req, res) => {
       .json(new ApiResponse(201, { order, razorpayOrder }, 'Order created, proceed to payment'));
   }
 
+  // WhatsApp orders are confirmed manually over chat — place immediately,
+  // reserve stock, and hand back a wa.me deep link for the client to open.
   for (const item of orderItems) {
     await decrementStock(item);
   }
 
   cart.items = [];
+  cart.couponCode = null;
   await cart.save();
 
-  res.status(201).json(new ApiResponse(201, { order }, 'Order placed successfully'));
+  const whatsappMessage = encodeURIComponent(
+    `Hi! I'd like to confirm my order #${order._id.toString().slice(-8).toUpperCase()} for ₹${totalPrice}.`
+  );
+  const whatsappLink = settings.commerce.whatsappNumber
+    ? `https://wa.me/${settings.commerce.whatsappNumber.replace(/\D/g, '')}?text=${whatsappMessage}`
+    : null;
+
+  res.status(201).json(new ApiResponse(201, { order, whatsappLink }, 'Order placed successfully'));
 });
 
 export const verifyPayment = asyncHandler(async (req, res) => {
@@ -103,6 +135,7 @@ export const verifyPayment = asyncHandler(async (req, res) => {
   const cart = await Cart.findOne({ user: order.user });
   if (cart) {
     cart.items = [];
+    cart.couponCode = null;
     await cart.save();
   }
 

@@ -1,5 +1,5 @@
 import { useNavigate, Link } from 'react-router-dom';
-import { HiArrowLeft } from 'react-icons/hi2';
+import { HiArrowLeft, HiOutlineShoppingBag } from 'react-icons/hi2';
 import { useCart } from '../context/CartContext.jsx';
 import CartItem from '../components/cart/CartItem.jsx';
 import CartSummary from '../components/cart/CartSummary.jsx';
@@ -17,6 +17,11 @@ const CartPage = () => {
     return (
       <div className="container-tgs py-16">
         <EmptyState
+          illustration={
+            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary-50 text-primary-300">
+              <HiOutlineShoppingBag size={44} />
+            </div>
+          }
           title="Your cart is empty"
           description="Looks like you haven't added anything yet. Explore our collection to find the perfect gift."
           action={<Button onClick={() => navigate('/products')}>Continue Shopping</Button>}
@@ -42,16 +47,14 @@ const CartPage = () => {
         {itemCount} {itemCount === 1 ? 'item' : 'items'}
       </p>
 
-      <div className="grid gap-8 md:grid-cols-3 md:gap-10">
+      <div className="grid gap-8 md:grid-cols-3 md:items-start md:gap-10">
         <div className="rounded-2xl border border-charcoal/10 bg-white px-5 md:col-span-2">
           {cart.items.map((item) => (
             <CartItem key={item._id || item.product._id} item={item} />
           ))}
         </div>
 
-        <div>
-          <CartSummary items={cart.items} onCheckout={() => navigate('/checkout')} />
-        </div>
+        <CartSummary items={cart.items} onCheckout={() => navigate('/checkout')} sticky />
       </div>
     </div>
   );

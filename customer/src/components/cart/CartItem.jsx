@@ -2,18 +2,18 @@ import { HiOutlineTrash, HiOutlineMinus, HiOutlinePlus } from 'react-icons/hi2';
 import { useCart } from '../../context/CartContext.jsx';
 import CustomizationValue from '../common/CustomizationValue.jsx';
 
-const CartItem = ({ item }) => {
+const CartItem = ({ item, compact = false }) => {
   const { updateItem, removeItem } = useCart();
   const { product, quantity, customizations, variantSku } = item;
   const unitPrice = item.priceAtAddition + (item.customizationPrice || 0);
   const lineTotal = unitPrice * quantity;
 
   return (
-    <div className="flex gap-4 border-b border-charcoal/10 py-6 first:pt-0 sm:gap-5">
+    <div className={`flex gap-4 py-6 first:pt-0 sm:gap-5 ${compact ? 'py-5' : 'border-b border-charcoal/10'}`}>
       <img
         src={product.images?.[0]?.url}
         alt={product.name}
-        className="h-20 w-20 shrink-0 rounded-xl object-cover sm:h-24 sm:w-24"
+        className={`shrink-0 rounded-xl object-cover ${compact ? 'h-16 w-16' : 'h-20 w-20 sm:h-24 sm:w-24'}`}
       />
 
       <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:justify-between sm:gap-5">

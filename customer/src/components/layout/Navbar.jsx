@@ -16,7 +16,7 @@ const navLinkClass = ({ isActive }) =>
 
 const Navbar = () => {
   const { user } = useAuth();
-  const { itemCount } = useCart();
+  const { itemCount, openDrawer } = useCart();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -70,14 +70,19 @@ const Navbar = () => {
             <HiOutlineHeart size={22} />
           </Link>
 
-          <Link to="/cart" className="relative text-charcoal/70 transition-colors hover:text-primary-600" aria-label="Cart">
+          <button
+            type="button"
+            onClick={openDrawer}
+            className="relative text-charcoal/70 transition-colors hover:text-primary-600"
+            aria-label="Cart"
+          >
             <HiOutlineShoppingBag size={22} />
             {itemCount > 0 && (
               <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary-600 text-[10px] font-semibold text-cream">
                 {itemCount}
               </span>
             )}
-          </Link>
+          </button>
 
           <Link
             to={user ? '/account' : '/login'}
@@ -117,8 +122,7 @@ const Navbar = () => {
                 end={link.end}
                 onClick={() => setIsMenuOpen(false)}
                 className={({ isActive }) =>
-                  `border-b border-charcoal/5 py-3 text-sm font-medium last:border-0 ${
-                    isActive ? 'text-primary-600' : 'text-charcoal/70'
+                  `border-b border-charcoal/5 py-3 text-sm font-medium last:border-0 ${isActive ? 'text-primary-600' : 'text-charcoal/70'
                   }`
                 }
               >

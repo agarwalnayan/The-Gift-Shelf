@@ -66,7 +66,7 @@ const orderSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ['razorpay', 'cod'],
+      enum: ['razorpay', 'whatsapp', 'cod'],
       required: true,
     },
     paymentResult: {
@@ -75,8 +75,14 @@ const orderSchema = new mongoose.Schema(
       razorpaySignature: { type: String },
       status: { type: String },
     },
+    couponCode: { type: String, default: null },
+    giftMessage: { type: String, trim: true, maxlength: 300, default: '' },
+    orderNotes: { type: String, trim: true, maxlength: 300, default: '' },
     itemsPrice: { type: Number, required: true, default: 0 },
     shippingPrice: { type: Number, required: true, default: 0 },
+    discountPrice: { type: Number, required: true, default: 0 },
+    whatsappCharge: { type: Number, required: true, default: 0 },
+    // GST removed store-wide; retained (always 0) so historical documents stay valid.
     taxPrice: { type: Number, required: true, default: 0 },
     totalPrice: { type: Number, required: true, default: 0 },
     isPaid: { type: Boolean, default: false },

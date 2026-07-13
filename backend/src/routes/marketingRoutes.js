@@ -18,6 +18,7 @@ import {
   getSiteSettings,
   updateAnnouncementBar,
   updateWelcomePopup,
+  updateCommerceSettings,
   getHomepageContent,
 } from '../controllers/marketingController.js';
 import { protect, authorizeRoles, attachUserIfPresent } from '../middleware/authMiddleware.js';
@@ -33,6 +34,7 @@ import {
   reorderSchema,
   announcementBarSchema,
   welcomePopupSchema,
+  commerceSettingsSchema,
 } from '../validations/marketingValidation.js';
 
 const router = express.Router();
@@ -79,5 +81,6 @@ router.put(
 
 router.put('/settings/announcement-bar', validate(announcementBarSchema), updateAnnouncementBar);
 router.put('/settings/welcome-popup', singleImage, validate(welcomePopupSchema), updateWelcomePopup);
+router.put('/settings/commerce', validate(commerceSettingsSchema), updateCommerceSettings);
 
 export default router;

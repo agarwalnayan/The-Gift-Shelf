@@ -12,6 +12,8 @@ export const updateProfileApi = (payload) => axiosInstance.patch('/users/profile
 
 export const addAddressApi = (payload) => axiosInstance.post('/users/addresses', payload);
 
+export const updateAddressApi = (addressId, payload) => axiosInstance.put(`/users/addresses/${addressId}`, payload);
+
 export const deleteAddressApi = (addressId) => axiosInstance.delete(`/users/addresses/${addressId}`);
 
 export const toggleWishlistApi = (productId) => axiosInstance.patch(`/users/wishlist/${productId}`);

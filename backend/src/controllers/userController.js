@@ -28,6 +28,21 @@ export const addAddress = asyncHandler(async (req, res) => {
   res.status(201).json(new ApiResponse(201, { addresses: user.addresses }, 'Address added successfully'));
 });
 
+export const updateAddress = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  const address = user.addresses.id(req.params.addressId);
+  if (!address) throw new ApiError(404, 'Address not found');
+
+  if (req.body.isDefault) {
+    user.addresses.forEach((addr) => (addr.isDefault = false));
+  }
+
+  Object.assign(address, req.body);
+  await user.save();
+
+  res.status(200).json(new ApiResponse(200, { addresses: user.addresses }, 'Address updated successfully'));
+});
+
 export const deleteAddress = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
   user.addresses = user.addresses.filter((addr) => addr._id.toString() !== req.params.addressId);

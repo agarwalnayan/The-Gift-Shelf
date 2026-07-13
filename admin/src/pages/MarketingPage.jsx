@@ -22,6 +22,8 @@ import BannerFormModal from '../components/marketing/BannerFormModal.jsx';
 import FeaturedItemFormModal from '../components/marketing/FeaturedItemFormModal.jsx';
 import BudgetCollectionFormModal from '../components/marketing/BudgetCollectionFormModal.jsx';
 import SiteSettingsForm from '../components/marketing/SiteSettingsForm.jsx';
+import StoreCheckoutSettingsForm from '../components/marketing/StoreCheckoutSettingsForm.jsx';
+import CouponManager from '../components/marketing/CouponManager.jsx';
 import ConfirmDialog from '../components/common/ConfirmDialog.jsx';
 import Button from '../components/common/Button.jsx';
 import { TableSkeleton } from '../components/common/Skeleton.jsx';
@@ -33,6 +35,8 @@ const TABS = [
   { key: 'occasion', label: 'Featured Occasions' },
   { key: 'budget', label: 'Budget Collections' },
   { key: 'settings', label: 'Announcement & Popup' },
+  { key: 'checkout', label: 'Checkout & Store' },
+  { key: 'coupons', label: 'Coupons' },
 ];
 
 const FEATURED_MAX = 6;
@@ -68,7 +72,7 @@ const MarketingPage = () => {
       } else if (activeTab === 'budget') {
         const { data } = await getBudgetCollectionsApi();
         setBudgetCollections(data.data.collections);
-      } else if (activeTab === 'settings') {
+      } else if (activeTab === 'settings' || activeTab === 'checkout') {
         const { data } = await getSiteSettingsApi();
         setSettings(data.data.settings);
       }
@@ -217,9 +221,8 @@ const MarketingPage = () => {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-              activeTab === tab.key ? 'bg-primary-50 text-primary-700' : 'text-ink/60 hover:bg-ink/5'
-            }`}
+            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${activeTab === tab.key ? 'bg-primary-50 text-primary-700' : 'text-ink/60 hover:bg-ink/5'
+              }`}
           >
             {tab.label}
           </button>
@@ -288,6 +291,10 @@ const MarketingPage = () => {
             </div>
           ))}
         </div>
+      ) : activeTab === 'checkout' ? (
+        <StoreCheckoutSettingsForm settings={settings} onSaved={setSettings} />
+      ) : activeTab === 'coupons' ? (
+        <CouponManager />
       ) : (
         <SiteSettingsForm settings={settings} onSaved={setSettings} />
       )}

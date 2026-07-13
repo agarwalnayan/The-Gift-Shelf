@@ -346,6 +346,41 @@ export const updateAnnouncementBar = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, { announcementBar: settings.announcementBar }, 'Announcement bar updated successfully'));
 });
 
+export const updateCommerceSettings = asyncHandler(async (req, res) => {
+  const settings = await SiteSettings.getSingleton();
+  const {
+    freeShippingThreshold,
+    shippingCharge,
+    whatsappCharge,
+    whatsappNumber,
+    checkoutMessage,
+    paymentOptions,
+    returnPolicy,
+    replacementPolicy,
+  } = req.body;
+
+  const current = settings.commerce.toObject();
+
+  settings.commerce = {
+    ...current,
+    ...(freeShippingThreshold !== undefined && { freeShippingThreshold }),
+    ...(shippingCharge !== undefined && { shippingCharge }),
+    ...(whatsappCharge !== undefined && { whatsappCharge }),
+    ...(whatsappNumber !== undefined && { whatsappNumber }),
+    ...(checkoutMessage !== undefined && { checkoutMessage }),
+    ...(returnPolicy !== undefined && { returnPolicy }),
+    ...(replacementPolicy !== undefined && { replacementPolicy }),
+    ...(paymentOptions !== undefined && {
+      paymentOptions: { ...current.paymentOptions, ...paymentOptions },
+    }),
+  };
+
+  settings.updatedBy = req.user._id;
+  await settings.save();
+
+  res.status(200).json(new ApiResponse(200, { commerce: settings.commerce }, 'Checkout settings updated successfully'));
+});
+
 export const updateWelcomePopup = asyncHandler(async (req, res) => {
   const settings = await SiteSettings.getSingleton();
   const { enabled, title, description, ctaText, ctaLink, delaySeconds, showOncePerSession, removeImage } = req.body;
@@ -406,6 +441,7 @@ export const getHomepageContent = asyncHandler(async (req, res) => {
         budgetCollections,
         announcementBar: settings.announcementBar,
         welcomePopup: settings.welcomePopup,
+        commerce: settings.commerce,
       },
       'Homepage content fetched successfully'
     )

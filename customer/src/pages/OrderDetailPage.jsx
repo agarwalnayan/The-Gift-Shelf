@@ -59,19 +59,44 @@ const OrderDetailPage = () => {
               <span>Subtotal</span>
               <span>₹{order.itemsPrice}</span>
             </div>
+            {order.discountPrice > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Discount {order.couponCode ? `(${order.couponCode})` : ''}</span>
+                <span>-₹{order.discountPrice}</span>
+              </div>
+            )}
             <div className="flex justify-between text-charcoal/70">
               <span>Shipping</span>
-              <span>₹{order.shippingPrice}</span>
+              <span>{order.shippingPrice === 0 ? 'Free' : `₹${order.shippingPrice}`}</span>
             </div>
-            <div className="flex justify-between text-charcoal/70">
-              <span>Tax</span>
-              <span>₹{order.taxPrice}</span>
-            </div>
+            {order.whatsappCharge > 0 && (
+              <div className="flex justify-between text-charcoal/70">
+                <span>WhatsApp Order Charge</span>
+                <span>₹{order.whatsappCharge}</span>
+              </div>
+            )}
             <div className="mt-2 flex justify-between border-t border-charcoal/10 pt-2 font-semibold text-charcoal">
               <span>Total</span>
               <span>₹{order.totalPrice}</span>
             </div>
           </div>
+
+          {(order.giftMessage || order.orderNotes) && (
+            <div className="mt-6 border-t border-charcoal/10 pt-4 text-sm">
+              {order.giftMessage && (
+                <div className="mb-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-charcoal/40">Gift Message</p>
+                  <p className="mt-1 text-charcoal/70">{order.giftMessage}</p>
+                </div>
+              )}
+              {order.orderNotes && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-charcoal/40">Order Notes</p>
+                  <p className="mt-1 text-charcoal/70">{order.orderNotes}</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -48,8 +48,8 @@ const Footer = () => {
         </div>
       </div>
 
-      <div className="container-tgs grid grid-cols-2 gap-x-6 gap-y-10 py-12 sm:py-14 md:grid-cols-4">
-        <div className="col-span-2 md:col-span-1">
+      <div className="container-tgs grid grid-cols-1 gap-x-6 gap-y-10 py-10 text-center sm:grid-cols-2 sm:py-14 sm:text-left md:grid-cols-4">
+        <div className="flex flex-col items-center sm:col-span-2 sm:items-start md:col-span-1">
           <p className="font-display text-xl font-semibold text-charcoal">The Gift Shelf</p>
           <p className="mt-3 max-w-[220px] text-sm leading-relaxed text-charcoal/60">
             Thoughtfully curated gifts for every occasion, delivered with care.

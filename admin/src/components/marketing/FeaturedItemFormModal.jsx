@@ -48,12 +48,20 @@ const FeaturedItemFormModal = ({ isOpen, onClose, onSubmit, item, itemType, isSu
 
   const submitHandler = (values) => {
     const formData = new FormData();
-    formData.append('type', itemType);
+
+    // Only send type while creating
+    if (!isEditMode) {
+      formData.append('type', itemType);
+    }
+
     formData.append('name', values.name);
     formData.append('value', values.value);
     formData.append('displayOrder', values.displayOrder || 0);
     formData.append('isActive', values.isActive);
-    if (imageFile) formData.append('image', imageFile);
+
+    if (imageFile) {
+      formData.append('image', imageFile);
+    }
 
     onSubmit(formData);
   };

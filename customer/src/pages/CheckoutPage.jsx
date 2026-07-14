@@ -192,18 +192,18 @@ const CheckoutPage = () => {
         </div>
       )}
 
-      <div className="grid gap-8 lg:grid-cols-3 lg:items-start lg:gap-10">
+      <div className="grid gap-6 sm:gap-8 md:grid-cols-3 md:items-start md:gap-10 lg:gap-12">
         {/* Left column */}
-        <div className="space-y-8 lg:col-span-2">
+        <div className="min-w-0 space-y-6 sm:space-y-8 md:col-span-2">
           <section>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-display text-lg font-semibold text-charcoal">Delivery Address</h2>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="min-w-0 truncate font-display text-lg font-semibold text-charcoal">Delivery Address</h2>
               <button
                 onClick={() => {
                   setEditingAddress(null);
                   setIsAddressModalOpen(true);
                 }}
-                className="flex items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700"
+                className="flex shrink-0 items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700 whitespace-nowrap"
               >
                 <HiOutlinePlus size={16} />
                 Add New
@@ -211,7 +211,7 @@ const CheckoutPage = () => {
             </div>
 
             {addresses.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-charcoal/20 p-6 text-center text-sm text-charcoal/60">
+              <div className="rounded-2xl border border-dashed border-charcoal/20 p-4 text-center text-sm text-charcoal/60 sm:p-6">
                 No saved addresses yet. Add one to continue.
               </div>
             ) : (
@@ -296,20 +296,21 @@ const CheckoutPage = () => {
                   className={`flex cursor-pointer items-center justify-between rounded-2xl border p-4 transition-colors ${paymentMethod === 'razorpay' ? 'border-primary-500 bg-primary-50/50' : 'border-charcoal/10 bg-white'
                     }`}
                 >
-                  <span className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                     <input
                       type="radio"
                       name="paymentMethod"
+                      className="shrink-0"
                       checked={paymentMethod === 'razorpay'}
                       onChange={() => setPaymentMethod('razorpay')}
                     />
-                    <span>
+                    <div className="min-w-0">
                       <span className="flex items-center gap-1.5 text-sm font-medium text-charcoal">
-                        <HiOutlineShieldCheck size={17} /> Pay Online (Razorpay)
+                        <HiOutlineShieldCheck className="shrink-0" size={17} /> <span className="truncate">Pay Online (Razorpay)</span>
                       </span>
-                      <span className="mt-0.5 block text-xs text-charcoal/50">Cards, UPI, Netbanking & Wallets</span>
-                    </span>
-                  </span>
+                      <span className="mt-0.5 block truncate text-xs text-charcoal/50">Cards, UPI, Netbanking & Wallets</span>
+                    </div>
+                  </div>
                 </label>
               )}
 
@@ -318,22 +319,23 @@ const CheckoutPage = () => {
                   className={`flex cursor-pointer items-center justify-between rounded-2xl border p-4 transition-colors ${paymentMethod === 'whatsapp' ? 'border-primary-500 bg-primary-50/50' : 'border-charcoal/10 bg-white'
                     }`}
                 >
-                  <span className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                     <input
                       type="radio"
                       name="paymentMethod"
+                      className="shrink-0"
                       checked={paymentMethod === 'whatsapp'}
                       onChange={() => setPaymentMethod('whatsapp')}
                     />
-                    <span>
+                    <div className="min-w-0">
                       <span className="flex items-center gap-1.5 text-sm font-medium text-charcoal">
-                        <FaWhatsapp size={17} /> Order via WhatsApp
+                        <FaWhatsapp className="shrink-0" size={17} /> <span className="truncate">Order via WhatsApp</span>
                       </span>
-                      <span className="mt-0.5 block text-xs text-charcoal/50">
+                      <span className="mt-0.5 block truncate text-xs text-charcoal/50">
                         Confirm your order over chat (+₹{whatsappCharge})
                       </span>
-                    </span>
-                  </span>
+                    </div>
+                  </div>
                 </label>
               )}
             </div>
@@ -341,7 +343,7 @@ const CheckoutPage = () => {
         </div>
 
         {/* Right column — sticky order summary */}
-        <div className="rounded-2xl border border-charcoal/10 bg-white p-6 lg:sticky lg:top-28">
+        <div className="min-w-0 rounded-2xl border border-charcoal/10 bg-white p-4 lg:sticky lg:top-28">
           <h3 className="font-display text-lg font-semibold text-charcoal">Order Summary</h3>
 
           <div className="mt-4 max-h-60 space-y-3 overflow-y-auto pr-1">

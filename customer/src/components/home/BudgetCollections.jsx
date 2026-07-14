@@ -19,7 +19,7 @@ const BudgetCollections = ({ collections }) => {
       <div className="mb-8 flex items-end justify-between sm:mb-10">
         <h2 className="font-display text-xl font-semibold text-charcoal sm:text-2xl">Shop by Budget</h2>
       </div>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-3 gap-3 sm:gap-6 lg:gap-8">
         {collections.map((collection) => (
           <Link
             key={collection._id}

@@ -69,8 +69,8 @@ const ProductCard = ({ product }) => {
   };
 
   return (
-    <Link to={`/products/${product.slug}`} className="group block">
-      <div className="relative aspect-square overflow-hidden rounded-2xl bg-white shadow-sm transition-shadow duration-300 group-hover:shadow-xl">
+    <Link to={`/products/${product.slug}`} className="group block min-w-0">
+      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-white shadow-sm transition-shadow duration-300 group-hover:shadow-xl">
         <img
           src={product.images?.[0]?.url}
           alt={product.name}

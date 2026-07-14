@@ -12,7 +12,9 @@ import PromoBannerSection from '../components/home/PromoBannerSection.jsx';
 import FeaturedRecipients from '../components/home/FeaturedRecipients.jsx';
 import FeaturedOccasions from '../components/home/FeaturedOccasions.jsx';
 import BudgetCollections from '../components/home/BudgetCollections.jsx';
+import ProductCard from '../components/product/ProductCard.jsx';
 import { useMarketing } from '../context/MarketingContext.jsx';
+
 
 const HomePage = () => {
   const {
@@ -34,6 +36,8 @@ const HomePage = () => {
       try {
         const { data } = await getProductsApi({ featured: true, limit: 8 });
         setFeaturedProducts(data.data.products);
+      } catch (error) {
+        console.error('[HomePage] Error fetching featured products:', error);
       } finally {
         setIsLoading(false);
       }
@@ -85,7 +89,8 @@ const HomePage = () => {
       <FeaturedRecipients items={featuredRecipients} />
       <FeaturedOccasions items={featuredOccasions} />
       <BudgetCollections collections={budgetCollections} />
-      <PromoBannerSection banners={promoBanners} />
+
+      {promoBanners?.length > 0 && <PromoBannerSection banners={[promoBanners[0]]} />}
 
       <section className="container-tgs py-14 sm:py-16">
         <div className="mb-8 flex items-end justify-between sm:mb-10">
@@ -110,6 +115,8 @@ const HomePage = () => {
         </section>
       )}
 
+      {promoBanners?.length > 1 && <PromoBannerSection banners={promoBanners.slice(1)} />}
+
       {bestSellers.length > 0 && (
         <section className="border-t border-charcoal/10 bg-primary-50/40">
           <div className="container-tgs py-14 sm:py-16">
@@ -119,7 +126,13 @@ const HomePage = () => {
                 View all
               </Link>
             </div>
-            <ProductGrid products={bestSellers} />
+            <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory">
+              {bestSellers.map((product) => (
+                <div key={product._id} className="w-[calc(50%-0.5rem)] min-w-[160px] shrink-0 snap-start sm:w-48 lg:w-56">
+                  <ProductCard product={product} />
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       )}

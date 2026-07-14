@@ -10,10 +10,20 @@ import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
 const app = express();
 
+const corsOrigins = [env.clientUrl, env.adminUrl];
+if (env.nodeEnv === 'development') {
+  corsOrigins.push(
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174'
+  );
+}
+
 app.use(helmet());
 app.use(
   cors({
-    origin: [env.clientUrl, env.adminUrl],
+    origin: corsOrigins,
     credentials: true,
   })
 );

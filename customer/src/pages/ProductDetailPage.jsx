@@ -31,6 +31,7 @@ const ProductDetailPage = () => {
   const [isAdding, setIsAdding] = useState(false);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     setIsLoading(true);
     setCustomizationValues({});
     setValidationErrors({});

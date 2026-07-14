@@ -5,7 +5,7 @@ const AddressCard = ({ address, isSelected, onSelect, onEdit, onDelete }) => {
         <button
             type="button"
             onClick={() => onSelect(address._id)}
-            className={`relative w-full rounded-2xl border p-4 text-left transition-colors ${isSelected ? 'border-primary-500 bg-primary-50/50' : 'border-charcoal/10 bg-white hover:border-charcoal/20'
+            className={`relative w-full overflow-hidden break-words rounded-2xl border p-4 text-left transition-colors ${isSelected ? 'border-primary-500 bg-primary-50/50' : 'border-charcoal/10 bg-white hover:border-charcoal/20'
                 }`}
         >
             {isSelected && (

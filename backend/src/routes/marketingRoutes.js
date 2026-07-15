@@ -16,6 +16,7 @@ import {
   getBudgetCollections,
   upsertBudgetCollection,
   getSiteSettings,
+  updateSiteSettings,
   updateAnnouncementBar,
   updateWelcomePopup,
   updateCommerceSettings,
@@ -82,5 +83,6 @@ router.put(
 router.put('/settings/announcement-bar', validate(announcementBarSchema), updateAnnouncementBar);
 router.put('/settings/welcome-popup', singleImage, validate(welcomePopupSchema), updateWelcomePopup);
 router.put('/settings/commerce', validate(commerceSettingsSchema), updateCommerceSettings);
+router.put('/settings', updateSiteSettings);
 
 export default router;

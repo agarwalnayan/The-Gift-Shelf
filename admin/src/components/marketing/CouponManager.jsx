@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { HiOutlineTrash } from 'react-icons/hi2';
+import { HiOutlineTrash, HiOutlineMagnifyingGlass } from 'react-icons/hi2';
 import Input from '../common/Input.jsx';
 import Button from '../common/Button.jsx';
 import Toggle from '../common/Toggle.jsx';
@@ -17,6 +17,8 @@ const emptyForm = { code: '', type: 'percentage', value: '', minOrderValue: '', 
  */
 const CouponManager = () => {
     const [coupons, setCoupons] = useState([]);
+    const [filteredCoupons, setFilteredCoupons] = useState([]);
+    const [searchQuery, setSearchQuery] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [form, setForm] = useState(emptyForm);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,6 +30,7 @@ const CouponManager = () => {
         try {
             const { data } = await getCouponsApi();
             setCoupons(data.data.coupons);
+            setFilteredCoupons(data.data.coupons);
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to load coupons');
         } finally {
@@ -38,6 +41,21 @@ const CouponManager = () => {
     useEffect(() => {
         loadCoupons();
     }, []);
+
+    useEffect(() => {
+        if (searchQuery.trim() === '') {
+            setFilteredCoupons(coupons);
+        } else {
+            const query = searchQuery.toLowerCase();
+            setFilteredCoupons(
+                coupons.filter(
+                    (coupon) =>
+                        coupon.code?.toLowerCase().includes(query) ||
+                        coupon.type?.toLowerCase().includes(query)
+                )
+            );
+        }
+    }, [searchQuery, coupons]);
 
     const handleCreate = async (event) => {
         event.preventDefault();
@@ -145,16 +163,50 @@ const CouponManager = () => {
                 </div>
             </form>
 
+            {coupons.length > 0 && (
+                <div className="card p-5">
+                    <h3 className="text-base font-semibold text-ink mb-4">Coupon Analytics</h3>
+                    <div className="grid gap-4 sm:grid-cols-3">
+                        <div className="rounded-lg bg-surface p-4">
+                            <p className="text-sm text-ink/60">Total Coupons</p>
+                            <p className="text-2xl font-semibold text-ink">{coupons.length}</p>
+                        </div>
+                        <div className="rounded-lg bg-surface p-4">
+                            <p className="text-sm text-ink/60">Active Coupons</p>
+                            <p className="text-2xl font-semibold text-green-600">{coupons.filter(c => c.isActive).length}</p>
+                        </div>
+                        <div className="rounded-lg bg-surface p-4">
+                            <p className="text-sm text-ink/60">Expired Coupons</p>
+                            <p className="text-2xl font-semibold text-amber-600">
+                                {coupons.filter(c => c.expiresAt && new Date(c.expiresAt) < new Date()).length}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="card p-0">
+                <div className="border-b border-ink/10 p-4">
+                    <div className="relative">
+                        <HiOutlineMagnifyingGlass size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/40" />
+                        <input
+                            type="text"
+                            placeholder="Search by code or type..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full rounded-lg border border-ink/20 py-2 pl-10 pr-4 text-sm focus:border-primary-500 focus:outline-none"
+                        />
+                    </div>
+                </div>
                 {isLoading ? (
                     <p className="p-5 text-sm text-ink/50">Loading coupons…</p>
-                ) : coupons.length === 0 ? (
-                    <p className="p-5 text-sm text-ink/50">No coupons created yet.</p>
+                ) : filteredCoupons.length === 0 ? (
+                    <p className="p-5 text-sm text-ink/50">{searchQuery ? 'No coupons found' : 'No coupons created yet.'}</p>
                 ) : (
                     <div className="divide-y divide-ink/5">
-                        {coupons.map((coupon) => (
+                        {filteredCoupons.map((coupon) => (
                             <div key={coupon._id} className="flex items-center justify-between gap-4 p-4">
-                                <div>
+                                <div className="flex-1">
                                     <p className="font-semibold text-ink">{coupon.code}</p>
                                     <p className="text-xs text-ink/50">
                                         {coupon.type === 'percentage' ? `${coupon.value}% off` : `₹${coupon.value} off`}
@@ -162,6 +214,12 @@ const CouponManager = () => {
                                         {coupon.maxDiscount && ` · Max ₹${coupon.maxDiscount}`}
                                         {coupon.expiresAt && ` · Expires ${new Date(coupon.expiresAt).toLocaleDateString()}`}
                                     </p>
+                                    <div className="mt-2 flex items-center gap-4 text-xs text-ink/60">
+                                        <span>Uses: {coupon.usageCount || 0}</span>
+                                        {coupon.totalDiscountGiven !== undefined && (
+                                            <span>Total Discount: ₹{coupon.totalDiscountGiven.toFixed(2)}</span>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="flex items-center gap-4">
                                     <Toggle checked={coupon.isActive} onChange={() => handleToggleActive(coupon)} label="Active" />

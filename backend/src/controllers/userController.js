@@ -73,6 +73,26 @@ export const getAllUsers = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, { users, count: users.length }, 'Users fetched successfully'));
 });
 
+export const getUserById = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id).select('-password');
+  if (!user) throw new ApiError(404, 'User not found');
+
+  res.status(200).json(new ApiResponse(200, { user }, 'User fetched successfully'));
+});
+
+export const resetUserPassword = asyncHandler(async (req, res) => {
+  const { password } = req.body;
+  if (!password) throw new ApiError(400, 'Password is required');
+
+  const user = await User.findById(req.params.id);
+  if (!user) throw new ApiError(404, 'User not found');
+
+  user.password = password;
+  await user.save();
+
+  res.status(200).json(new ApiResponse(200, { user: user.toSafeObject() }, 'Password reset successfully'));
+});
+
 export const updateUserStatus = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
   if (!user) throw new ApiError(404, 'User not found');

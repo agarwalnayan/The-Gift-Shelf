@@ -10,9 +10,12 @@ const ProductBulkActionsBar = ({ count, onAction, onClear }) => {
         <Button variant="secondary" onClick={() => onAction('activate')}>Activate</Button>
         <Button variant="secondary" onClick={() => onAction('deactivate')}>Deactivate</Button>
         <Button variant="secondary" onClick={() => onAction('publish')}>Publish</Button>
+        <Button variant="secondary" onClick={() => onAction('unpublish')}>Unpublish</Button>
         <Button variant="secondary" onClick={() => onAction('draft')}>Move to Draft</Button>
         <Button variant="secondary" onClick={() => onAction('feature')}>Feature</Button>
         <Button variant="secondary" onClick={() => onAction('unfeature')}>Unfeature</Button>
+        <Button variant="secondary" onClick={() => onAction('duplicate')}>Duplicate</Button>
+        <Button variant="secondary" onClick={() => onAction('export')}>Export</Button>
         <Button className="!bg-red-600 hover:!bg-red-700" onClick={() => onAction('delete')}>
           Move to Trash
         </Button>

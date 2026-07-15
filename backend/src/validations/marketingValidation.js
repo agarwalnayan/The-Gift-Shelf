@@ -57,9 +57,13 @@ export const updateFeaturedItemSchema = Joi.object({
 export const upsertBudgetCollectionSchema = Joi.object({
   label: Joi.string().trim().min(1).max(80).required(),
   description: Joi.string().trim().max(200).allow('', null),
-  minPrice: Joi.number().min(0),
-  maxPrice: Joi.number().min(0).allow(null),
-  displayOrder: Joi.number().integer().min(0),
+  minPrice: Joi.number().min(0).allow('', null),
+  maxPrice: Joi.alternatives().try(
+    Joi.number().min(0),
+    Joi.string().allow(''),
+    Joi.allow(null)
+  ),
+  displayOrder: Joi.number().integer().min(0).allow('', null),
   isActive: Joi.boolean(),
   image: Joi.any().optional(),
 }).unknown(false);

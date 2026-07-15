@@ -186,6 +186,11 @@ const CheckoutPage = () => {
     <div className="container-tgs py-8 sm:py-12">
       <h1 className="mb-8 font-display text-2xl font-semibold text-charcoal sm:text-3xl">Checkout</h1>
 
+      <div className="mb-6 rounded-lg bg-primary-50 border border-primary-100 px-4 py-3">
+        <p className="text-sm font-medium text-primary-600">🎉 Launch Offer: Flat 20% OFF + Free Delivery</p>
+        <p className="text-xs text-charcoal/60 mt-1">Use code <span className="font-semibold">LAUNCH20</span> for discount</p>
+      </div>
+
       {commerce?.checkoutMessage && (
         <div className="mb-6 rounded-xl bg-primary-50 px-4 py-3 text-sm text-primary-700">
           {commerce.checkoutMessage}

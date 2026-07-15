@@ -4,9 +4,12 @@ const FeaturedCategories = ({ categories }) => {
   if (!categories || categories.length === 0) return null;
 
   return (
-    <section className="container-tgs py-14 sm:py-16">
-      <div className="mb-8 flex items-end justify-between sm:mb-10">
-        <h2 className="font-display text-xl font-semibold text-charcoal sm:text-2xl">Shop by Category</h2>
+    <section className="container-tgs py-8 sm:py-10">
+      <div className="mb-5 flex items-end justify-between sm:mb-6">
+        <div>
+          <h2 className="font-display text-xl font-semibold text-charcoal sm:text-2xl">Shop by Category</h2>
+          <p className="mt-1.5 text-sm text-charcoal/60">Find the perfect gift type</p>
+        </div>
         <Link to="/categories" className="text-sm font-medium text-primary-600 hover:underline">
           View all
         </Link>
@@ -19,12 +22,12 @@ const FeaturedCategories = ({ categories }) => {
             to={`/products?category=${category._id}`}
             className="group w-32 shrink-0 sm:w-auto"
           >
-            <div className="aspect-square overflow-hidden rounded-2xl bg-primary-50">
+            <div className="aspect-square overflow-hidden rounded-2xl bg-primary-50 shadow-sm transition-all duration-200 group-hover:shadow-lg">
               {category.image?.url ? (
                 <img
                   src={category.image.url}
                   alt={category.name}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center font-display text-2xl text-primary-300">

@@ -6,7 +6,9 @@ import {
   deleteAddress,
   toggleWishlist,
   getAllUsers,
+  getUserById,
   updateUserStatus,
+  resetUserPassword,
 } from '../controllers/userController.js';
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 
@@ -21,6 +23,8 @@ router.delete('/addresses/:addressId', deleteAddress);
 router.patch('/wishlist/:productId', toggleWishlist);
 
 router.get('/', authorizeRoles('admin', 'superadmin'), getAllUsers);
+router.get('/:id', authorizeRoles('admin', 'superadmin'), getUserById);
 router.patch('/:id/status', authorizeRoles('admin', 'superadmin'), updateUserStatus);
+router.patch('/:id/reset-password', authorizeRoles('admin', 'superadmin'), resetUserPassword);
 
 export default router;

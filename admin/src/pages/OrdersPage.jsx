@@ -1,20 +1,24 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { HiOutlineTrash } from 'react-icons/hi2';
+import { HiOutlineTrash, HiOutlineMagnifyingGlass } from 'react-icons/hi2';
 import { getAllOrdersApi, updateOrderStatusApi, deleteOrderApi } from '../api/orderApi.js';
 import Loader from '../components/common/Loader.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 import ConfirmDialog from '../components/common/ConfirmDialog.jsx';
 
-const statusOptions = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+const statusOptions = ['Pending', 'Confirmed', 'Preparing', 'Packed', 'Shipped', 'Out For Delivery', 'Delivered', 'Cancelled', 'Returned'];
 
 const statusStyles = {
-  pending: 'bg-yellow-100 text-yellow-700',
-  processing: 'bg-blue-100 text-blue-700',
-  shipped: 'bg-indigo-100 text-indigo-700',
-  delivered: 'bg-green-100 text-green-700',
-  cancelled: 'bg-red-100 text-red-700',
+  'Pending': 'bg-yellow-100 text-yellow-700',
+  'Confirmed': 'bg-blue-100 text-blue-700',
+  'Preparing': 'bg-indigo-100 text-indigo-700',
+  'Packed': 'bg-purple-100 text-purple-700',
+  'Shipped': 'bg-cyan-100 text-cyan-700',
+  'Out For Delivery': 'bg-orange-100 text-orange-700',
+  'Delivered': 'bg-green-100 text-green-700',
+  'Cancelled': 'bg-red-100 text-red-700',
+  'Returned': 'bg-gray-100 text-gray-700',
 };
 
 const startOfDay = (date) => {
@@ -43,6 +47,8 @@ const groupOrdersByDate = (orders) => {
 
 const OrdersPage = () => {
   const [orders, setOrders] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [orderPendingDelete, setOrderPendingDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -52,6 +58,7 @@ const OrdersPage = () => {
     try {
       const { data } = await getAllOrdersApi({ limit: 100 });
       setOrders(data.data.orders);
+      setFilteredOrders(data.data.orders);
     } finally {
       setIsLoading(false);
     }
@@ -60,6 +67,23 @@ const OrdersPage = () => {
   useEffect(() => {
     loadOrders();
   }, []);
+
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredOrders(orders);
+    } else {
+      const query = searchQuery.toLowerCase();
+      setFilteredOrders(
+        orders.filter(
+          (order) =>
+            order._id?.toLowerCase().includes(query) ||
+            order.user?.name?.toLowerCase().includes(query) ||
+            order.user?.email?.toLowerCase().includes(query) ||
+            order.orderStatus?.toLowerCase().includes(query)
+        )
+      );
+    }
+  }, [searchQuery, orders]);
 
   const handleStatusChange = async (orderId, orderStatus) => {
     try {
@@ -86,7 +110,7 @@ const OrdersPage = () => {
     }
   };
 
-  const groupedOrders = useMemo(() => groupOrdersByDate(orders), [orders]);
+  const groupedOrders = useMemo(() => groupOrdersByDate(filteredOrders), [filteredOrders]);
 
   if (isLoading) return <Loader fullScreen />;
 
@@ -94,8 +118,21 @@ const OrdersPage = () => {
     <div>
       <h1 className="mb-6 text-2xl font-semibold text-ink">Orders</h1>
 
-      {orders.length === 0 ? (
-        <EmptyState title="No orders yet" description="Orders placed by customers will show up here." />
+      <div className="mb-4">
+        <div className="relative">
+          <HiOutlineMagnifyingGlass size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/40" />
+          <input
+            type="text"
+            placeholder="Search by Order ID, customer name, email, or status..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full rounded-lg border border-ink/20 py-2 pl-10 pr-4 text-sm focus:border-primary-500 focus:outline-none"
+          />
+        </div>
+      </div>
+
+      {filteredOrders.length === 0 ? (
+        <EmptyState title="No orders found" description={searchQuery ? `No orders matching "${searchQuery}"` : "Orders placed by customers will show up here."} />
       ) : (
         <div className="space-y-8">
           {Object.entries(groupedOrders).map(([groupLabel, groupOrders]) => {
@@ -143,7 +180,7 @@ const OrdersPage = () => {
                             <select
                               value={order.orderStatus}
                               onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                              className={`rounded-full border-0 px-2.5 py-1 text-xs font-medium ${statusStyles[order.orderStatus]}`}
+                              className={`rounded-full border-0 px-2.5 py-1 text-xs font-medium ${statusStyles[order.orderStatus] || statusStyles['Pending']}`}
                             >
                               {statusOptions.map((status) => (
                                 <option key={status} value={status}>

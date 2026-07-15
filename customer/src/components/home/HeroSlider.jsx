@@ -71,6 +71,7 @@ const HeroSlider = ({ banners, isLoading }) => {
               )}
             </picture>
 
+
             {banner.ctaText && banner.ctaLink && (
               <div className="absolute bottom-6 left-1/2 -translate-x-1/2 sm:bottom-10 sm:left-10 sm:translate-x-0">
                 {isExternal ? (

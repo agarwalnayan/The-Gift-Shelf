@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import AnnouncementBar from './AnnouncementBar.jsx';
+import AnnouncementBar from '../common/AnnouncementBar.jsx';
+import LaunchPopup from '../common/LaunchPopup.jsx';
 import Navbar from './Navbar.jsx';
 import Footer from './Footer.jsx';
 import MobileBottomNav from './MobileBottomNav.jsx';
@@ -62,6 +63,7 @@ const MainLayout = () => {
 
       {showFirstVisitScreen && <FirstVisitWelcomeScreen onComplete={handleNameCaptured} />}
       {isNameReady && <WelcomePopup firstName={firstName} />}
+      <LaunchPopup />
     </div>
   );
 };

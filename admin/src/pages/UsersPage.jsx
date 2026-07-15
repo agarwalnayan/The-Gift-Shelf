@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { HiOutlineMagnifyingGlass } from 'react-icons/hi2';
 import { getAllUsersApi, updateUserStatusApi } from '../api/userApi.js';
 import Loader from '../components/common/Loader.jsx';
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   const loadUsers = async () => {
@@ -12,6 +16,7 @@ const UsersPage = () => {
     try {
       const { data } = await getAllUsersApi();
       setUsers(data.data.users);
+      setFilteredUsers(data.data.users);
     } finally {
       setIsLoading(false);
     }
@@ -20,6 +25,22 @@ const UsersPage = () => {
   useEffect(() => {
     loadUsers();
   }, []);
+
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredUsers(users);
+    } else {
+      const query = searchQuery.toLowerCase();
+      setFilteredUsers(
+        users.filter(
+          (user) =>
+            user.name?.toLowerCase().includes(query) ||
+            user.email?.toLowerCase().includes(query) ||
+            user.role?.toLowerCase().includes(query)
+        )
+      );
+    }
+  }, [searchQuery, users]);
 
   const handleToggleStatus = async (id, isActive) => {
     try {
@@ -37,6 +58,19 @@ const UsersPage = () => {
     <div>
       <h1 className="mb-6 text-2xl font-semibold text-ink">Users</h1>
 
+      <div className="mb-4">
+        <div className="relative">
+          <HiOutlineMagnifyingGlass size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/40" />
+          <input
+            type="text"
+            placeholder="Search by name, email, or role..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full rounded-lg border border-ink/20 py-2 pl-10 pr-4 text-sm focus:border-primary-500 focus:outline-none"
+          />
+        </div>
+      </div>
+
       <div className="card overflow-x-auto p-0">
         <table className="table-base">
           <thead>
@@ -49,9 +83,13 @@ const UsersPage = () => {
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => (
-              <tr key={user._id}>
-                <td className="font-medium">{user.name}</td>
+            {filteredUsers.map((user) => (
+              <tr key={user._id || user.id}>
+                <td className="font-medium">
+                  <Link to={`/users/${user._id || user.id}`} className="hover:text-primary-600 hover:underline">
+                    {user.name}
+                  </Link>
+                </td>
                 <td>{user.email}</td>
                 <td className="capitalize">{user.role}</td>
                 <td>
@@ -65,7 +103,7 @@ const UsersPage = () => {
                 </td>
                 <td>
                   <button
-                    onClick={() => handleToggleStatus(user._id, user.isActive)}
+                    onClick={() => handleToggleStatus(user._id || user.id, user.isActive)}
                     className="text-sm font-medium text-primary-600 hover:underline"
                   >
                     {user.isActive ? 'Deactivate' : 'Activate'}
@@ -75,6 +113,11 @@ const UsersPage = () => {
             ))}
           </tbody>
         </table>
+        {filteredUsers.length === 0 && (
+          <div className="p-8 text-center text-ink/60">
+            No users found matching "{searchQuery}"
+          </div>
+        )}
       </div>
     </div>
   );

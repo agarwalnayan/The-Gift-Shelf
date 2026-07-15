@@ -14,9 +14,12 @@ const FeaturedRecipients = ({ items }) => {
   if (recipients.length === 0) return null;
 
   return (
-    <section className="container-tgs py-14 sm:py-16">
-      <div className="mb-8 flex items-end justify-between sm:mb-10">
-        <h2 className="font-display text-xl font-semibold text-charcoal sm:text-2xl">Shop by Recipient</h2>
+    <section className="container-tgs py-8 sm:py-10">
+      <div className="mb-5 flex items-end justify-between sm:mb-6">
+        <div>
+          <h2 className="font-display text-xl font-semibold text-charcoal sm:text-2xl">Shop by Recipient</h2>
+          <p className="mt-1.5 text-sm text-charcoal/60">Gifts for everyone on your list</p>
+        </div>
       </div>
 
       <div className="flex snap-x snap-mandatory gap-6 overflow-x-auto pb-2 sm:justify-center sm:overflow-visible">
@@ -26,7 +29,7 @@ const FeaturedRecipients = ({ items }) => {
             to={`/products?recipient=${encodeURIComponent(item.value)}`}
             className="group flex shrink-0 snap-start flex-col items-center gap-3 text-center"
           >
-            <div className="h-20 w-20 overflow-hidden rounded-full bg-primary-100 ring-1 ring-charcoal/5 transition-transform duration-300 group-hover:scale-105 sm:h-24 sm:w-24">
+            <div className="h-20 w-20 overflow-hidden rounded-full bg-primary-100 ring-1 ring-charcoal/5 transition-transform duration-200 group-hover:scale-105 sm:h-24 sm:w-24">
               {item.image?.url && (
                 <img src={item.image.url} alt={item.name} className="h-full w-full object-cover" />
               )}

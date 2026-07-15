@@ -9,7 +9,10 @@ import CategoriesPage from '../pages/CategoriesPage.jsx';
 import OrdersPage from '../pages/OrdersPage.jsx';
 import OrderDetailPage from '../pages/OrderDetailPage.jsx';
 import UsersPage from '../pages/UsersPage.jsx';
+import UserProfilePage from '../pages/UserProfilePage.jsx';
 import MarketingPage from '../pages/MarketingPage.jsx';
+import GlobalSettingsPage from '../pages/GlobalSettingsPage.jsx';
+import CMSPage from '../pages/CMSPage.jsx';
 import NotFoundPage from '../pages/NotFoundPage.jsx';
 
 const AppRoutes = () => {
@@ -28,6 +31,9 @@ const AppRoutes = () => {
           <Route path="orders" element={<OrdersPage />} />
           <Route path="orders/:id" element={<OrderDetailPage />} />
           <Route path="users" element={<UsersPage />} />
+          <Route path="users/:id" element={<UserProfilePage />} />
+          <Route path="settings" element={<GlobalSettingsPage />} />
+          <Route path="cms" element={<CMSPage />} />
         </Route>
       </Route>
 

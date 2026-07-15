@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { HiOutlineMagnifyingGlass } from 'react-icons/hi2';
 import {
   getBannersApi,
   createBannerApi,
@@ -24,6 +25,7 @@ import BudgetCollectionFormModal from '../components/marketing/BudgetCollectionF
 import SiteSettingsForm from '../components/marketing/SiteSettingsForm.jsx';
 import StoreCheckoutSettingsForm from '../components/marketing/StoreCheckoutSettingsForm.jsx';
 import CouponManager from '../components/marketing/CouponManager.jsx';
+import HomepageBuilder from '../components/marketing/HomepageBuilder.jsx';
 import ConfirmDialog from '../components/common/ConfirmDialog.jsx';
 import Button from '../components/common/Button.jsx';
 import { TableSkeleton } from '../components/common/Skeleton.jsx';
@@ -34,6 +36,7 @@ const TABS = [
   { key: 'recipient', label: 'Featured Recipients' },
   { key: 'occasion', label: 'Featured Occasions' },
   { key: 'budget', label: 'Budget Collections' },
+  { key: 'homepage', label: 'Homepage Builder' },
   { key: 'settings', label: 'Announcement & Popup' },
   { key: 'checkout', label: 'Checkout & Store' },
   { key: 'coupons', label: 'Coupons' },
@@ -43,6 +46,7 @@ const FEATURED_MAX = 6;
 
 const MarketingPage = () => {
   const [activeTab, setActiveTab] = useState('hero');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Shared list state per section (kept simple: refetch on tab switch)
   const [banners, setBanners] = useState([]);
@@ -207,6 +211,29 @@ const MarketingPage = () => {
 
   const currentFeaturedCount = featuredItems.length;
 
+  const getFilteredItems = () => {
+    if (searchQuery.trim() === '') {
+      if (isBannerTab) return banners;
+      if (isFeaturedTab) return featuredItems;
+      if (activeTab === 'budget') return budgetCollections;
+      return [];
+    }
+    
+    const query = searchQuery.toLowerCase();
+    if (isBannerTab) {
+      return banners.filter(b => b.title?.toLowerCase().includes(query));
+    }
+    if (isFeaturedTab) {
+      return featuredItems.filter(f => f.title?.toLowerCase().includes(query));
+    }
+    if (activeTab === 'budget') {
+      return budgetCollections.filter(c => c.label?.toLowerCase().includes(query));
+    }
+    return [];
+  };
+
+  const filteredItems = getFilteredItems();
+
   return (
     <div>
       <div className="mb-6">
@@ -220,7 +247,10 @@ const MarketingPage = () => {
         {TABS.map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => {
+              setActiveTab(tab.key);
+              setSearchQuery('');
+            }}
             className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${activeTab === tab.key ? 'bg-primary-50 text-primary-700' : 'text-ink/60 hover:bg-ink/5'
               }`}
           >
@@ -229,17 +259,31 @@ const MarketingPage = () => {
         ))}
       </div>
 
-      {(isBannerTab || isFeaturedTab) && (
+      {(isBannerTab || isFeaturedTab || activeTab === 'budget') && (
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-sm text-ink/50">
-            {isFeaturedTab && `${currentFeaturedCount} / ${FEATURED_MAX} used`}
-          </p>
-          <Button
-            onClick={openAddModal}
-            disabled={isFeaturedTab && currentFeaturedCount >= FEATURED_MAX}
-          >
-            Add {activeTab === 'hero' ? 'Hero Banner' : activeTab === 'promo' ? 'Promo Banner' : 'Item'}
-          </Button>
+          <div className="relative flex-1 max-w-md">
+            <HiOutlineMagnifyingGlass size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/40" />
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-lg border border-ink/20 py-2 pl-10 pr-4 text-sm focus:border-primary-500 focus:outline-none"
+            />
+          </div>
+          {(isBannerTab || isFeaturedTab) && (
+            <>
+              <p className="text-sm text-ink/50">
+                {isFeaturedTab && `${currentFeaturedCount} / ${FEATURED_MAX} used`}
+              </p>
+              <Button
+                onClick={openAddModal}
+                disabled={isFeaturedTab && currentFeaturedCount >= FEATURED_MAX}
+              >
+                Add {activeTab === 'hero' ? 'Hero Banner' : activeTab === 'promo' ? 'Promo Banner' : 'Item'}
+              </Button>
+            </>
+          )}
         </div>
       )}
 
@@ -249,7 +293,7 @@ const MarketingPage = () => {
         </div>
       ) : isBannerTab ? (
         <MarketingListTable
-          items={banners}
+          items={filteredItems}
           onReorder={handleReorder}
           onToggleActive={handleToggleActive}
           onEdit={openEditModal}
@@ -258,7 +302,7 @@ const MarketingPage = () => {
         />
       ) : isFeaturedTab ? (
         <MarketingListTable
-          items={featuredItems}
+          items={filteredItems}
           onReorder={handleReorder}
           onToggleActive={handleToggleActive}
           onEdit={openEditModal}
@@ -267,7 +311,7 @@ const MarketingPage = () => {
         />
       ) : activeTab === 'budget' ? (
         <div className="grid gap-4 sm:grid-cols-3">
-          {budgetCollections.map((collection) => (
+          {filteredItems.map((collection) => (
             <div key={collection._id} className="card space-y-3 p-5">
               <div className="h-24 w-full overflow-hidden rounded-lg bg-surface">
                 {collection.image?.url && (
@@ -290,7 +334,14 @@ const MarketingPage = () => {
               </Button>
             </div>
           ))}
+          {filteredItems.length === 0 && (
+            <div className="col-span-3 card p-8 text-center text-ink/60">
+              No budget collections found
+            </div>
+          )}
         </div>
+      ) : activeTab === 'homepage' ? (
+        <HomepageBuilder />
       ) : activeTab === 'checkout' ? (
         <StoreCheckoutSettingsForm settings={settings} onSaved={setSettings} />
       ) : activeTab === 'coupons' ? (

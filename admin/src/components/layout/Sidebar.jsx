@@ -6,6 +6,8 @@ import {
   HiOutlineClipboardDocumentList,
   HiOutlineUsers,
   HiOutlineMegaphone,
+  HiOutlineCog6Tooth,
+  HiOutlineDocumentText,
   HiXMark,
 } from 'react-icons/hi2';
 
@@ -16,6 +18,8 @@ const navItems = [
   { label: 'Marketing', to: '/marketing', icon: HiOutlineMegaphone },
   { label: 'Orders', to: '/orders', icon: HiOutlineClipboardDocumentList },
   { label: 'Users', to: '/users', icon: HiOutlineUsers },
+  { label: 'CMS', to: '/cms', icon: HiOutlineDocumentText },
+  { label: 'Settings', to: '/settings', icon: HiOutlineCog6Tooth },
 ];
 
 const NavItems = ({ onNavigate }) => (

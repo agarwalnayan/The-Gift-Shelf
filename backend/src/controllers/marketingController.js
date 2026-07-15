@@ -335,6 +335,40 @@ export const getSiteSettings = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, { settings }, 'Site settings fetched successfully'));
 });
 
+export const updateSiteSettings = asyncHandler(async (req, res) => {
+  const settings = await SiteSettings.getSingleton();
+  
+  // Update global config if provided
+  if (req.body.globalConfig) {
+    settings.globalConfig = { ...settings.globalConfig.toObject(), ...req.body.globalConfig };
+  }
+  
+  // Update homepage config if provided
+  if (req.body.homepageConfig) {
+    settings.homepageConfig = { ...settings.homepageConfig.toObject(), ...req.body.homepageConfig };
+  }
+  
+  // Update announcement bar if provided
+  if (req.body.announcementBar) {
+    settings.announcementBar = { ...settings.announcementBar.toObject(), ...req.body.announcementBar };
+  }
+  
+  // Update welcome popup if provided
+  if (req.body.welcomePopup) {
+    settings.welcomePopup = { ...settings.welcomePopup.toObject(), ...req.body.welcomePopup };
+  }
+  
+  // Update commerce settings if provided
+  if (req.body.commerce) {
+    settings.commerce = { ...settings.commerce.toObject(), ...req.body.commerce };
+  }
+
+  settings.updatedBy = req.user._id;
+  await settings.save();
+
+  res.status(200).json(new ApiResponse(200, { settings }, 'Site settings updated successfully'));
+});
+
 export const updateAnnouncementBar = asyncHandler(async (req, res) => {
   const settings = await SiteSettings.getSingleton();
   settings.announcementBar = { ...settings.announcementBar.toObject(), ...req.body };

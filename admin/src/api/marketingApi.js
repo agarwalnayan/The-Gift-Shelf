@@ -26,6 +26,7 @@ export const upsertBudgetCollectionApi = (tier, formData) =>
 
 /* ---- Site Settings (Announcement Bar + Welcome Popup) ---- */
 export const getSiteSettingsApi = () => axiosInstance.get('/marketing/settings');
+export const updateSiteSettingsApi = (payload) => axiosInstance.put('/marketing/settings', payload);
 export const updateAnnouncementBarApi = (payload) => axiosInstance.put('/marketing/settings/announcement-bar', payload);
 export const updateWelcomePopupApi = (formData) => axiosInstance.put('/marketing/settings/welcome-popup', formData);
 export const updateCommerceSettingsApi = (payload) => axiosInstance.put('/marketing/settings/commerce', payload);

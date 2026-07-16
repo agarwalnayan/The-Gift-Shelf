@@ -137,23 +137,20 @@ const ProductDetailPage = () => {
   };
 
   const handleAddToCart = async () => {
-    if (!user) {
-      toast.error('Please sign in to add items to your cart');
-      return;
-    }
-
-    const isValid = validateCustomizations();
-    if (!isValid) {
-      toast.error('Please complete the required customization fields');
-      return;
-    }
-
-    setIsAdding(true);
     try {
+      const isValid = validateCustomizations();
+      if (!isValid) {
+        toast.error('Please complete the required customization fields');
+        return;
+      }
+
+      setIsAdding(true);
+
       const customizations = customizationOptions
         .map((option) => {
           const value = customizationValues[option.key];
           if (!hasValue(value)) return null;
+
           return {
             key: option.key,
             label: option.label,
@@ -167,6 +164,7 @@ const ProductDetailPage = () => {
       await addItem(product._id, quantity, {
         variantSku: selectedVariantSku || null,
         customizations,
+        product,
       });
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to add item to cart');
@@ -298,10 +296,10 @@ const ProductDetailPage = () => {
         <span className="truncate text-charcoal/70">{product.name}</span>
       </nav>
 
-      <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
         {/* Gallery */}
         <div className="lg:sticky lg:top-28 lg:self-start">
-          <div className="aspect-square overflow-hidden rounded-3xl bg-white shadow-sm">
+          <div className="aspect-square overflow-hidden rounded-2xl bg-white shadow-md">
             <img
               src={product.images[activeImage]?.url}
               alt={product.name}
@@ -309,14 +307,13 @@ const ProductDetailPage = () => {
             />
           </div>
           {product.images.length > 1 && (
-            <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
+            <div className="mt-6 flex gap-4 overflow-x-auto pb-2">
               {product.images.map((img, index) => (
                 <button
                   key={img.publicId}
                   onClick={() => setActiveImage(index)}
-                  className={`h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition-colors ${
-                    activeImage === index ? 'border-primary-600' : 'border-transparent hover:border-charcoal/15'
-                  }`}
+                  className={`h-20 w-20 shrink-0 overflow-hidden rounded-xl border-2 transition-all duration-300 lg:h-24 lg:w-24 ${activeImage === index ? 'border-primary-600 ring-2 ring-primary-600/20' : 'border-transparent hover:border-charcoal/15 hover:opacity-80'
+                    }`}
                 >
                   <img src={img.url} alt={`Product thumbnail ${index + 1}`} className="h-full w-full object-cover" />
                 </button>
@@ -326,44 +323,48 @@ const ProductDetailPage = () => {
         </div>
 
         {/* Details */}
-        <div>
-          {product.category?.name && (
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary-600 sm:text-sm">
-              {product.category.name}
-            </p>
-          )}
-          <h1 className="mt-2 font-display text-2xl font-semibold leading-tight text-charcoal sm:text-3xl lg:text-4xl">
-            {product.name}
-          </h1>
+        <div className="flex flex-col space-y-8">
+          <div className="space-y-4">
+            {product.category?.name && (
+              <p className="text-xs font-semibold uppercase tracking-widest text-primary-600 sm:text-sm">
+                {product.category.name}
+              </p>
+            )}
+            <h1 className="font-display text-2xl font-semibold leading-tight text-charcoal sm:text-3xl lg:text-4xl">
+              {product.name}
+            </h1>
 
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <span className="text-2xl font-semibold text-charcoal sm:text-3xl">
-              ₹{estimatedUnitPrice.toFixed(2)}
-            </span>
-            {hasDiscount && (
-              <span className="text-base text-charcoal/40 line-through sm:text-lg">₹{product.price}</span>
-            )}
-            {customizationSurcharge > 0 && (
-              <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700">
-                incl. ₹{customizationSurcharge} personalization
-              </span>
-            )}
+            <div>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-2xl font-semibold text-charcoal sm:text-3xl">
+                  ₹{estimatedUnitPrice.toFixed(2)}
+                </span>
+                {hasDiscount && (
+                  <span className="text-base text-charcoal/40 line-through sm:text-lg">₹{product.price}</span>
+                )}
+                {customizationSurcharge > 0 && (
+                  <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700">
+                    incl. ₹{customizationSurcharge} personalization
+                  </span>
+                )}
+              </div>
+              <p className="mt-2 text-xs text-charcoal/50">Inclusive of all taxes</p>
+            </div>
           </div>
-          <p className="mt-1 text-xs text-charcoal/50">Inclusive of all taxes</p>
 
           {product.stock === 0 ? (
-            <span className="mt-4 inline-flex w-fit items-center rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-600">
+            <span className="inline-flex w-fit items-center rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-600">
               Out of stock
             </span>
           ) : product.stock <= 5 ? (
-            <span className="mt-4 inline-flex w-fit items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+            <span className="inline-flex w-fit items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
               Only {product.stock} left in stock
             </span>
           ) : null}
 
           {/* Variant selector */}
           {variants.length > 0 && (
-            <div className="mt-8 rounded-2xl border border-charcoal/10 bg-white p-5">
+            <div className="rounded-2xl border border-charcoal/10 bg-white p-5 shadow-sm">
               <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-charcoal/70">Select Variant</h3>
               <div className="mt-4 flex flex-wrap gap-2.5">
                 {variants.map((variant) => {
@@ -374,11 +375,10 @@ const ProductDetailPage = () => {
                       key={variant.sku}
                       type="button"
                       onClick={() => setSelectedVariantSku(variant.sku)}
-                      className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
-                        isSelected
-                          ? 'border-primary-600 bg-primary-600 text-white shadow-sm'
-                          : 'border-charcoal/20 bg-white text-charcoal hover:border-charcoal/40'
-                      }`}
+                      className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${isSelected
+                        ? 'border-primary-600 bg-primary-600 text-white shadow-sm'
+                        : 'border-charcoal/20 bg-white text-charcoal hover:border-charcoal/40'
+                        }`}
                     >
                       {variantLabel || variant.sku}
                     </button>
@@ -390,14 +390,14 @@ const ProductDetailPage = () => {
 
           {/* Personalization */}
           {customizationOptions.length > 0 && (
-            <div className="mt-8 rounded-2xl border border-charcoal/10 bg-white p-5">
+            <div className="rounded-2xl border border-charcoal/10 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-charcoal/70">Personalize Your Gift</h3>
                 <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700">
                   {customizationOptions.length} option{customizationOptions.length > 1 ? 's' : ''}
                 </span>
               </div>
-              <div className="mt-5 space-y-5">
+              <div className="mt-5 space-y-6">
                 {customizationOptions.map((option) => {
                   const currentValue = customizationValues[option.key];
                   const error = validationErrors[option.key];
@@ -564,28 +564,28 @@ const ProductDetailPage = () => {
           )}
 
           {/* Quantity + Add to cart */}
-          <div className="sticky bottom-0 z-10 -mx-4 mt-8 flex items-center gap-4 border-t border-charcoal/10 bg-cream/95 px-4 py-4 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none">
-            <div className="flex items-center gap-3 rounded-full border border-charcoal/20 bg-white px-2 py-1.5">
+          <div className="sticky bottom-0 left-0 right-0 z-20 -mx-4 mt-auto flex flex-row items-center gap-4 border-t border-charcoal/10 bg-white/90 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.15)] backdrop-blur-md sm:static sm:mx-0 sm:mt-0 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-none">
+            <div className="flex h-12 items-center gap-2 rounded-full border border-charcoal/20 bg-white px-1 shadow-sm">
               <button
                 type="button"
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                 aria-label="Decrease quantity"
-                className="flex h-7 w-7 items-center justify-center rounded-full text-charcoal/70 hover:bg-charcoal/5"
+                className="flex h-10 w-10 items-center justify-center rounded-full text-charcoal/70 transition-colors hover:bg-charcoal/5 hover:text-charcoal"
               >
-                <HiOutlineMinus size={14} />
+                <HiOutlineMinus size={18} />
               </button>
-              <span className="w-6 text-center text-sm font-medium">{quantity}</span>
+              <span className="w-6 text-center text-sm font-semibold text-charcoal">{quantity}</span>
               <button
                 type="button"
                 onClick={() => setQuantity((q) => q + 1)}
                 aria-label="Increase quantity"
-                className="flex h-7 w-7 items-center justify-center rounded-full text-charcoal/70 hover:bg-charcoal/5"
+                className="flex h-10 w-10 items-center justify-center rounded-full text-charcoal/70 transition-colors hover:bg-charcoal/5 hover:text-charcoal"
               >
-                <HiOutlinePlus size={14} />
+                <HiOutlinePlus size={18} />
               </button>
             </div>
 
-            <Button onClick={handleAddToCart} isLoading={isAdding} disabled={product.stock === 0} className="flex-1 sm:flex-none">
+            <Button onClick={handleAddToCart} isLoading={isAdding} disabled={product.stock === 0} className="h-12 flex-1 sm:flex-none">
               {product.stock === 0 ? 'Out of Stock' : `Add to Cart · ₹${(estimatedUnitPrice * quantity).toFixed(2)}`}
             </Button>
           </div>
@@ -593,7 +593,7 @@ const ProductDetailPage = () => {
       </div>
 
       {/* Structured description */}
-      <div className="mt-14 max-w-3xl sm:mt-20">
+      <div className="mt-16 max-w-4xl">
         <h2 className="mb-4 font-display text-xl font-semibold text-charcoal sm:text-2xl">Product Details</h2>
         <Accordion items={accordionItems} />
       </div>

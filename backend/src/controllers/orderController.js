@@ -62,6 +62,36 @@ export const createOrder = asyncHandler(async (req, res) => {
   // GST removed store-wide — no tax component in the total.
   const totalPrice = Number((itemsPrice - discountPrice + shippingPrice + whatsappSurcharge).toFixed(2));
 
+  const stockRequirements = {};
+  for (const item of orderItems) {
+    const key = `${item.product}_${item.variantSku || 'base'}`;
+    if (!stockRequirements[key]) {
+      stockRequirements[key] = {
+        productId: item.product,
+        variantSku: item.variantSku,
+        name: item.name,
+        quantity: 0
+      };
+    }
+    stockRequirements[key].quantity += item.quantity;
+  }
+
+  for (const reqItem of Object.values(stockRequirements)) {
+    const product = await Product.findById(reqItem.productId);
+    if (!product || !product.isActive || product.isDeleted) {
+      throw new ApiError(400, `Product ${reqItem.name} is no longer available`);
+    }
+    let availableStock = product.stock;
+    if (reqItem.variantSku) {
+      const variant = product.variants.find(v => v.sku === reqItem.variantSku && v.isActive);
+      if (!variant) throw new ApiError(400, `Variant for ${reqItem.name} is no longer available`);
+      availableStock = variant.stock;
+    }
+    if (availableStock < reqItem.quantity) {
+      throw new ApiError(400, `Insufficient Stock: ${reqItem.name} is out of stock or does not have enough quantity.`);
+    }
+  }
+
   const order = await Order.create({
     user: req.user._id,
     orderItems,

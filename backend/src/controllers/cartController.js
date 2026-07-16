@@ -70,6 +70,9 @@ export const addToCart = asyncHandler(async (req, res) => {
   const existingItem = cart.items.find((item) => isSameLine(item, productId, variantSku, customizations));
 
   if (existingItem) {
+    if (existingItem.quantity + Number(quantity) > availableStock) {
+      throw new ApiError(400, 'Insufficient stock available');
+    }
     existingItem.quantity += Number(quantity);
   } else {
     cart.items.push({

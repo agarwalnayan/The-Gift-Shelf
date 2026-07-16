@@ -96,6 +96,7 @@ export const CartProvider = ({ children }) => {
     refreshCart();
   }, [refreshCart]);
 
+  useEffect(() => {
     const mergeGuestCart = async () => {
       if (!user || hasMergedGuestCart.current) return;
 

@@ -1,8 +1,7 @@
 import { create } from 'xmlbuilder2';
 import Product from '../models/Product.js';
 
-import env from '../config/env.js';
-
+import { env } from '../config/env.js';
 const BASE_URL = (env.siteUrl || env.clientUrl).replace(/\/$/, '');
 
 const STATIC_PAGES = [

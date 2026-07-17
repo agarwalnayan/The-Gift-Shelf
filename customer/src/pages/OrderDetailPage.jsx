@@ -15,17 +15,31 @@ const OrderDetailPage = () => {
       .finally(() => setIsLoading(false));
   }, [id]);
 
+  const statusOptions = [
+    { value: 'pending', label: 'Pending' },
+    { value: 'confirmed', label: 'Confirmed' },
+    { value: 'preparing', label: 'Preparing' },
+    { value: 'packed', label: 'Packed' },
+    { value: 'shipped', label: 'Shipped' },
+    { value: 'out_for_delivery', label: 'Out For Delivery' },
+    { value: 'delivered', label: 'Delivered' },
+    { value: 'cancelled', label: 'Cancelled' },
+    { value: 'returned', label: 'Returned' },
+  ];
+
   const getTrackingStatus = (orderStatus) => {
     const statusMap = {
-      'Pending': 0,
-      'Confirmed': 1,
-      'Processing': 2,
-      'Packed': 3,
-      'Shipped': 4,
-      'Out For Delivery': 5,
-      'Delivered': 6
+      'pending': 0,
+      'confirmed': 1,
+      'preparing': 2,
+      'packed': 3,
+      'shipped': 4,
+      'out_for_delivery': 5,
+      'delivered': 6,
+      'cancelled': -1,
+      'returned': -1,
     };
-    return statusMap[orderStatus] || 0;
+    return statusMap[orderStatus] !== undefined ? statusMap[orderStatus] : 0;
   };
 
   const trackingSteps = [
@@ -48,7 +62,7 @@ const OrderDetailPage = () => {
       <h1 className="font-display text-3xl font-semibold text-charcoal sm:text-4xl">
         Order #{order._id.slice(-8).toUpperCase()}
       </h1>
-      <p className="mt-2 text-sm text-charcoal/60">Status: {order.orderStatus}</p>
+      <p className="mt-2 text-sm text-charcoal/60">Status: {statusOptions.find((o) => o.value === order.orderStatus)?.label || order.orderStatus}</p>
 
       <div className="mt-6 rounded-lg bg-primary-50 border border-primary-100 px-4 py-3">
         <p className="text-sm font-medium text-primary-600">🎉 Thank you for your order!</p>

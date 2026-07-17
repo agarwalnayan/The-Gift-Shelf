@@ -187,7 +187,7 @@ export const verifyPayment = asyncHandler(async (req, res) => {
 
   order.isPaid = true;
   order.paidAt = new Date();
-  order.orderStatus = 'processing';
+  order.orderStatus = 'confirmed';
   order.paymentResult = {
     razorpayOrderId,
     razorpayPaymentId,

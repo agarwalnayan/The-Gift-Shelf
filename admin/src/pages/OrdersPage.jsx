@@ -7,18 +7,28 @@ import Loader from '../components/common/Loader.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 import ConfirmDialog from '../components/common/ConfirmDialog.jsx';
 
-const statusOptions = ['Pending', 'Confirmed', 'Preparing', 'Packed', 'Shipped', 'Out For Delivery', 'Delivered', 'Cancelled', 'Returned'];
+const statusOptions = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'confirmed', label: 'Confirmed' },
+  { value: 'preparing', label: 'Preparing' },
+  { value: 'packed', label: 'Packed' },
+  { value: 'shipped', label: 'Shipped' },
+  { value: 'out_for_delivery', label: 'Out For Delivery' },
+  { value: 'delivered', label: 'Delivered' },
+  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'returned', label: 'Returned' },
+];
 
 const statusStyles = {
-  'Pending': 'bg-yellow-100 text-yellow-700',
-  'Confirmed': 'bg-blue-100 text-blue-700',
-  'Preparing': 'bg-indigo-100 text-indigo-700',
-  'Packed': 'bg-purple-100 text-purple-700',
-  'Shipped': 'bg-cyan-100 text-cyan-700',
-  'Out For Delivery': 'bg-orange-100 text-orange-700',
-  'Delivered': 'bg-green-100 text-green-700',
-  'Cancelled': 'bg-red-100 text-red-700',
-  'Returned': 'bg-gray-100 text-gray-700',
+  'pending': 'bg-yellow-100 text-yellow-700',
+  'confirmed': 'bg-blue-100 text-blue-700',
+  'preparing': 'bg-indigo-100 text-indigo-700',
+  'packed': 'bg-purple-100 text-purple-700',
+  'shipped': 'bg-cyan-100 text-cyan-700',
+  'out_for_delivery': 'bg-orange-100 text-orange-700',
+  'delivered': 'bg-green-100 text-green-700',
+  'cancelled': 'bg-red-100 text-red-700',
+  'returned': 'bg-gray-100 text-gray-700',
 };
 
 const startOfDay = (date) => {
@@ -180,11 +190,11 @@ const OrdersPage = () => {
                             <select
                               value={order.orderStatus}
                               onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                              className={`rounded-full border-0 px-2.5 py-1 text-xs font-medium ${statusStyles[order.orderStatus] || statusStyles['Pending']}`}
+                              className={`rounded-full border-0 px-2.5 py-1 text-xs font-medium ${statusStyles[order.orderStatus] || statusStyles['pending']}`}
                             >
                               {statusOptions.map((status) => (
-                                <option key={status} value={status}>
-                                  {status}
+                                <option key={status.value} value={status.value}>
+                                  {status.label}
                                 </option>
                               ))}
                             </select>

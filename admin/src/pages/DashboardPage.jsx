@@ -80,7 +80,7 @@ const DashboardPage = () => {
         const todayOrders = orders.filter(order => new Date(order.createdAt) >= today);
         const todayRevenue = todayOrders.filter((order) => order.isPaid).reduce((sum, order) => sum + order.totalPrice, 0);
         
-        const pendingOrders = orders.filter(order => order.orderStatus === 'Pending' || order.orderStatus === 'Confirmed').length;
+        const pendingOrders = orders.filter(order => order.orderStatus === 'pending' || order.orderStatus === 'confirmed').length;
         
         const lowStock = products.filter(p => p.stock > 0 && p.stock <= 10).length;
         const outOfStock = products.filter(p => p.stock === 0).length;

@@ -4,12 +4,28 @@ import { getMyOrdersApi } from '../api/orderApi.js';
 import Loader from '../components/common/Loader.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 
+const statusOptions = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'confirmed', label: 'Confirmed' },
+  { value: 'preparing', label: 'Preparing' },
+  { value: 'packed', label: 'Packed' },
+  { value: 'shipped', label: 'Shipped' },
+  { value: 'out_for_delivery', label: 'Out For Delivery' },
+  { value: 'delivered', label: 'Delivered' },
+  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'returned', label: 'Returned' },
+];
+
 const statusStyles = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  processing: 'bg-blue-100 text-blue-800',
-  shipped: 'bg-indigo-100 text-indigo-800',
-  delivered: 'bg-green-100 text-green-800',
-  cancelled: 'bg-red-100 text-red-800',
+  'pending': 'bg-yellow-100 text-yellow-800',
+  'confirmed': 'bg-blue-100 text-blue-800',
+  'preparing': 'bg-indigo-100 text-indigo-800',
+  'packed': 'bg-purple-100 text-purple-800',
+  'shipped': 'bg-cyan-100 text-cyan-800',
+  'out_for_delivery': 'bg-orange-100 text-orange-800',
+  'delivered': 'bg-green-100 text-green-800',
+  'cancelled': 'bg-red-100 text-red-800',
+  'returned': 'bg-gray-100 text-gray-800',
 };
 
 const OrdersPage = () => {
@@ -52,8 +68,8 @@ const OrdersPage = () => {
 
             <div className="flex items-center gap-4">
               <span className="text-sm font-semibold text-charcoal">₹{order.totalPrice}</span>
-              <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusStyles[order.orderStatus]}`}>
-                {order.orderStatus}
+              <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusStyles[order.orderStatus] || statusStyles['pending']}`}>
+                {statusOptions.find((o) => o.value === order.orderStatus)?.label || order.orderStatus}
               </span>
             </div>
           </Link>

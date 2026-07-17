@@ -5,8 +5,11 @@ import { Toaster } from 'react-hot-toast';
 import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { CartProvider } from './context/CartContext.jsx';
+import { initializeAnalytics } from './services/analytics';
 import { MarketingProvider } from './context/MarketingContext.jsx';
 import './index.css';
+
+initializeAnalytics();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

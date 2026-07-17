@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import { env } from './config/env.js';
 import apiRoutes from './routes/index.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
+import sitemapRoutes from './routes/sitemapRoutes.js';
 
 const app = express();
 
@@ -46,6 +47,8 @@ app.use('/api', apiLimiter);
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', service: 'tgs-backend' });
 });
+
+app.use('/', sitemapRoutes);
 
 app.use('/api/v1', apiRoutes);
 

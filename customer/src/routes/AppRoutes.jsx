@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout.jsx';
 import ProtectedRoute from '../components/layout/ProtectedRoute.jsx';
 import ScrollToTop from '../components/common/ScrollToTop.jsx';
@@ -22,8 +22,15 @@ import HelpSupportPage from '../pages/HelpSupportPage.jsx';
 import AboutPage from '../pages/AboutPage.jsx';
 import StaticInfoPage from '../pages/StaticInfoPage.jsx';
 import NotFoundPage from '../pages/NotFoundPage.jsx';
+import { useEffect } from 'react';
+import { trackPageView } from '../services/analytics';
 
 const AppRoutes = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    trackPageView(location.pathname);
+  }, [location]);
   return (
     <>
       <ScrollToTop />

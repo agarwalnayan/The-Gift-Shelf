@@ -207,7 +207,7 @@ export const CartProvider = ({ children }) => {
           items: [
             ...(cart.items || []),
             {
-              _id: `guest-${Date.now()}`,
+              _id: `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
               product,
               quantity,
               variantSku,
@@ -274,15 +274,25 @@ export const CartProvider = ({ children }) => {
       saveGuestCart(updatedCart);
 
       toast.success('Removed from cart');
-
       return;
     }
 
-    const { data } = await removeFromCartApi(itemId);
+    const previousCart = cart;
+    const optimisticCart = {
+      ...cart,
+      items: cart.items.filter((item) => item._id !== itemId),
+    };
+    
+    setCart(optimisticCart);
 
-    setCart(data.data.cart);
-
-    toast.success('Removed from cart');
+    try {
+      const { data } = await removeFromCartApi(itemId);
+      setCart(data.data.cart);
+      toast.success('Removed from cart');
+    } catch (error) {
+      setCart(previousCart);
+      toast.error(error.response?.data?.message || 'Failed to remove item');
+    }
   };
 
   const clearCart = async () => {

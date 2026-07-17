@@ -118,6 +118,7 @@ export const removeFromCart = asyncHandler(async (req, res) => {
 
   cart.items.pull({ _id: req.params.itemId });
   await cart.save();
+  await cart.populate('items.product', CART_POPULATE_FIELDS);
 
   res.status(200).json(new ApiResponse(200, { cart }, 'Item removed from cart'));
 });

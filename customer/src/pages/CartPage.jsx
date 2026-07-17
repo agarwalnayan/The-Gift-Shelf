@@ -55,7 +55,7 @@ const CartPage = () => {
       <div className="grid gap-6 sm:gap-8 md:grid-cols-3 md:items-start md:gap-10 lg:gap-12">
         <div className="min-w-0 rounded-2xl border border-charcoal/10 bg-white px-4 py-4 sm:px-5 sm:py-5 md:px-6 md:py-6 md:col-span-2">
           {cart.items.map((item) => (
-            <CartItem key={item._id || item.product._id} item={item} />
+            <CartItem key={item._id} item={item} />
           ))}
         </div>
 

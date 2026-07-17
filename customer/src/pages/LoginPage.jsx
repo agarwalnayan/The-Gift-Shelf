@@ -16,8 +16,22 @@ const LoginPage = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
+      const guestCartStr = localStorage.getItem('tgs_guest_cart');
+      let hasGuestCart = false;
+      try {
+        hasGuestCart = guestCartStr && JSON.parse(guestCartStr)?.items?.length > 0;
+      } catch (e) {
+        // Ignore parse error
+      }
+      
       await login(form);
-      navigate(location.state?.from?.pathname || '/');
+      
+      const destination = location.state?.from?.pathname || '/';
+      if (hasGuestCart) {
+        navigate('/cart');
+      } else {
+        navigate(destination);
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Login failed');
     } finally {

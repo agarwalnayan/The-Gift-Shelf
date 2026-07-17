@@ -91,7 +91,7 @@ const CartDrawer = () => {
 
                             <div className="mt-5 divide-y divide-charcoal/10">
                                 {items.map((item) => (
-                                    <CartItem key={item._id || item.product._id} item={item} compact />
+                                    <CartItem key={item._id} item={item} compact />
                                 ))}
                             </div>
 

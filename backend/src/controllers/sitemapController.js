@@ -1,7 +1,9 @@
 import { create } from 'xmlbuilder2';
 import Product from '../models/Product.js';
 
-const BASE_URL = 'https://www.thegiftshelf.in';
+import env from '../config/env.js';
+
+const BASE_URL = (env.siteUrl || env.clientUrl).replace(/\/$/, '');
 
 const STATIC_PAGES = [
     { path: '/', priority: '1.0', changefreq: 'daily' },

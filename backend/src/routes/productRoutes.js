@@ -33,7 +33,7 @@ const productImages = upload.array('images', 8);
 router.get('/', attachUserIfPresent, getAllProducts);
 router.get('/:idOrSlug', attachUserIfPresent, getProductByIdOrSlug);
 
-router.post('/:id/customization-image', protect, upload.single('file'), uploadCustomizationImage);
+router.post('/:id/customization-image', upload.single('file'), uploadCustomizationImage);
 
 router.use(protect, authorizeRoles('admin', 'superadmin'));
 

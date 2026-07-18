@@ -7,6 +7,7 @@ import cartRoutes from './cartRoutes.js';
 import orderRoutes from './orderRoutes.js';
 import marketingRoutes from './marketingRoutes.js';
 import couponRoutes from './couponRoutes.js';
+import siteSettingsRoutes from './siteSettingsRoutes.js';
 
 const router = express.Router();
 
@@ -18,5 +19,6 @@ router.use('/cart', cartRoutes);
 router.use('/orders', orderRoutes);
 router.use('/marketing', marketingRoutes);
 router.use('/coupons', couponRoutes);
+router.use('/site-settings', siteSettingsRoutes);
 
 export default router;

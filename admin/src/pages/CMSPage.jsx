@@ -1,20 +1,13 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { HiOutlineDocumentText, HiOutlinePencil, HiOutlineEye, HiOutlinePlus } from 'react-icons/hi2';
+import { HiOutlineDocumentText, HiOutlinePencil, HiOutlineEye } from 'react-icons/hi2';
 import Input from '../components/common/Input.jsx';
 import Button from '../components/common/Button.jsx';
-import Toggle from '../components/common/Toggle.jsx';
-import ConfirmDialog from '../components/common/ConfirmDialog.jsx';
 import Loader from '../components/common/Loader.jsx';
-
-const DEFAULT_PAGES = [
-  { slug: 'about-us', title: 'About Us', content: '' },
-  { slug: 'privacy-policy', title: 'Privacy Policy', content: '' },
-  { slug: 'terms-of-service', title: 'Terms of Service', content: '' },
-  { slug: 'shipping-policy', title: 'Shipping Policy', content: '' },
-  { slug: 'refund-policy', title: 'Refund & Returns Policy', content: '' },
-  { slug: 'contact-us', title: 'Contact Us', content: '' },
-];
+import {
+  getSiteSettings,
+  updateSiteSettings,
+} from '../api/siteSettingsApi';
 
 const CMSPage = () => {
   const [pages, setPages] = useState([]);
@@ -22,11 +15,6 @@ const CMSPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [editingPage, setEditingPage] = useState(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const [deletePageId, setDeletePageId] = useState(null);
-  const [isCreating, setIsCreating] = useState(false);
-  const [newPageSlug, setNewPageSlug] = useState('');
-  const [newPageTitle, setNewPageTitle] = useState('');
 
   useEffect(() => {
     loadPages();
@@ -34,81 +22,96 @@ const CMSPage = () => {
 
   const loadPages = async () => {
     setIsLoading(true);
+
     try {
-      const storedPages = localStorage.getItem('cms_pages');
-      if (storedPages) {
-        setPages(JSON.parse(storedPages));
-      } else {
-        setPages(DEFAULT_PAGES);
-      }
+      const settings = await getSiteSettings();
+
+      setPages([
+        {
+          slug: 'about-us',
+          title: 'About Us',
+          content: settings.policies?.aboutUs || '',
+        },
+        {
+          slug: 'privacy-policy',
+          title: 'Privacy Policy',
+          content: settings.policies?.privacyPolicy || '',
+        },
+        {
+          slug: 'shipping-policy',
+          title: 'Shipping Policy',
+          content: settings.policies?.shippingPolicy || '',
+        },
+        {
+          slug: 'refund-policy',
+          title: 'Return Policy',
+          content: settings.policies?.returnPolicy || '',
+        },
+        {
+          slug: 'terms-of-service',
+          title: 'Terms & Conditions',
+          content: settings.policies?.termsAndConditions || '',
+        },
+      ]);
     } catch (error) {
-      toast.error('Failed to load pages');
+      toast.error('Failed to load site settings');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const savePages = async (updatedPages) => {
-    localStorage.setItem('cms_pages', JSON.stringify(updatedPages));
-    setPages(updatedPages);
-  };
-
   const handleSave = async () => {
     if (!editingPage) return;
+
     setIsSaving(true);
+
     try {
-      const updatedPages = pages.map(p => 
-        p.slug === editingPage.slug ? editingPage : p
-      );
-      await savePages(updatedPages);
-      toast.success('Page saved successfully');
+      const settings = await getSiteSettings();
+
+      const policies = {
+        ...settings.policies,
+      };
+
+      switch (editingPage.slug) {
+        case 'about-us':
+          policies.aboutUs = editingPage.content;
+          break;
+
+        case 'privacy-policy':
+          policies.privacyPolicy = editingPage.content;
+          break;
+
+        case 'shipping-policy':
+          policies.shippingPolicy = editingPage.content;
+          break;
+
+        case 'refund-policy':
+          policies.returnPolicy = editingPage.content;
+          break;
+
+        case 'terms-of-service':
+          policies.termsAndConditions = editingPage.content;
+          break;
+
+        default:
+          break;
+      }
+
+      await updateSiteSettings({
+        policies,
+      });
+
+      toast.success('Saved');
+
       setEditingPage(null);
+
+      loadPages();
+
     } catch (error) {
-      toast.error('Failed to save page');
+      toast.error('Failed to save');
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const handleCreatePage = async () => {
-    if (!newPageSlug || !newPageTitle) {
-      toast.error('Slug and title are required');
-      return;
-    }
-    if (pages.some(p => p.slug === newPageSlug)) {
-      toast.error('A page with this slug already exists');
-      return;
-    }
-    const newPage = {
-      slug: newPageSlug.toLowerCase().replace(/\s+/g, '-'),
-      title: newPageTitle,
-      content: '',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-    };
-    const updatedPages = [...pages, newPage];
-    await savePages(updatedPages);
-    toast.success('Page created successfully');
-    setNewPageSlug('');
-    setNewPageTitle('');
-    setIsCreating(false);
-  };
-
-  const handleDeletePage = async () => {
-    if (!deletePageId) return;
-    const updatedPages = pages.filter(p => p.slug !== deletePageId);
-    await savePages(updatedPages);
-    toast.success('Page deleted successfully');
-    setIsDeleteConfirmOpen(false);
-    setDeletePageId(null);
-  };
-
-  const handleToggleActive = async (slug) => {
-    const updatedPages = pages.map(p =>
-      p.slug === slug ? { ...p, isActive: !p.isActive } : p
-    );
-    await savePages(updatedPages);
-    toast.success('Page visibility updated');
   };
 
   if (isLoading) return <Loader fullScreen />;
@@ -122,38 +125,7 @@ const CMSPage = () => {
             Manage static pages like About Us, Privacy Policy, and more.
           </p>
         </div>
-        <Button onClick={() => setIsCreating(true)}>
-          <HiOutlinePlus size={16} className="mr-1.5" />
-          Create New Page
-        </Button>
       </div>
-
-      {isCreating && (
-        <div className="card space-y-4 p-6">
-          <h3 className="text-base font-semibold text-ink">Create New Page</h3>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Input
-              label="Page Slug"
-              value={newPageSlug}
-              onChange={(e) => setNewPageSlug(e.target.value)}
-              placeholder="my-new-page"
-              helperText="URL-friendly identifier (e.g., my-new-page)"
-            />
-            <Input
-              label="Page Title"
-              value={newPageTitle}
-              onChange={(e) => setNewPageTitle(e.target.value)}
-              placeholder="My New Page"
-            />
-          </div>
-          <div className="flex gap-3">
-            <Button onClick={handleCreatePage}>Create Page</Button>
-            <Button variant="secondary" onClick={() => setIsCreating(false)}>
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
 
       <div className="card space-y-4 p-0">
         {pages.length === 0 ? (
@@ -168,22 +140,14 @@ const CMSPage = () => {
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
                     <p className="font-medium text-ink">{page.title}</p>
-                    {!page.isActive && (
-                      <span className="rounded-full bg-ink/10 px-2 py-0.5 text-xs text-ink/60">
-                        Hidden
-                      </span>
-                    )}
+
                   </div>
                   <p className="mt-1 text-xs text-ink/50">
                     /{page.slug} · {page.content?.length || 0} characters
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Toggle
-                    checked={page.isActive}
-                    onChange={() => handleToggleActive(page.slug)}
-                    label="Visible"
-                  />
+
                   <Button
                     variant="secondary"
                     size="sm"
@@ -204,19 +168,7 @@ const CMSPage = () => {
                   >
                     <HiOutlineEye size={16} />
                   </Button>
-                  {!DEFAULT_PAGES.some(p => p.slug === page.slug) && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="text-red-600 hover:text-red-700"
-                      onClick={() => {
-                        setDeletePageId(page.slug);
-                        setIsDeleteConfirmOpen(true);
-                      }}
-                    >
-                      <HiOutlineDocumentText size={16} />
-                    </Button>
-                  )}
+
                 </div>
               </div>
             ))}
@@ -245,7 +197,7 @@ const CMSPage = () => {
               <Input
                 label="Page Title"
                 value={editingPage.title}
-                onChange={(e) => setEditingPage({ ...editingPage, title: e.target.value })}
+                disabled
               />
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-ink/80">Content</label>
@@ -276,17 +228,6 @@ const CMSPage = () => {
         </div>
       )}
 
-      <ConfirmDialog
-        isOpen={isDeleteConfirmOpen}
-        title="Delete this page?"
-        description="This action cannot be undone. The page will be permanently removed."
-        confirmLabel="Delete"
-        onConfirm={handleDeletePage}
-        onCancel={() => {
-          setIsDeleteConfirmOpen(false);
-          setDeletePageId(null);
-        }}
-      />
     </div>
   );
 };

@@ -38,6 +38,32 @@ const welcomePopupSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const policyPagesSchema = new mongoose.Schema(
+  {
+    privacyPolicy: {
+      type: String,
+      default: '',
+    },
+    shippingPolicy: {
+      type: String,
+      default: '',
+    },
+    returnPolicy: {
+      type: String,
+      default: '',
+    },
+    termsAndConditions: {
+      type: String,
+      default: '',
+    },
+    aboutUs: {
+      type: String,
+      default: '',
+    },
+  },
+  { _id: false }
+);
+
 // Store-wide checkout/commerce configuration — everything the Premium
 // Cart & Checkout experience needs from Admin so nothing is hardcoded on
 // the storefront (shipping, WhatsApp ordering charge, payment options,
@@ -76,6 +102,10 @@ const siteSettingsSchema = new mongoose.Schema(
     },
     commerce: {
       type: commerceSettingsSchema,
+      default: () => ({}),
+    },
+    policies: {
+      type: policyPagesSchema,
       default: () => ({}),
     },
     updatedBy: {

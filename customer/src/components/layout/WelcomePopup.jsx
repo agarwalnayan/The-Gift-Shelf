@@ -5,7 +5,7 @@ import { useMarketing } from '../../context/MarketingContext.jsx';
 
 const SESSION_KEY = 'tgs_welcome_popup_shown';
 
-// Admin-configurable launch popup. Shows after a configurable delay, and —
+// Admin-configurable welcome  popup. Shows after a configurable delay, and —
 // when `showOncePerSession` is on — only once per browser session so it
 // doesn't nag the customer on every page. Content and enabled/disabled
 // state come from the shared MarketingContext (no extra network request).

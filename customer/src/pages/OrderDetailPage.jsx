@@ -66,7 +66,6 @@ const OrderDetailPage = () => {
 
       <div className="mt-6 rounded-lg bg-primary-50 border border-primary-100 px-4 py-3">
         <p className="text-sm font-medium text-primary-600">🎉 Thank you for your order!</p>
-        <p className="text-xs text-charcoal/60 mt-1">Use code <span className="font-semibold">LAUNCH20</span> on your next order for 20% OFF</p>
       </div>
 
       <div className="mt-8 rounded-2xl bg-white p-6 shadow-sm">

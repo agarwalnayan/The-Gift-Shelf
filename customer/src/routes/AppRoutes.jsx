@@ -3,6 +3,7 @@ import MainLayout from '../components/layout/MainLayout.jsx';
 import ProtectedRoute from '../components/layout/ProtectedRoute.jsx';
 import ScrollToTop from '../components/common/ScrollToTop.jsx';
 import HomePage from '../pages/HomePage.jsx';
+import RakshaBandhanPage from '../pages/RakshaBandhanPage.jsx';
 import ProductListingPage from '../pages/ProductListingPage.jsx';
 import ProductDetailPage from '../pages/ProductDetailPage.jsx';
 import CategoriesPage from '../pages/CategoriesPage.jsx';
@@ -10,6 +11,8 @@ import CartPage from '../pages/CartPage.jsx';
 import CheckoutPage from '../pages/CheckoutPage.jsx';
 import LoginPage from '../pages/LoginPage.jsx';
 import RegisterPage from '../pages/RegisterPage.jsx';
+import ForgotPasswordPage from '../pages/ForgotPasswordPage.jsx';
+import ResetPasswordPage from '../pages/ResetPasswordPage.jsx';
 import AccountPage from '../pages/AccountPage.jsx';
 import OrdersPage from '../pages/OrdersPage.jsx';
 import OrderDetailPage from '../pages/OrderDetailPage.jsx';
@@ -21,6 +24,7 @@ import NotificationsPage from '../pages/NotificationsPage.jsx';
 import HelpSupportPage from '../pages/HelpSupportPage.jsx';
 import AboutPage from '../pages/AboutPage.jsx';
 import StaticInfoPage from '../pages/StaticInfoPage.jsx';
+import LandingPage from '../pages/LandingPage.jsx';
 import NotFoundPage from '../pages/NotFoundPage.jsx';
 import { useEffect } from 'react';
 import { trackPageView } from '../services/analytics';
@@ -37,6 +41,8 @@ const AppRoutes = () => {
       <Routes>
         <Route element={<MainLayout />}>
           <Route index element={<HomePage />} />
+          <Route path=":slug" element={<LandingPage />} />
+          <Route path="raksha-bandhan" element={<RakshaBandhanPage />} />
           <Route path="products" element={<ProductListingPage />} />
           <Route path="products/:slug" element={<ProductDetailPage />} />
           <Route path="categories" element={<CategoriesPage />} />
@@ -44,6 +50,8 @@ const AppRoutes = () => {
           <Route path="cart" element={<CartPage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
+          <Route path="forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="reset-password/:token" element={<ResetPasswordPage />} />
 
           <Route path="about" element={<AboutPage />} />
           <Route path="contact" element={<StaticInfoPage slug="contact" />} />

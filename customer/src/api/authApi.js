@@ -10,6 +10,12 @@ export const getCurrentUserApi = () => axiosInstance.get('/auth/me');
 
 export const updateProfileApi = (payload) => axiosInstance.patch('/users/profile', payload);
 
+export const changePasswordApi = (payload) => axiosInstance.patch('/users/change-password', payload);
+
+export const forgotPasswordApi = (email) => axiosInstance.post('/auth/forgot-password', { email });
+
+export const resetPasswordApi = (token, password) => axiosInstance.post(`/auth/reset-password/${token}`, { password });
+
 export const addAddressApi = (payload) => axiosInstance.post('/users/addresses', payload);
 
 export const updateAddressApi = (addressId, payload) => axiosInstance.put(`/users/addresses/${addressId}`, payload);

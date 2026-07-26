@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import Loader from '../components/common/Loader.jsx';
 import Button from '../components/common/Button.jsx';
 import Accordion from '../components/common/Accordion.jsx';
+import PromotionBadge from '../components/product/PromotionBadge.jsx';
 
 const hasValue = (value) => {
   if (value === undefined || value === null) return false;
@@ -333,6 +334,8 @@ const ProductDetailPage = () => {
             <h1 className="font-display text-2xl font-semibold leading-tight text-charcoal sm:text-3xl lg:text-4xl">
               {product.name}
             </h1>
+
+            <PromotionBadge productId={product._id} categoryId={product.category?._id} />
 
             <div>
               <div className="flex flex-wrap items-center gap-3">

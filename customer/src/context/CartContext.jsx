@@ -9,6 +9,7 @@ import {
   applyCouponApi,
   removeCouponApi,
 } from '../api/cartApi.js';
+import { evaluatePromotionsApi } from '../api/promotionApi.js';
 import { useAuth } from './AuthContext.jsx';
 
 const CartContext = createContext(null);
@@ -19,6 +20,8 @@ export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState({ items: [] });
   const [isLoading, setIsLoading] = useState(false);
   const [discount, setDiscount] = useState(0);
+  const [promotionDiscount, setPromotionDiscount] = useState(0);
+  const [appliedPromotion, setAppliedPromotion] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const hasMergedGuestCart = useRef(false);
 
@@ -325,7 +328,54 @@ export const CartProvider = ({ children }) => {
     toast.success('Coupon removed');
   };
 
+  const evaluatePromotions = useCallback(async () => {
+    if (!cart.items || cart.items.length === 0) {
+      setPromotionDiscount(0);
+      setAppliedPromotion(null);
+      return;
+    }
+
+    const subtotal = cart.items.reduce((sum, item) => sum + (item.priceAtAddition || item.product?.finalPrice || item.product?.price || 0) * item.quantity, 0);
+
+    try {
+      const cartData = {
+        cartItems: cart.items.map((item) => ({
+          productId: item.product._id,
+          quantity: item.quantity,
+          price: item.priceAtAddition || item.product?.finalPrice || item.product?.price || 0,
+          categoryId: item.product?.category?._id || null,
+          variantSku: item.variantSku || null,
+        })),
+        subtotal,
+        userId: user?._id || null,
+        isNewCustomer: false, // This would need to be determined from user's order history
+      };
+
+      const { data } = await evaluatePromotionsApi(cartData);
+      const applicablePromotions = data.data.applicablePromotions;
+
+      if (applicablePromotions && applicablePromotions.length > 0) {
+        // Apply the best promotion (highest discount)
+        const bestPromotion = applicablePromotions[0];
+        setPromotionDiscount(bestPromotion.discountAmount);
+        setAppliedPromotion(bestPromotion);
+      } else {
+        setPromotionDiscount(0);
+        setAppliedPromotion(null);
+      }
+    } catch (error) {
+      console.error('Failed to evaluate promotions:', error);
+      setPromotionDiscount(0);
+      setAppliedPromotion(null);
+    }
+  }, [cart, user]);
+
   const itemCount = cart.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+
+  // Evaluate promotions whenever cart changes
+  useEffect(() => {
+    evaluatePromotions();
+  }, [evaluatePromotions]);
 
   return (
     <CartContext.Provider
@@ -334,6 +384,8 @@ export const CartProvider = ({ children }) => {
         isLoading,
         itemCount,
         discount,
+        promotionDiscount,
+        appliedPromotion,
         isDrawerOpen,
         openDrawer,
         closeDrawer,
@@ -344,6 +396,7 @@ export const CartProvider = ({ children }) => {
         refreshCart,
         applyCoupon,
         removeCoupon,
+        evaluatePromotions,
       }}
     >
       {children}

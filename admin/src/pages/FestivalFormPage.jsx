@@ -1,0 +1,265 @@
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
+import { HiOutlineArrowLeft } from 'react-icons/hi2';
+import { getFestivalByIdApi, createFestivalApi, updateFestivalApi, getFestivalsApi } from '../api/festivalApi.js';
+import { getProductsApi } from '../api/productApi.js';
+import { getBudgetCollectionsApi } from '../api/marketingApi.js';
+import Button from '../components/common/Button.jsx';
+import Input from '../components/common/Input.jsx';
+import Toggle from '../components/common/Toggle.jsx';
+import Loader from '../components/common/Loader.jsx';
+
+const FestivalFormPage = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [collections, setCollections] = useState([]);
+  const [festivals, setFestivals] = useState([]);
+  const [desktopBannerFile, setDesktopBannerFile] = useState(null);
+  const [mobileBannerFile, setMobileBannerFile] = useState(null);
+  const [badgeFile, setBadgeFile] = useState(null);
+
+  const form = useForm({
+    defaultValues: {
+      name: '',
+      slug: '',
+      enabled: false,
+      startDate: '',
+      endDate: '',
+      heroTitle: '',
+      heroSubtitle: '',
+      primaryCtaText: '',
+      primaryCtaLink: '',
+      secondaryCtaText: '',
+      secondaryCtaLink: '',
+      deliveryMessage: '',
+      countdownDate: '',
+      landingPage: '',
+      announcement: {
+        enabled: false,
+        message: '',
+        linkText: '',
+        linkUrl: '',
+        backgroundColor: '#F59E0B',
+        textColor: '#FFFFFF',
+        dismissible: true,
+      },
+      featuredProducts: [],
+      featuredCollections: [],
+      upcomingFestival: '',
+      displayOrder: 0,
+      isActive: true,
+    },
+  });
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [productsRes, collectionsRes, festivalsRes] = await Promise.all([
+          getProductsApi({ limit: 100 }),
+          getBudgetCollectionsApi(),
+          getFestivalsApi(),
+        ]);
+        setProducts(productsRes.data.data.products || []);
+        setCollections(collectionsRes.data.data.collections || []);
+        setFestivals(festivalsRes.data.data.festivals || []);
+
+        if (id) {
+          const { data } = await getFestivalByIdApi(id);
+          const festival = data.data.festival;
+          form.reset({
+            ...festival,
+            startDate: festival.startDate ? festival.startDate.split('T')[0] : '',
+            endDate: festival.endDate ? festival.endDate.split('T')[0] : '',
+            countdownDate: festival.countdownDate ? festival.countdownDate.split('T')[0] : '',
+            upcomingFestival: festival.upcomingFestival?._id || '',
+          });
+        }
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Failed to load data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, [id, form]);
+
+  const onSubmit = async (values) => {
+    setIsSaving(true);
+    try {
+      const formData = new FormData();
+      
+      Object.keys(values).forEach(key => {
+        if (key === 'announcement') {
+          formData.append('announcement', JSON.stringify(values[key]));
+        } else if (Array.isArray(values[key])) {
+          formData.append(key, JSON.stringify(values[key]));
+        } else if (key === 'upcomingFestival' && !values[key]) {
+          formData.append(key, '');
+        } else {
+          formData.append(key, values[key] || '');
+        }
+      });
+
+      if (desktopBannerFile) formData.append('desktopBanner', desktopBannerFile);
+      if (mobileBannerFile) formData.append('mobileBanner', mobileBannerFile);
+      if (badgeFile) formData.append('festivalBadge', badgeFile);
+
+      if (id) {
+        await updateFestivalApi(id, formData);
+        toast.success('Festival updated successfully');
+      } else {
+        await createFestivalApi(formData);
+        toast.success('Festival created successfully');
+      }
+      navigate('/festivals');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to save festival');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) return <Loader fullScreen />;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <button onClick={() => navigate('/festivals')} className="rounded-lg p-2 text-ink/60 hover:bg-ink/5">
+          <HiOutlineArrowLeft size={20} />
+        </button>
+        <div>
+          <h1 className="text-2xl font-semibold text-ink">{id ? 'Edit Festival' : 'Add Festival'}</h1>
+          <p className="mt-1 text-sm text-ink/60">Configure seasonal festival settings</p>
+        </div>
+      </div>
+
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Basic Information */}
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-ink mb-4">Basic Information</h3>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <Input label="Festival Name" {...form.register('name', { required: 'Name is required' })} error={form.formState.errors.name?.message} />
+            <Input label="Slug" {...form.register('slug', { required: 'Slug is required' })} error={form.formState.errors.slug?.message} placeholder="raksha-bandhan" />
+            <Input label="Start Date" type="date" {...form.register('startDate', { required: 'Start date is required' })} error={form.formState.errors.startDate?.message} />
+            <Input label="End Date" type="date" {...form.register('endDate', { required: 'End date is required' })} error={form.formState.errors.endDate?.message} />
+            <Input label="Display Order" type="number" {...form.register('displayOrder')} />
+            <div className="flex items-center gap-3 pt-6">
+              <Toggle {...form.register('enabled')} label="Enabled" />
+              <Toggle {...form.register('isActive')} label="Active" />
+            </div>
+          </div>
+        </div>
+
+        {/* Hero Section */}
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-ink mb-4">Hero Section</h3>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <Input label="Hero Title" {...form.register('heroTitle')} placeholder="Raksha Bandhan Special" />
+              <Input label="Hero Subtitle" {...form.register('heroSubtitle')} placeholder="Celebrate the bond of love" />
+            </div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <Input label="Primary CTA Text" {...form.register('primaryCtaText')} placeholder="Shop Now" />
+              <Input label="Primary CTA Link" {...form.register('primaryCtaLink')} placeholder="/raksha-bandhan-gifts" />
+            </div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <Input label="Secondary CTA Text" {...form.register('secondaryCtaText')} />
+              <Input label="Secondary CTA Link" {...form.register('secondaryCtaLink')} />
+            </div>
+            <Input label="Delivery Message" {...form.register('deliveryMessage')} placeholder="Order by 31st July for delivery" />
+            <Input label="Countdown Date" type="date" {...form.register('countdownDate')} />
+            <Input label="Landing Page Slug" {...form.register('landingPage')} placeholder="raksha-bandhan" />
+          </div>
+        </div>
+
+        {/* Banners */}
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-ink mb-4">Banners</h3>
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-ink mb-2">Desktop Banner</label>
+              <input type="file" accept="image/*" onChange={(e) => setDesktopBannerFile(e.target.files[0])} className="w-full rounded-lg border border-ink/10 p-2" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-ink mb-2">Mobile Banner</label>
+              <input type="file" accept="image/*" onChange={(e) => setMobileBannerFile(e.target.files[0])} className="w-full rounded-lg border border-ink/10 p-2" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-ink mb-2">Festival Badge</label>
+              <input type="file" accept="image/*" onChange={(e) => setBadgeFile(e.target.files[0])} className="w-full rounded-lg border border-ink/10 p-2" />
+            </div>
+          </div>
+        </div>
+
+        {/* Announcement Bar */}
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-ink mb-4">Announcement Bar</h3>
+          <div className="space-y-6">
+            <Toggle {...form.register('announcement.enabled')} label="Enable Announcement" />
+            <Input label="Message" {...form.register('announcement.message')} placeholder="Special offer for Raksha Bandhan!" />
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <Input label="Link Text" {...form.register('announcement.linkText')} placeholder="Shop Now" />
+              <Input label="Link URL" {...form.register('announcement.linkUrl')} placeholder="/raksha-bandhan" />
+            </div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <Input label="Background Color" {...form.register('announcement.backgroundColor')} placeholder="#F59E0B" />
+              <Input label="Text Color" {...form.register('announcement.textColor')} placeholder="#FFFFFF" />
+            </div>
+            <Toggle {...form.register('announcement.dismissible')} label="Dismissible" />
+          </div>
+        </div>
+
+        {/* Featured Content */}
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-ink mb-4">Featured Content</h3>
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-ink mb-2">Featured Products</label>
+              <select multiple {...form.register('featuredProducts')} className="w-full rounded-lg border border-ink/10 p-2 h-32">
+                {products.map((p) => (
+                  <option key={p._id} value={p._id}>{p.name}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-ink/50">Hold Ctrl/Cmd to select multiple</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-ink mb-2">Featured Collections</label>
+              <select multiple {...form.register('featuredCollections')} className="w-full rounded-lg border border-ink/10 p-2 h-32">
+                {collections.map((c) => (
+                  <option key={c._id} value={c._id}>{c.name}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-ink/50">Hold Ctrl/Cmd to select multiple</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-ink mb-2">Upcoming Festival</label>
+              <select {...form.register('upcomingFestival')} className="w-full rounded-lg border border-ink/10 p-2">
+                <option value="">None</option>
+                {festivals.filter(f => f._id !== id).map((f) => (
+                  <option key={f._id} value={f._id}>{f.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3">
+          <Button type="button" variant="secondary" onClick={() => navigate('/festivals')}>
+            Cancel
+          </Button>
+          <Button type="submit" isLoading={isSaving}>
+            {id ? 'Update Festival' : 'Create Festival'}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default FestivalFormPage;

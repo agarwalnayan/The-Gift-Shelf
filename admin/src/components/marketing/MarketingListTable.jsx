@@ -61,7 +61,10 @@ const MarketingListTable = ({ items, titleKey = 'title', onReorder, onToggleActi
                 </div>
               </td>
               <td>
-                <Toggle checked={item.isActive} onChange={(value) => onToggleActive(item._id, value)} />
+                <Toggle
+                  checked={item.isActive}
+                  onChange={(value) => onToggleActive(item._id, value)}
+                />
               </td>
               <td>{item.displayOrder}</td>
               <td>

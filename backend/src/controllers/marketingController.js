@@ -14,8 +14,18 @@ const isAdminUser = (req) => Boolean(req.user && ['admin', 'superadmin'].include
  * ========================================================================= */
 
 export const createBanner = asyncHandler(async (req, res) => {
-  const { type, title, subtitle, description, ctaText, ctaLink, displayOrder, isActive, startDate, endDate } =
-    req.body;
+  const {
+    type,
+    title,
+    subtitle,
+    description,
+    ctaText,
+    ctaLink,
+    displayOrder,
+    isActive,
+    startDate,
+    endDate,
+  } = req.body;
 
   let image = { url: '', publicId: '' };
   let mobileImage = { url: '', publicId: '' };
@@ -23,8 +33,23 @@ export const createBanner = asyncHandler(async (req, res) => {
   if (req.files?.image?.[0]) {
     image = await uploadImage(req.files.image[0].buffer, 'tgs/marketing/banners');
   }
+
   if (req.files?.mobileImage?.[0]) {
     mobileImage = await uploadImage(req.files.mobileImage[0].buffer, 'tgs/marketing/banners');
+  }
+
+  // Auto-generate display order if not provided
+  let finalDisplayOrder = displayOrder;
+
+  if (finalDisplayOrder === undefined || finalDisplayOrder === null || finalDisplayOrder === '') {
+    const lastBanner = await Banner.findOne({
+      type,
+      isDeleted: { $ne: true },
+    }).sort({ displayOrder: -1 });
+
+    finalDisplayOrder = lastBanner
+      ? lastBanner.displayOrder + 1
+      : 1;
   }
 
   const banner = await Banner.create({
@@ -34,7 +59,7 @@ export const createBanner = asyncHandler(async (req, res) => {
     description,
     ctaText,
     ctaLink,
-    displayOrder: displayOrder ?? 0,
+    displayOrder: Number(finalDisplayOrder),
     isActive: isActive ?? true,
     startDate: startDate || null,
     endDate: endDate || null,
@@ -44,9 +69,10 @@ export const createBanner = asyncHandler(async (req, res) => {
     updatedBy: req.user._id,
   });
 
-  res.status(201).json(new ApiResponse(201, { banner }, 'Banner created successfully'));
+  res
+    .status(201)
+    .json(new ApiResponse(201, { banner }, 'Banner created successfully'));
 });
-
 export const getBanners = asyncHandler(async (req, res) => {
   const privileged = isAdminUser(req);
   const { type } = req.query;
@@ -57,8 +83,10 @@ export const getBanners = asyncHandler(async (req, res) => {
 
   const filter = privileged ? { type, isDeleted: { $ne: true } } : Banner.liveFilter(type);
 
-  const banners = await Banner.find(filter).sort({ displayOrder: 1 });
-
+  const banners = await Banner.find(filter).sort({
+    displayOrder: 1,
+    createdAt: 1,
+  });
   res.status(200).json(new ApiResponse(200, { banners, count: banners.length }, 'Banners fetched successfully'));
 });
 
@@ -91,7 +119,7 @@ export const updateBanner = asyncHandler(async (req, res) => {
   if (description !== undefined) banner.description = description;
   if (ctaText !== undefined) banner.ctaText = ctaText;
   if (ctaLink !== undefined) banner.ctaLink = ctaLink;
-  if (displayOrder !== undefined) banner.displayOrder = displayOrder;
+  if (displayOrder !== undefined && displayOrder !== '') banner.displayOrder = Number(displayOrder);
   if (isActive !== undefined) banner.isActive = isActive;
   if (startDate !== undefined) banner.startDate = startDate || null;
   if (endDate !== undefined) banner.endDate = endDate || null;
@@ -128,7 +156,10 @@ export const reorderBanners = asyncHandler(async (req, res) => {
   }));
   await Banner.bulkWrite(bulkOps);
 
-  const banners = await Banner.find({ _id: { $in: ids } }).sort({ displayOrder: 1 });
+  const banners = await Banner.find({ _id: { $in: ids } }).sort({
+    displayOrder: 1,
+    createdAt: 1,
+  });
   res.status(200).json(new ApiResponse(200, { banners }, 'Banner order updated successfully'));
 });
 
@@ -221,7 +252,7 @@ export const updateFeaturedItem = asyncHandler(async (req, res) => {
 
   if (name !== undefined) item.name = name;
   if (value !== undefined) item.value = value;
-  if (displayOrder !== undefined) item.displayOrder = displayOrder;
+  if (displayOrder !== undefined && displayOrder !== '') item.displayOrder = Number(displayOrder);
   if (isActive !== undefined) item.isActive = isActive;
 
   item.updatedBy = req.user._id;
@@ -315,9 +346,9 @@ export const upsertBudgetCollection = asyncHandler(async (req, res) => {
 
   if (label !== undefined) collection.label = label;
   if (description !== undefined) collection.description = description;
-  if (minPrice !== undefined) collection.minPrice = minPrice;
-  if (maxPrice !== undefined) collection.maxPrice = maxPrice === '' ? null : maxPrice;
-  if (displayOrder !== undefined) collection.displayOrder = displayOrder;
+  if (minPrice !== undefined && minPrice !== '') collection.minPrice = Number(minPrice);
+  if (maxPrice !== undefined) collection.maxPrice = maxPrice === '' ? null : Number(maxPrice);
+  if (displayOrder !== undefined && displayOrder !== '') collection.displayOrder = Number(displayOrder);
   if (isActive !== undefined) collection.isActive = isActive;
 
   collection.updatedBy = req.user._id;
@@ -337,27 +368,27 @@ export const getSiteSettings = asyncHandler(async (req, res) => {
 
 export const updateSiteSettings = asyncHandler(async (req, res) => {
   const settings = await SiteSettings.getSingleton();
-  
+
   // Update global config if provided
   if (req.body.globalConfig) {
     settings.globalConfig = { ...settings.globalConfig.toObject(), ...req.body.globalConfig };
   }
-  
+
   // Update homepage config if provided
   if (req.body.homepageConfig) {
     settings.homepageConfig = { ...settings.homepageConfig.toObject(), ...req.body.homepageConfig };
   }
-  
+
   // Update announcement bar if provided
   if (req.body.announcementBar) {
     settings.announcementBar = { ...settings.announcementBar.toObject(), ...req.body.announcementBar };
   }
-  
+
   // Update welcome popup if provided
   if (req.body.welcomePopup) {
     settings.welcomePopup = { ...settings.welcomePopup.toObject(), ...req.body.welcomePopup };
   }
-  
+
   // Update commerce settings if provided
   if (req.body.commerce) {
     settings.commerce = { ...settings.commerce.toObject(), ...req.body.commerce };
@@ -452,8 +483,15 @@ export const updateWelcomePopup = asyncHandler(async (req, res) => {
 export const getHomepageContent = asyncHandler(async (req, res) => {
   const [heroBanners, promoBanners, featuredRecipients, featuredOccasions, budgetCollections, settings] =
     await Promise.all([
-      Banner.find(Banner.liveFilter('hero')).sort({ displayOrder: 1 }),
-      Banner.find(Banner.liveFilter('promo')).sort({ displayOrder: 1 }),
+      Banner.find(Banner.liveFilter('hero')).sort({
+        displayOrder: 1,
+        createdAt: 1,
+      }),
+
+      Banner.find(Banner.liveFilter('promo')).sort({
+        displayOrder: 1,
+        createdAt: 1,
+      }),
       FeaturedItem.find({ type: 'recipient', isDeleted: { $ne: true }, isActive: true })
         .sort({ displayOrder: 1 })
         .limit(FeaturedItem.MAX_ITEMS_PER_TYPE),
@@ -476,6 +514,7 @@ export const getHomepageContent = asyncHandler(async (req, res) => {
         announcementBar: settings.announcementBar,
         welcomePopup: settings.welcomePopup,
         commerce: settings.commerce,
+        globalConfig: settings.globalConfig,
       },
       'Homepage content fetched successfully'
     )

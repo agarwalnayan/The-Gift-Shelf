@@ -60,6 +60,11 @@ const LoginPage = () => {
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             required
           />
+          <div className="text-right">
+            <Link to="/forgot-password" className="text-sm text-primary-600 hover:underline">
+              Forgot password?
+            </Link>
+          </div>
           <Button type="submit" isLoading={isLoading} className="w-full">
             Sign In
           </Button>

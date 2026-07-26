@@ -47,11 +47,6 @@ const CartPage = () => {
         {itemCount} {itemCount === 1 ? 'item' : 'items'}
       </p>
 
-      <div className="mb-6 rounded-lg bg-primary-50 border border-primary-100 px-4 py-3">
-        <p className="text-sm font-medium text-primary-600">🎉 Launch Offer: Flat 20% OFF + Free Delivery</p>
-        <p className="text-xs text-charcoal/60 mt-1">Use code <span className="font-semibold">LAUNCH20</span> at checkout</p>
-      </div>
-
       <div className="grid gap-6 sm:gap-8 md:grid-cols-3 md:items-start md:gap-10 lg:gap-12">
         <div className="min-w-0 rounded-2xl border border-charcoal/10 bg-white px-4 py-4 sm:px-5 sm:py-5 md:px-6 md:py-6 md:col-span-2">
           {cart.items.map((item) => (

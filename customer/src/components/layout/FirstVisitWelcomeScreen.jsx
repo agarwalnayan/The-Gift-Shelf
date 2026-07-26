@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 
 /**
  * Premium modal for first-visit name collection. Shows once before
- * the Launch Welcome Popup. MainLayout controls mounting.
+ * the Welcome Popup. MainLayout controls mounting.
  */
 const FirstVisitWelcomeScreen = ({ onComplete }) => {
   const [name, setName] = useState('');

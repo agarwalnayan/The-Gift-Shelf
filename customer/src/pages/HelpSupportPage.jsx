@@ -103,7 +103,7 @@ const HelpSupportPage = () => {
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
         <a
-          href="/return-policy"
+          href="/returns"
           className="flex items-center justify-between rounded-2xl border border-charcoal/10 bg-white p-6 text-left transition-colors duration-300 hover:border-primary-500 hover:shadow-lg"
         >
           <div>

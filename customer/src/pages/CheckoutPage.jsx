@@ -28,7 +28,7 @@ const loadRazorpayScript = () =>
 
 const CheckoutPage = () => {
   const { user, setUser } = useAuth();
-  const { cart, discount, isLoading: isCartLoading } = useCart();
+  const { cart, discount, promotionDiscount, appliedPromotion, isLoading: isCartLoading } = useCart();
   const { commerce } = useMarketing();
   const navigate = useNavigate();
 
@@ -67,10 +67,14 @@ const CheckoutPage = () => {
     () => items.reduce((sum, item) => sum + (item.priceAtAddition + (item.customizationPrice || 0)) * item.quantity, 0),
     [items]
   );
-  const discountedSubtotal = Math.max(0, itemsPrice - discount);
+  const totalDiscount = discount + promotionDiscount;
+  const discountedSubtotal = Math.max(0, itemsPrice - totalDiscount);
   const shippingThreshold = commerce?.freeShippingThreshold ?? 999;
   const shippingCharge = commerce?.shippingCharge ?? 49;
-  const shipping = discountedSubtotal >= shippingThreshold ? 0 : shippingCharge;
+  
+  // Check if free shipping promotion applies
+  const hasFreeShipping = appliedPromotion?.freeShipping;
+  const shipping = hasFreeShipping ? 0 : (discountedSubtotal >= shippingThreshold ? 0 : shippingCharge);
   const surcharge = paymentMethod === 'whatsapp' ? whatsappCharge : 0;
   const total = Number((discountedSubtotal + shipping + surcharge).toFixed(2));
 
@@ -102,6 +106,10 @@ const CheckoutPage = () => {
   };
 
   const placeOrder = async () => {
+    if (isPlacingOrder) {
+      return; // Prevent double-click
+    }
+
     if (!selectedAddressId) {
       toast.error('Please select or add a delivery address');
       return;
@@ -115,6 +123,7 @@ const CheckoutPage = () => {
         paymentMethod,
         giftMessage,
         orderNotes,
+        promotionId: appliedPromotion?.promotionId || null,
       });
       const { order } = data.data;
 
@@ -185,11 +194,6 @@ const CheckoutPage = () => {
   return (
     <div className="container-tgs py-8 sm:py-12">
       <h1 className="mb-8 font-display text-2xl font-semibold text-charcoal sm:text-3xl">Checkout</h1>
-
-      <div className="mb-6 rounded-lg bg-primary-50 border border-primary-100 px-4 py-3">
-        <p className="text-sm font-medium text-primary-600">🎉 Launch Offer: Flat 20% OFF + Free Delivery</p>
-        <p className="text-xs text-charcoal/60 mt-1">Use code <span className="font-semibold">LAUNCH20</span> for discount</p>
-      </div>
 
       {commerce?.checkoutMessage && (
         <div className="mb-6 rounded-xl bg-primary-50 px-4 py-3 text-sm text-primary-700">
@@ -388,8 +392,14 @@ const CheckoutPage = () => {
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-green-600">
-                <span>Discount</span>
+                <span>Discount {cart.couponCode ? `(${cart.couponCode})` : ''}</span>
                 <span>-₹{discount.toFixed(2)}</span>
+              </div>
+            )}
+            {promotionDiscount > 0 && appliedPromotion && (
+              <div className="flex justify-between text-green-600">
+                <span>Promotion ({appliedPromotion.promotionName})</span>
+                <span>-₹{promotionDiscount.toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between text-charcoal/70">

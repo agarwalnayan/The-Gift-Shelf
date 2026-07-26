@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { useState } from 'react';
 import {
   HiOutlineSquares2X2,
   HiOutlineShoppingBag,
@@ -8,40 +9,107 @@ import {
   HiOutlineMegaphone,
   HiOutlineCog6Tooth,
   HiOutlineDocumentText,
+  HiOutlineChevronDown,
+  HiOutlineChevronRight,
   HiXMark,
+  HiOutlineCube,
+  HiOutlineGift,
+  HiOutlineSparkles,
+  HiOutlineStar,
+  HiOutlineChatBubbleLeftRight,
+  HiOutlineArchiveBox,
+  HiOutlinePhoto,
 } from 'react-icons/hi2';
 
-const navItems = [
-  { label: 'Dashboard', to: '/', icon: HiOutlineSquares2X2 },
-  { label: 'Products', to: '/products', icon: HiOutlineShoppingBag },
-  { label: 'Categories', to: '/categories', icon: HiOutlineTag },
-  { label: 'Marketing', to: '/marketing', icon: HiOutlineMegaphone },
-  { label: 'Orders', to: '/orders', icon: HiOutlineClipboardDocumentList },
-  { label: 'Users', to: '/users', icon: HiOutlineUsers },
-  { label: 'CMS', to: '/cms', icon: HiOutlineDocumentText },
-  { label: 'Settings', to: '/settings', icon: HiOutlineCog6Tooth },
+const navGroups = [
+  {
+    label: 'Dashboard',
+    items: [{ label: 'Dashboard', to: '/', icon: HiOutlineSquares2X2 }],
+  },
+  {
+    label: 'Catalog',
+    items: [
+      { label: 'Products', to: '/products', icon: HiOutlineShoppingBag },
+      { label: 'Categories', to: '/categories', icon: HiOutlineTag },
+    ],
+  },
+  {
+    label: 'Marketing',
+    items: [
+      { label: 'Homepage', to: '/homepage', icon: HiOutlineMegaphone },
+      { label: 'Festivals', to: '/festivals', icon: HiOutlineGift },
+      { label: 'Promotions', to: '/promotions', icon: HiOutlineStar },
+    ],
+  },
+  {
+    label: 'Orders',
+    items: [
+      { label: 'Orders', to: '/orders', icon: HiOutlineClipboardDocumentList },
+      { label: 'Customers', to: '/customers', icon: HiOutlineUsers },
+    ],
+  },
+  {
+    label: 'Content',
+    items: [
+      { label: 'CMS', to: '/cms', icon: HiOutlineDocumentText },
+    ],
+  },
+  {
+    label: 'Settings',
+    items: [
+      { label: 'Site Settings', to: '/settings', icon: HiOutlineCog6Tooth },
+      { label: 'Admin Users', to: '/users', icon: HiOutlineUsers },
+    ],
+  },
 ];
 
-const NavItems = ({ onNavigate }) => (
-  <nav className="space-y-1 px-3">
-    {navItems.map(({ label, to, icon: Icon }) => (
-      <NavLink
-        key={to}
-        to={to}
-        end={to === '/'}
-        onClick={onNavigate}
-        className={({ isActive }) =>
-          `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-            isActive ? 'bg-primary-50 text-primary-700' : 'text-ink/60 hover:bg-ink/5 hover:text-ink'
-          }`
-        }
-      >
-        <Icon size={19} />
-        {label}
-      </NavLink>
-    ))}
-  </nav>
-);
+const NavItems = ({ onNavigate }) => {
+  const [expandedGroups, setExpandedGroups] = useState({});
+
+  const toggleGroup = (label) => {
+    setExpandedGroups((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
+
+  return (
+    <nav className="space-y-1 px-3">
+      {navGroups.map((group) => (
+        <div key={group.label}>
+          <button
+            onClick={() => toggleGroup(group.label)}
+            className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-ink/60 transition-colors hover:bg-ink/5 hover:text-ink"
+          >
+            <span>{group.label}</span>
+            {expandedGroups[group.label] ? (
+              <HiOutlineChevronDown size={16} />
+            ) : (
+              <HiOutlineChevronRight size={16} />
+            )}
+          </button>
+          {expandedGroups[group.label] && (
+            <div className="ml-4 mt-1 space-y-1">
+              {group.items.map(({ label, to, icon: Icon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={to === '/'}
+                  onClick={onNavigate}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                      isActive ? 'bg-primary-50 text-primary-700' : 'text-ink/60 hover:bg-ink/5 hover:text-ink'
+                    }`
+                  }
+                >
+                  <Icon size={16} />
+                  {label}
+                </NavLink>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </nav>
+  );
+};
 
 // Sidebar previously had no mobile presentation at all (`hidden md:block`),
 // meaning admins on a phone/tablet had no way to navigate between pages.

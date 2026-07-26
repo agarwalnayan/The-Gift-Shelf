@@ -180,6 +180,7 @@ export const getAllProducts = asyncHandler(async (req, res) => {
     isFeatured,
     publishStatus,
     includeDeleted,
+    ids,
   } = req.query;
 
   const filter = {};
@@ -207,6 +208,12 @@ export const getAllProducts = asyncHandler(async (req, res) => {
     filter.price = {};
     if (minPrice) filter.price.$gte = Number(minPrice);
     if (maxPrice) filter.price.$lte = Number(maxPrice);
+  }
+  if (ids) {
+    const idArray = ids.split(',').filter(id => isValidObjectId(id));
+    if (idArray.length > 0) {
+      filter._id = { $in: idArray };
+    }
   }
 
   const skip = (Number(page) - 1) * Number(limit);

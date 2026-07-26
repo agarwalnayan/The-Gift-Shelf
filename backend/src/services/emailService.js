@@ -1,11 +1,46 @@
+import nodemailer from 'nodemailer';
 import { env } from '../config/env.js';
 
-export const sendEmail = async ({ to, subject, html }) => {
-  if (env.nodeEnv !== 'production') {
-    console.log(`[emailService] Email to ${to} | Subject: ${subject}`);
-    return;
+let transporter = null;
+
+const getTransporter = () => {
+  if (!env.smtp.host || !env.smtp.user || !env.smtp.pass) return null;
+
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      host: env.smtp.host,
+      port: env.smtp.port,
+      secure: env.smtp.port === 465,
+      auth: { user: env.smtp.user, pass: env.smtp.pass },
+    });
   }
 
-  // Wire up a transport (e.g. nodemailer with SMTP creds from env.smtp)
-  // once production email credentials are available.
+  return transporter;
+};
+
+// Sends an email if SMTP is configured. Deliberately never throws — a
+// misconfigured or temporarily-down mail provider must not break the
+// business flow that triggered it (registration, checkout, password reset).
+// Callers that need to know whether the email actually went out can inspect
+// the resolved boolean.
+export const sendEmail = async ({ to, subject, html }) => {
+  const transport = getTransporter();
+
+  if (!transport) {
+    console.log(`[emailService] SMTP not configured — skipping email to ${to} | Subject: ${subject}`);
+    return false;
+  }
+
+  try {
+    await transport.sendMail({
+      from: env.smtp.from || env.smtp.user,
+      to,
+      subject,
+      html,
+    });
+    return true;
+  } catch (err) {
+    console.error(`[emailService] Failed to send email to ${to}:`, err.message);
+    return false;
+  }
 };

@@ -1,16 +1,14 @@
 import { HiOutlineTicket, HiOutlineCheckCircle, HiOutlineClock } from 'react-icons/hi2';
 
+// NOTE: There is currently no customer-facing endpoint that returns a
+// customer's available/used coupons (the only coupon route in the backend
+// is admin/superadmin-only, and coupons aren't tracked per-customer yet).
+// Wiring this page up to real data would require new backend work
+// (a customer-scoped "my coupons" endpoint), which is out of scope for a
+// hardcoded-content cleanup pass. Showing the honest empty state below
+// instead of fabricated placeholder coupons until that backend work exists.
 const CouponsPage = () => {
-  const availableCoupons = [
-    {
-      code: 'LAUNCH20',
-      discount: 'Flat 20% OFF',
-      description: 'Get flat 20% discount on all orders',
-      status: 'active',
-      expiry: 'Limited time offer'
-    }
-  ];
-
+  const availableCoupons = [];
   const usedCoupons = [];
 
   return (

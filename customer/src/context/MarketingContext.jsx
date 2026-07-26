@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { getHomepageContentApi } from '../api/marketingApi.js';
+import { getActiveFestivalApi } from '../api/festivalApi.js';
 
 const MarketingContext = createContext(null);
 
@@ -11,6 +12,7 @@ const emptyContent = {
   budgetCollections: [],
   announcementBar: { enabled: false },
   welcomePopup: { enabled: false },
+  globalConfig: {},
   commerce: {
     freeShippingThreshold: 999,
     shippingCharge: 49,
@@ -21,6 +23,7 @@ const emptyContent = {
     returnPolicy: '',
     replacementPolicy: '',
   },
+  activeFestival: null,
 };
 
 // Module-level (not component-level) cache + in-flight promise. This is the
@@ -36,9 +39,15 @@ let inFlightRequest = null;
 const fetchHomepageContentOnce = async () => {
   if (cachedContent) return cachedContent;
   if (!inFlightRequest) {
-    inFlightRequest = getHomepageContentApi()
-      .then(({ data }) => {
-        cachedContent = data.data;
+    inFlightRequest = Promise.all([
+      getHomepageContentApi(),
+      getActiveFestivalApi().catch(() => ({ data: { data: { festival: null } } })),
+    ])
+      .then(([homepageRes, festivalRes]) => {
+        cachedContent = {
+          ...homepageRes.data.data,
+          activeFestival: festivalRes.data.data.festival,
+        };
         return cachedContent;
       })
       .finally(() => {

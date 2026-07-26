@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { HiOutlineMagnifyingGlass } from 'react-icons/hi2';
+import { HiOutlineMagnifyingGlass, HiOutlineArrowRight } from 'react-icons/hi2';
 import {
   getBannersApi,
   createBannerApi,
@@ -40,11 +41,13 @@ const TABS = [
   { key: 'settings', label: 'Announcement & Popup' },
   { key: 'checkout', label: 'Checkout & Store' },
   { key: 'coupons', label: 'Coupons' },
+  { key: 'promotions', label: 'Promotions', external: true },
 ];
 
 const FEATURED_MAX = 6;
 
 const MarketingPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('hero');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -90,6 +93,19 @@ const MarketingPage = () => {
   useEffect(() => {
     loadTabData();
   }, [loadTabData]);
+
+  // Sync tab from URL on page load
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl && TABS.find(t => t.key === tabFromUrl)) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams]);
+
+  // Update URL when tab changes
+  useEffect(() => {
+    setSearchParams({ tab: activeTab });
+  }, [activeTab, setSearchParams]);
 
   const openAddModal = () => {
     setEditingItem(null);
@@ -245,17 +261,28 @@ const MarketingPage = () => {
 
       <div className="mb-6 flex flex-wrap gap-2 border-b border-ink/10 pb-3">
         {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => {
-              setActiveTab(tab.key);
-              setSearchQuery('');
-            }}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${activeTab === tab.key ? 'bg-primary-50 text-primary-700' : 'text-ink/60 hover:bg-ink/5'
-              }`}
-          >
-            {tab.label}
-          </button>
+          tab.external ? (
+            <Link
+              key={tab.key}
+              to="/promotions"
+              className="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors text-ink/60 hover:bg-ink/5 flex items-center gap-1"
+            >
+              {tab.label}
+              <HiOutlineArrowRight size={14} />
+            </Link>
+          ) : (
+            <button
+              key={tab.key}
+              onClick={() => {
+                setSearchQuery('');
+                setActiveTab(tab.key);
+              }}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${activeTab === tab.key ? 'bg-primary-50 text-primary-700' : 'text-ink/60 hover:bg-ink/5'
+                }`}
+            >
+              {tab.label}
+            </button>
+          )
         ))}
       </div>
 

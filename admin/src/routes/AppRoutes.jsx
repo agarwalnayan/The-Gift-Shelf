@@ -9,10 +9,16 @@ import CategoriesPage from '../pages/CategoriesPage.jsx';
 import OrdersPage from '../pages/OrdersPage.jsx';
 import OrderDetailPage from '../pages/OrderDetailPage.jsx';
 import UsersPage from '../pages/UsersPage.jsx';
+import CustomersPage from '../pages/CustomersPage.jsx';
 import UserProfilePage from '../pages/UserProfilePage.jsx';
 import MarketingPage from '../pages/MarketingPage.jsx';
 import GlobalSettingsPage from '../pages/GlobalSettingsPage.jsx';
 import CMSPage from '../pages/CMSPage.jsx';
+import PromotionsPage from '../pages/PromotionsPage.jsx';
+import PromotionFormPage from '../pages/PromotionFormPage.jsx';
+import FestivalPage from '../pages/FestivalPage.jsx';
+import FestivalFormPage from '../pages/FestivalFormPage.jsx';
+import HomepageManagementPage from '../pages/HomepageManagementPage.jsx';
 import NotFoundPage from '../pages/NotFoundPage.jsx';
 
 const AppRoutes = () => {
@@ -28,8 +34,16 @@ const AppRoutes = () => {
           <Route path="products/:id/edit" element={<ProductFormPage />} />
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="marketing" element={<MarketingPage />} />
+          <Route path="promotions" element={<PromotionsPage />} />
+          <Route path="promotions/new" element={<PromotionFormPage />} />
+          <Route path="promotions/:id" element={<PromotionFormPage />} />
+          <Route path="festivals" element={<FestivalPage />} />
+          <Route path="festivals/new" element={<FestivalFormPage />} />
+          <Route path="festivals/:id" element={<FestivalFormPage />} />
+          <Route path="homepage" element={<HomepageManagementPage />} />
           <Route path="orders" element={<OrdersPage />} />
           <Route path="orders/:id" element={<OrderDetailPage />} />
+          <Route path="customers" element={<CustomersPage />} />
           <Route path="users" element={<UsersPage />} />
           <Route path="users/:id" element={<UserProfilePage />} />
           <Route path="settings" element={<GlobalSettingsPage />} />

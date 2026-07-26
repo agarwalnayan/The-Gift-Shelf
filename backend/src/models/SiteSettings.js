@@ -10,7 +10,7 @@ const imageSchema = new mongoose.Schema(
 
 // Singleton document holding the two homepage/site-wide configuration
 // blocks that don't behave like list items (only one is ever "current"):
-// the Dynamic Announcement Bar and the Launch Welcome Popup.
+// the Dynamic Announcement Bar and the Welcome Popup.
 const announcementBarSchema = new mongoose.Schema(
   {
     enabled: { type: Boolean, default: false },
@@ -64,6 +64,32 @@ const policyPagesSchema = new mongoose.Schema(
   { _id: false }
 );
 
+// Business/brand-wide info: contact details, social links, and SEO
+// defaults. Edited via the admin's "Global Site Settings" page and
+// consumed on the storefront (Footer, SEO meta tags) so none of it is
+// hardcoded there.
+const globalConfigSchema = new mongoose.Schema(
+  {
+    storeName: { type: String, trim: true, default: '' },
+    legalName: { type: String, trim: true, default: '' },
+    contactEmail: { type: String, trim: true, default: '' },
+    contactPhone: { type: String, trim: true, default: '' },
+    businessAddress: { type: String, trim: true, default: '' },
+    gstin: { type: String, trim: true, default: '' },
+    pan: { type: String, trim: true, default: '' },
+    siteTitle: { type: String, trim: true, default: '' },
+    metaDescription: { type: String, trim: true, default: '' },
+    metaKeywords: { type: String, trim: true, default: '' },
+    facebookUrl: { type: String, trim: true, default: '' },
+    instagramUrl: { type: String, trim: true, default: '' },
+    twitterUrl: { type: String, trim: true, default: '' },
+    youtubeUrl: { type: String, trim: true, default: '' },
+    currency: { type: String, trim: true, default: 'INR' },
+    timezone: { type: String, trim: true, default: 'Asia/Kolkata' },
+  },
+  { _id: false }
+);
+
 // Store-wide checkout/commerce configuration — everything the Premium
 // Cart & Checkout experience needs from Admin so nothing is hardcoded on
 // the storefront (shipping, WhatsApp ordering charge, payment options,
@@ -91,6 +117,14 @@ const siteSettingsSchema = new mongoose.Schema(
       type: String,
       default: 'main',
       unique: true,
+    },
+    homepageConfig: {
+      type: mongoose.Schema.Types.Mixed,
+      default: () => ({}),
+    },
+    globalConfig: {
+      type: globalConfigSchema,
+      default: () => ({}),
     },
     announcementBar: {
       type: announcementBarSchema,

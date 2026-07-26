@@ -1,47 +1,53 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useMarketing } from '../../context/MarketingContext.jsx';
 
+// Admin-configurable announcement bar. Content, colors, link, and whether it
+// can be dismissed all come from SiteSettings.announcementBar (see the
+// "Dynamic Announcement Bar" form in the admin panel) via MarketingContext —
+// nothing here is hardcoded.
 const AnnouncementBar = () => {
-  const [isPaused, setIsPaused] = useState(false);
+  const { announcementBar } = useMarketing();
+  const [isDismissed, setIsDismissed] = useState(false);
+
+  if (!announcementBar?.enabled || !announcementBar?.message || isDismissed) return null;
+
+  const isExternal = /^https?:\/\//.test(announcementBar.linkUrl || '');
 
   return (
-    <div 
-      className="bg-charcoal text-cream overflow-hidden"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
+    <div
+      className="flex items-center justify-center gap-3 px-4 py-2 text-center text-sm font-medium"
+      style={{
+        backgroundColor: announcementBar.backgroundColor || '#1c1c1c',
+        color: announcementBar.textColor || '#fdfaf6',
+      }}
     >
-      <div className={`flex whitespace-nowrap ${isPaused ? '' : 'animate-marquee'}`}>
-        <span className="mx-12 text-sm font-medium uppercase tracking-wide">
-          🎉 WE ARE LIVE
-        </span>
-        <span className="mx-12 text-sm font-medium uppercase tracking-wide">•</span>
-        <span className="mx-12 text-sm font-medium uppercase tracking-wide">
-          FLAT 20% OFF
-        </span>
-        <span className="mx-12 text-sm font-medium uppercase tracking-wide">•</span>
-        <span className="mx-12 text-sm font-medium uppercase tracking-wide">
-          FREE DELIVERY
-        </span>
-        <span className="mx-12 text-sm font-medium uppercase tracking-wide">•</span>
-        <span className="mx-12 text-sm font-medium uppercase tracking-wide">
-          USE CODE LAUNCH20
-        </span>
-        <span className="mx-12 text-sm font-medium uppercase tracking-wide">•</span>
-        <span className="mx-12 text-sm font-medium uppercase tracking-wide">
-          🎉 WE ARE LIVE
-        </span>
-        <span className="mx-12 text-sm font-medium uppercase tracking-wide">•</span>
-        <span className="mx-12 text-sm font-medium uppercase tracking-wide">
-          FLAT 20% OFF
-        </span>
-        <span className="mx-12 text-sm font-medium uppercase tracking-wide">•</span>
-        <span className="mx-12 text-sm font-medium uppercase tracking-wide">
-          FREE DELIVERY
-        </span>
-        <span className="mx-12 text-sm font-medium uppercase tracking-wide">•</span>
-        <span className="mx-12 text-sm font-medium uppercase tracking-wide">
-          USE CODE LAUNCH20
-        </span>
-      </div>
+      <span>
+        {announcementBar.message}
+        {announcementBar.linkText && announcementBar.linkUrl && (
+          <>
+            {' '}
+            {isExternal ? (
+              <a href={announcementBar.linkUrl} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+                {announcementBar.linkText}
+              </a>
+            ) : (
+              <a href={announcementBar.linkUrl} className="underline underline-offset-2">
+                {announcementBar.linkText}
+              </a>
+            )}
+          </>
+        )}
+      </span>
+
+      {announcementBar.dismissible && (
+        <button
+          onClick={() => setIsDismissed(true)}
+          aria-label="Dismiss"
+          className="shrink-0 opacity-70 hover:opacity-100"
+        >
+          ✕
+        </button>
+      )}
     </div>
   );
 };

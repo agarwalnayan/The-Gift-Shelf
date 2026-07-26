@@ -1,7 +1,135 @@
+import { useState } from 'react';
+import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext.jsx';
+import Input from '../components/common/Input.jsx';
+import Button from '../components/common/Button.jsx';
+import { updateProfileApi, changePasswordApi } from '../api/authApi.js';
+
+const EditProfileModal = ({ isOpen, onClose, user, onSaved }) => {
+  const [form, setForm] = useState({ name: user?.name || '', phone: user?.phone || '' });
+  const [isSaving, setIsSaving] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setIsSaving(true);
+    try {
+      const { data } = await updateProfileApi(form);
+      onSaved(data.data.user);
+      toast.success('Profile updated');
+      onClose();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to update profile');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-charcoal/40 p-0 sm:items-center sm:p-4">
+      <div className="w-full max-w-md rounded-t-2xl bg-cream p-6 sm:rounded-2xl">
+        <h3 className="mb-5 font-display text-lg font-semibold text-charcoal">Edit Profile</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input
+            label="Name"
+            value={form.name}
+            onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+            required
+          />
+          <Input
+            label="Phone"
+            value={form.phone}
+            onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
+          />
+          <div className="flex justify-end gap-3 border-t border-charcoal/10 pt-4">
+            <Button type="button" variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" isLoading={isSaving}>
+              Save Changes
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const ChangePasswordModal = ({ isOpen, onClose }) => {
+  const [form, setForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [isSaving, setIsSaving] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (form.newPassword !== form.confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+    if (form.newPassword.length < 8) {
+      toast.error('New password must be at least 8 characters long');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await changePasswordApi({ currentPassword: form.currentPassword, newPassword: form.newPassword });
+      toast.success('Password changed successfully');
+      onClose();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to change password');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-charcoal/40 p-0 sm:items-center sm:p-4">
+      <div className="w-full max-w-md rounded-t-2xl bg-cream p-6 sm:rounded-2xl">
+        <h3 className="mb-5 font-display text-lg font-semibold text-charcoal">Change Password</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input
+            label="Current Password"
+            type="password"
+            value={form.currentPassword}
+            onChange={(e) => setForm((prev) => ({ ...prev, currentPassword: e.target.value }))}
+            required
+          />
+          <Input
+            label="New Password"
+            type="password"
+            value={form.newPassword}
+            onChange={(e) => setForm((prev) => ({ ...prev, newPassword: e.target.value }))}
+            required
+          />
+          <Input
+            label="Confirm New Password"
+            type="password"
+            value={form.confirmPassword}
+            onChange={(e) => setForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+            required
+          />
+          <div className="flex justify-end gap-3 border-t border-charcoal/10 pt-4">
+            <Button type="button" variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" isLoading={isSaving}>
+              Update Password
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 const ProfilePage = () => {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isPasswordOpen, setIsPasswordOpen] = useState(false);
 
   const joinedDate = user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -71,18 +199,32 @@ const ProfilePage = () => {
           </div>
 
           <div className="mt-8 flex gap-3">
-            <button className="flex-1 flex items-center justify-center gap-2 rounded-xl border-2 border-charcoal/20 px-4 py-3 text-sm font-medium text-charcoal transition-colors duration-300 hover:border-primary-500 hover:text-primary-600">
+            <button
+              onClick={() => setIsEditOpen(true)}
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl border-2 border-charcoal/20 px-4 py-3 text-sm font-medium text-charcoal transition-colors duration-300 hover:border-primary-500 hover:text-primary-600"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
               Edit Profile
             </button>
-            <button className="flex-1 rounded-xl border-2 border-charcoal/20 px-4 py-3 text-sm font-medium text-charcoal/50 cursor-not-allowed">
-              Change Password (Coming Soon)
+            <button
+              onClick={() => setIsPasswordOpen(true)}
+              className="flex-1 rounded-xl border-2 border-charcoal/20 px-4 py-3 text-sm font-medium text-charcoal transition-colors duration-300 hover:border-primary-500 hover:text-primary-600"
+            >
+              Change Password
             </button>
           </div>
         </div>
       </div>
+
+      <EditProfileModal
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        user={user}
+        onSaved={setUser}
+      />
+      <ChangePasswordModal isOpen={isPasswordOpen} onClose={() => setIsPasswordOpen(false)} />
     </div>
   );
 };

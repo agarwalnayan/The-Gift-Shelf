@@ -8,6 +8,9 @@ import orderRoutes from './orderRoutes.js';
 import marketingRoutes from './marketingRoutes.js';
 import couponRoutes from './couponRoutes.js';
 import siteSettingsRoutes from './siteSettingsRoutes.js';
+import promotionRoutes from './promotionRoutes.js';
+import festivalRoutes from './festivalRoutes.js';
+import statsRoutes from './statsRoutes.js';
 
 const router = express.Router();
 
@@ -20,5 +23,8 @@ router.use('/orders', orderRoutes);
 router.use('/marketing', marketingRoutes);
 router.use('/coupons', couponRoutes);
 router.use('/site-settings', siteSettingsRoutes);
+router.use('/promotions', promotionRoutes);
+router.use('/festivals', festivalRoutes);
+router.use('/stats', statsRoutes);
 
 export default router;

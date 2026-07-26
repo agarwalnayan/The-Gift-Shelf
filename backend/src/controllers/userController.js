@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import User from '../models/User.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import ApiError from '../utils/ApiError.js';
@@ -15,7 +16,44 @@ export const updateProfile = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, { user }, 'Profile updated successfully'));
 });
 
+export const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    throw new ApiError(400, 'Current password and new password are required');
+  }
+
+  if (newPassword.length < 8) {
+    throw new ApiError(400, 'New password must be at least 8 characters long');
+  }
+
+  const user = await User.findById(req.user._id).select('+password');
+
+  if (!(await user.comparePassword(currentPassword))) {
+    throw new ApiError(401, 'Current password is incorrect');
+  }
+
+  user.password = newPassword;
+  await user.save();
+
+  res.status(200).json(new ApiResponse(200, null, 'Password changed successfully'));
+});
+
 export const addAddress = asyncHandler(async (req, res) => {
+  const { phone, postalCode, ...rest } = req.body;
+
+  // Validate phone number (10 digits for India)
+  const phoneRegex = /^[6-9]\d{9}$/;
+  if (phone && !phoneRegex.test(phone.replace(/\D/g, ''))) {
+    throw new ApiError(400, 'Please provide a valid 10-digit phone number');
+  }
+
+  // Validate postal code (6 digits for India)
+  const postalCodeRegex = /^\d{6}$/;
+  if (postalCode && !postalCodeRegex.test(postalCode)) {
+    throw new ApiError(400, 'Please provide a valid 6-digit postal code');
+  }
+
   const user = await User.findById(req.user._id);
 
   if (req.body.isDefault) {
@@ -29,6 +67,20 @@ export const addAddress = asyncHandler(async (req, res) => {
 });
 
 export const updateAddress = asyncHandler(async (req, res) => {
+  const { phone, postalCode, ...rest } = req.body;
+
+  // Validate phone number (10 digits for India)
+  const phoneRegex = /^[6-9]\d{9}$/;
+  if (phone && !phoneRegex.test(phone.replace(/\D/g, ''))) {
+    throw new ApiError(400, 'Please provide a valid 10-digit phone number');
+  }
+
+  // Validate postal code (6 digits for India)
+  const postalCodeRegex = /^\d{6}$/;
+  if (postalCode && !postalCodeRegex.test(postalCode)) {
+    throw new ApiError(400, 'Please provide a valid 6-digit postal code');
+  }
+
   const user = await User.findById(req.user._id);
   const address = user.addresses.id(req.params.addressId);
   if (!address) throw new ApiError(404, 'Address not found');
@@ -71,6 +123,34 @@ export const toggleWishlist = asyncHandler(async (req, res) => {
 export const getAllUsers = asyncHandler(async (req, res) => {
   const users = await User.find().select('-password');
   res.status(200).json(new ApiResponse(200, { users, count: users.length }, 'Users fetched successfully'));
+});
+
+export const getCustomers = asyncHandler(async (req, res) => {
+  const Order = mongoose.model('Order');
+  
+  // Find users who have placed at least one order
+  const customers = await User.aggregate([
+    {
+      $lookup: {
+        from: 'orders',
+        localField: '_id',
+        foreignField: 'user',
+        as: 'orders'
+      }
+    },
+    {
+      $match: {
+        orders: { $ne: [] }
+      }
+    },
+    {
+      $project: {
+        password: 0
+      }
+    }
+  ]);
+
+  res.status(200).json(new ApiResponse(200, { users: customers, count: customers.length }, 'Customers fetched successfully'));
 });
 
 export const getUserById = asyncHandler(async (req, res) => {

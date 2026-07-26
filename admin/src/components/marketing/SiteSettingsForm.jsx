@@ -123,7 +123,7 @@ const SiteSettingsForm = ({ settings, onSaved }) => {
 
       <form onSubmit={popupForm.handleSubmit(submitPopup)} className="card space-y-5 p-5">
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold text-ink">Launch Welcome Popup</h3>
+          <h3 className="text-base font-semibold text-ink">Welcome Popup</h3>
           <Toggle
             label="Enabled"
             checked={popupForm.watch('enabled')}

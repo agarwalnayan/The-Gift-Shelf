@@ -10,7 +10,7 @@ import CouponInput from './CouponInput.jsx';
  * per the store's pricing model — totals are subtotal, discount, shipping.
  */
 const CartSummary = ({ items, onCheckout, isLoading, sticky = false, showCoupon = true }) => {
-  const { cart, discount } = useCart();
+  const { cart, discount, promotionDiscount, appliedPromotion } = useCart();
   const { commerce } = useMarketing();
 
   const itemsPrice = items.reduce((sum, item) => {
@@ -18,10 +18,14 @@ const CartSummary = ({ items, onCheckout, isLoading, sticky = false, showCoupon 
     return sum + unitPrice * item.quantity;
   }, 0);
 
-  const discountedSubtotal = Math.max(0, itemsPrice - discount);
+  const totalDiscount = discount + promotionDiscount;
+  const discountedSubtotal = Math.max(0, itemsPrice - totalDiscount);
   const shippingThreshold = commerce?.freeShippingThreshold ?? 999;
   const shippingCharge = commerce?.shippingCharge ?? 49;
-  const shipping = discountedSubtotal >= shippingThreshold ? 0 : shippingCharge;
+  
+  // Check if free shipping promotion applies
+  const hasFreeShipping = appliedPromotion?.freeShipping;
+  const shipping = hasFreeShipping ? 0 : (discountedSubtotal >= shippingThreshold ? 0 : shippingCharge);
   const total = Number((discountedSubtotal + shipping).toFixed(2));
 
   return (
@@ -47,6 +51,12 @@ const CartSummary = ({ items, onCheckout, isLoading, sticky = false, showCoupon 
           <div className="flex justify-between text-green-600">
             <span>Discount {cart.couponCode ? `(${cart.couponCode})` : ''}</span>
             <span>-₹{discount.toFixed(2)}</span>
+          </div>
+        )}
+        {promotionDiscount > 0 && appliedPromotion && (
+          <div className="flex justify-between text-green-600">
+            <span>Promotion ({appliedPromotion.promotionName})</span>
+            <span>-₹{promotionDiscount.toFixed(2)}</span>
           </div>
         )}
         <div className="flex justify-between text-charcoal/70">

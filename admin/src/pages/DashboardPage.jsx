@@ -11,9 +11,7 @@ import {
   HiOutlineCube,
   HiOutlineTruck,
 } from 'react-icons/hi2';
-import { getAllOrdersApi } from '../api/orderApi.js';
-import { getProductsApi } from '../api/productApi.js';
-import { getAllUsersApi } from '../api/userApi.js';
+import { getDashboardStatsApi } from '../api/statsApi.js';
 import Loader from '../components/common/Loader.jsx';
 
 const StatCard = ({ label, value, icon: Icon, color = 'primary' }) => {
@@ -59,45 +57,22 @@ const DashboardPage = () => {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        const firstPage = await getAllOrdersApi({ limit: 1 });
-        const totalOrders = firstPage.data.data.total;
-
-        const [ordersRes, productsRes, usersRes, draftRes, productsListRes] = await Promise.all([
-          getAllOrdersApi({ limit: Math.max(totalOrders, 1) }),
-          getProductsApi({ limit: 1 }),
-          getAllUsersApi(),
-          getProductsApi({ limit: 1, publishStatus: 'draft' }),
-          getProductsApi({ limit: 100 }),
-        ]);
-
-        const orders = ordersRes.data.data.orders;
-        const products = productsListRes.data.data.products || [];
-        
-        const revenue = orders.filter((order) => order.isPaid).reduce((sum, order) => sum + order.totalPrice, 0);
-        
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayOrders = orders.filter(order => new Date(order.createdAt) >= today);
-        const todayRevenue = todayOrders.filter((order) => order.isPaid).reduce((sum, order) => sum + order.totalPrice, 0);
-        
-        const pendingOrders = orders.filter(order => order.orderStatus === 'pending' || order.orderStatus === 'confirmed').length;
-        
-        const lowStock = products.filter(p => p.stock > 0 && p.stock <= 10).length;
-        const outOfStock = products.filter(p => p.stock === 0).length;
+        const { data } = await getDashboardStatsApi();
+        const s = data.data;
 
         setStats({
-          totalOrders,
-          totalProducts: productsRes.data.data.total,
-          totalUsers: usersRes.data.data.count,
-          revenue,
-          todayOrders: todayOrders.length,
-          todayRevenue,
-          pendingOrders,
+          totalOrders: s.totalOrders,
+          totalProducts: s.totalProducts,
+          totalUsers: s.totalUsers,
+          revenue: s.revenue,
+          todayOrders: s.todayOrders,
+          todayRevenue: s.todayRevenue,
+          pendingOrders: s.pendingOrders,
         });
-        setDraftCount(draftRes.data.data.total);
-        setLowStockCount(lowStock);
-        setOutOfStockCount(outOfStockCount);
-        setRecentOrders(orders.slice(0, 5));
+        setDraftCount(s.draftProducts);
+        setLowStockCount(s.lowStockCount);
+        setOutOfStockCount(s.outOfStockCount);
+        setRecentOrders(s.recentOrders || []);
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to load dashboard stats');
       } finally {

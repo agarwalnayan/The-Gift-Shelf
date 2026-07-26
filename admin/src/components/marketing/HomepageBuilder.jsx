@@ -3,17 +3,7 @@ import toast from 'react-hot-toast';
 import { HiOutlineEye, HiOutlineEyeSlash } from 'react-icons/hi2';
 import Toggle from '../common/Toggle.jsx';
 import { getSiteSettingsApi, updateSiteSettingsApi } from '../../api/marketingApi.js';
-
-const SECTIONS = [
-  { key: 'heroSlider', label: 'Hero Slider', description: 'Main image carousel at the top' },
-  { key: 'launchOffer', label: 'Launch Offer Banner', description: 'Promotional banner below hero' },
-  { key: 'featuredRecipients', label: 'Featured Recipients', description: 'Gift ideas by recipient' },
-  { key: 'featuredOccasions', label: 'Featured Occasions', description: 'Gift ideas by occasion' },
-  { key: 'budgetCollections', label: 'Budget Collections', description: 'Shop by price range' },
-  { key: 'newArrivals', label: 'New Arrivals', description: 'Recently added products' },
-  { key: 'bestSellers', label: 'Best Sellers', description: 'Top selling products' },
-  { key: 'instagramFeed', label: 'Instagram Feed', description: 'Social media integration' },
-];
+import { HOMEPAGE_SECTIONS as SECTIONS } from '../../utils/homepageSections.js';
 
 const HomepageBuilder = () => {
   const [settings, setSettings] = useState(null);

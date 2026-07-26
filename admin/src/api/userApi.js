@@ -2,6 +2,8 @@ import axiosInstance from './axiosInstance.js';
 
 export const getAllUsersApi = () => axiosInstance.get('/users');
 
+export const getCustomersApi = () => axiosInstance.get('/users/customers');
+
 export const getUserByIdApi = (id) => axiosInstance.get(`/users/${id}`);
 
 export const updateUserStatusApi = (id, isActive) => axiosInstance.patch(`/users/${id}/status`, { isActive });

@@ -6,15 +6,22 @@ export const createFestivalSchema = Joi.object({
   enabled: Joi.boolean(),
   startDate: Joi.date().required(),
   endDate: Joi.date().required().greater(Joi.ref('startDate')),
+
   heroTitle: Joi.string().trim().max(200).allow('', null),
   heroSubtitle: Joi.string().trim().max(500).allow('', null),
+
   primaryCtaText: Joi.string().trim().max(50).allow('', null),
   primaryCtaLink: Joi.string().trim().max(500).allow('', null),
+
   secondaryCtaText: Joi.string().trim().max(50).allow('', null),
   secondaryCtaLink: Joi.string().trim().max(500).allow('', null),
+
   deliveryMessage: Joi.string().trim().max(300).allow('', null),
+
   countdownDate: Joi.date().allow(null),
+
   landingPage: Joi.string().trim().max(100).allow('', null),
+
   announcement: Joi.object({
     enabled: Joi.boolean(),
     message: Joi.string().trim().max(200).allow('', null),
@@ -24,10 +31,15 @@ export const createFestivalSchema = Joi.object({
     textColor: Joi.string().trim().max(20).allow('', null),
     dismissible: Joi.boolean(),
   }),
+
   featuredProducts: Joi.array().items(Joi.string()).default([]),
+
   featuredCollections: Joi.array().items(Joi.string()).default([]),
-  upcomingFestival: Joi.string().allow(null),
+
+  upcomingFestival: Joi.string().allow(null, ''),
+
   displayOrder: Joi.number().min(0).default(0),
+
   isActive: Joi.boolean(),
 });
 
@@ -37,15 +49,22 @@ export const updateFestivalSchema = Joi.object({
   enabled: Joi.boolean(),
   startDate: Joi.date(),
   endDate: Joi.date().greater(Joi.ref('startDate')),
+
   heroTitle: Joi.string().trim().max(200).allow('', null),
   heroSubtitle: Joi.string().trim().max(500).allow('', null),
+
   primaryCtaText: Joi.string().trim().max(50).allow('', null),
   primaryCtaLink: Joi.string().trim().max(500).allow('', null),
+
   secondaryCtaText: Joi.string().trim().max(50).allow('', null),
   secondaryCtaLink: Joi.string().trim().max(500).allow('', null),
+
   deliveryMessage: Joi.string().trim().max(300).allow('', null),
+
   countdownDate: Joi.date().allow(null),
+
   landingPage: Joi.string().trim().max(100).allow('', null),
+
   announcement: Joi.object({
     enabled: Joi.boolean(),
     message: Joi.string().trim().max(200).allow('', null),
@@ -55,9 +74,14 @@ export const updateFestivalSchema = Joi.object({
     textColor: Joi.string().trim().max(20).allow('', null),
     dismissible: Joi.boolean(),
   }),
+
   featuredProducts: Joi.array().items(Joi.string()),
+
   featuredCollections: Joi.array().items(Joi.string()),
-  upcomingFestival: Joi.string().allow(null),
+
+  upcomingFestival: Joi.string().allow(null, ''),
+
   displayOrder: Joi.number().min(0),
+
   isActive: Joi.boolean(),
 });

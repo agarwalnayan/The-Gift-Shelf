@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import toast from 'react-hot-toast';
+import { useForm, Controller } from 'react-hook-form'; import toast from 'react-hot-toast';
 import { HiOutlineArrowLeft } from 'react-icons/hi2';
 import { getFestivalByIdApi, createFestivalApi, updateFestivalApi, getFestivalsApi } from '../api/festivalApi.js';
 import { getProductsApi } from '../api/productApi.js';
@@ -91,35 +90,95 @@ const FestivalFormPage = () => {
 
   const onSubmit = async (values) => {
     setIsSaving(true);
+
     try {
       const formData = new FormData();
-      
-      Object.keys(values).forEach(key => {
-        if (key === 'announcement') {
-          formData.append('announcement', JSON.stringify(values[key]));
-        } else if (Array.isArray(values[key])) {
-          formData.append(key, JSON.stringify(values[key]));
-        } else if (key === 'upcomingFestival' && !values[key]) {
-          formData.append(key, '');
-        } else {
-          formData.append(key, values[key] || '');
-        }
-      });
 
-      if (desktopBannerFile) formData.append('desktopBanner', desktopBannerFile);
-      if (mobileBannerFile) formData.append('mobileBanner', mobileBannerFile);
-      if (badgeFile) formData.append('festivalBadge', badgeFile);
+      // Basic fields
+      formData.append("name", values.name);
+      formData.append("slug", values.slug);
+      formData.append("enabled", values.enabled);
+      formData.append("startDate", values.startDate);
+      formData.append("endDate", values.endDate);
+
+      formData.append("heroTitle", values.heroTitle || "");
+      formData.append("heroSubtitle", values.heroSubtitle || "");
+      formData.append("primaryCtaText", values.primaryCtaText || "");
+      formData.append("primaryCtaLink", values.primaryCtaLink || "");
+      formData.append("secondaryCtaText", values.secondaryCtaText || "");
+      formData.append("secondaryCtaLink", values.secondaryCtaLink || "");
+      formData.append("deliveryMessage", values.deliveryMessage || "");
+      formData.append("landingPage", values.landingPage || "");
+
+      if (values.countdownDate) {
+        formData.append("countdownDate", values.countdownDate);
+      }
+
+      formData.append("displayOrder", values.displayOrder);
+      formData.append("isActive", values.isActive);
+
+      // Complex objects
+      formData.append(
+        "announcement",
+        JSON.stringify(values.announcement)
+      );
+
+      formData.append(
+        "featuredProducts",
+        JSON.stringify(values.featuredProducts || [])
+      );
+
+      formData.append(
+        "featuredCollections",
+        JSON.stringify(values.featuredCollections || [])
+      );
+
+      // Only send if selected
+      if (values.upcomingFestival) {
+        formData.append(
+          "upcomingFestival",
+          values.upcomingFestival
+        );
+      }
+
+      // Images
+      if (desktopBannerFile) {
+        formData.append(
+          "desktopBanner",
+          desktopBannerFile
+        );
+      }
+
+      if (mobileBannerFile) {
+        formData.append(
+          "mobileBanner",
+          mobileBannerFile
+        );
+      }
+
+      if (badgeFile) {
+        formData.append(
+          "festivalBadge",
+          badgeFile
+        );
+      }
 
       if (id) {
         await updateFestivalApi(id, formData);
-        toast.success('Festival updated successfully');
+        toast.success("Festival updated successfully");
       } else {
         await createFestivalApi(formData);
-        toast.success('Festival created successfully');
+        toast.success("Festival created successfully");
       }
-      navigate('/festivals');
+
+      navigate("/festivals");
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to save festival');
+      console.error(error);
+
+      toast.error(
+        error.response?.data?.message ||
+        "Failed to save festival"
+      );
     } finally {
       setIsSaving(false);
     }
@@ -149,9 +208,30 @@ const FestivalFormPage = () => {
             <Input label="Start Date" type="date" {...form.register('startDate', { required: 'Start date is required' })} error={form.formState.errors.startDate?.message} />
             <Input label="End Date" type="date" {...form.register('endDate', { required: 'End date is required' })} error={form.formState.errors.endDate?.message} />
             <Input label="Display Order" type="number" {...form.register('displayOrder')} />
-            <div className="flex items-center gap-3 pt-6">
-              <Toggle {...form.register('enabled')} label="Enabled" />
-              <Toggle {...form.register('isActive')} label="Active" />
+            <div className="flex items-center gap-6 pt-6">
+              <Controller
+                control={form.control}
+                name="enabled"
+                render={({ field }) => (
+                  <Toggle
+                    checked={field.value}
+                    onChange={field.onChange}
+                    label="Enabled"
+                  />
+                )}
+              />
+
+              <Controller
+                control={form.control}
+                name="isActive"
+                render={({ field }) => (
+                  <Toggle
+                    checked={field.value}
+                    onChange={field.onChange}
+                    label="Active"
+                  />
+                )}
+              />
             </div>
           </div>
         </div>
@@ -201,8 +281,17 @@ const FestivalFormPage = () => {
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-ink mb-4">Announcement Bar</h3>
           <div className="space-y-6">
-            <Toggle {...form.register('announcement.enabled')} label="Enable Announcement" />
-            <Input label="Message" {...form.register('announcement.message')} placeholder="Special offer for Raksha Bandhan!" />
+            <Controller
+              control={form.control}
+              name="announcement.enabled"
+              render={({ field }) => (
+                <Toggle
+                  checked={field.value}
+                  onChange={field.onChange}
+                  label="Enable Announcement"
+                />
+              )}
+            />            <Input label="Message" {...form.register('announcement.message')} placeholder="Special offer for Raksha Bandhan!" />
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               <Input label="Link Text" {...form.register('announcement.linkText')} placeholder="Shop Now" />
               <Input label="Link URL" {...form.register('announcement.linkUrl')} placeholder="/raksha-bandhan" />
@@ -211,8 +300,17 @@ const FestivalFormPage = () => {
               <Input label="Background Color" {...form.register('announcement.backgroundColor')} placeholder="#F59E0B" />
               <Input label="Text Color" {...form.register('announcement.textColor')} placeholder="#FFFFFF" />
             </div>
-            <Toggle {...form.register('announcement.dismissible')} label="Dismissible" />
-          </div>
+            <Controller
+              control={form.control}
+              name="announcement.dismissible"
+              render={({ field }) => (
+                <Toggle
+                  checked={field.value}
+                  onChange={field.onChange}
+                  label="Dismissible"
+                />
+              )}
+            />          </div>
         </div>
 
         {/* Featured Content */}

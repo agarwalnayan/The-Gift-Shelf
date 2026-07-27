@@ -34,52 +34,14 @@ const festivalSchema = new mongoose.Schema(
       url: { type: String, default: '' },
       publicId: { type: String, default: '' },
     },
-    heroTitle: {
-      type: String,
-      trim: true,
-      default: '',
-    },
-    heroSubtitle: {
-      type: String,
-      trim: true,
-      default: '',
-    },
-    primaryCtaText: {
-      type: String,
-      trim: true,
-      default: '',
-    },
-    primaryCtaLink: {
-      type: String,
-      trim: true,
-      default: '',
-    },
-    secondaryCtaText: {
-      type: String,
-      trim: true,
-      default: '',
-    },
-    secondaryCtaLink: {
-      type: String,
-      trim: true,
-      default: '',
-    },
-    deliveryMessage: {
-      type: String,
-      trim: true,
-      default: '',
-    },
-    countdownDate: {
-      type: Date,
-    },
     festivalBadge: {
       url: { type: String, default: '' },
       publicId: { type: String, default: '' },
     },
-    landingPage: {
+    themeColor: {
       type: String,
       trim: true,
-      default: '',
+      default: '#C8A46B',
     },
     announcement: {
       enabled: { type: Boolean, default: false },
@@ -99,11 +61,6 @@ const festivalSchema = new mongoose.Schema(
       type: [mongoose.Schema.Types.ObjectId],
       ref: 'BudgetCollection',
       default: [],
-    },
-    upcomingFestival: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Festival',
-      default: null,
     },
     displayOrder: {
       type: Number,

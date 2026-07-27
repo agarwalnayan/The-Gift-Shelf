@@ -47,9 +47,9 @@ const defaultValues = {
   publishStatus: 'draft',
   isActive: true,
   isFeatured: false,
-  tagsText: '',
-  occasionText: '',
-  recipientText: '',
+  tags: [],
+  occasion: [],
+  recipient: [],
   weight: { value: 0, unit: 'g' },
   dimensions: { length: 0, width: 0, height: 0, unit: 'cm' },
   metaTitle: '',
@@ -59,13 +59,11 @@ const defaultValues = {
   customizationOptions: [],
 };
 
-const toArrayFromText = (text) =>
+const splitCommaSeparated = (text = "") =>
   text
-    ? text
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean)
-    : [];
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
 
 const buildProductFormData = (values) => {
   const formData = new FormData();
@@ -89,9 +87,20 @@ const buildProductFormData = (values) => {
   scalarFields.forEach((field) => formData.append(field, values[field] ?? ''));
   formData.append('subCategory', values.subCategory || '');
 
-  formData.append('tags', JSON.stringify(toArrayFromText(values.tagsText)));
-  formData.append('occasion', JSON.stringify(toArrayFromText(values.occasionText)));
-  formData.append('recipient', JSON.stringify(toArrayFromText(values.recipientText)));
+  formData.append(
+    "tags",
+    JSON.stringify(values.tags || [])
+  );
+
+  formData.append(
+    "occasion",
+    JSON.stringify(values.occasion || [])
+  );
+
+  formData.append(
+    "recipient",
+    JSON.stringify(values.recipient || [])
+  );
   formData.append('weight', JSON.stringify(values.weight));
   formData.append('dimensions', JSON.stringify(values.dimensions));
   formData.append(
@@ -99,7 +108,7 @@ const buildProductFormData = (values) => {
     JSON.stringify({
       metaTitle: values.metaTitle || '',
       metaDescription: values.metaDescription || '',
-      keywords: toArrayFromText(values.keywordsText),
+      keywords: splitCommaSeparated(values.keywordsText),
     })
   );
 
@@ -126,8 +135,7 @@ const buildProductFormData = (values) => {
       displayOrder: Number(option.displayOrder) || 0,
       placeholder: option.placeholder || '',
       helpText: option.helpText || '',
-      choices: toArrayFromText(option.choicesText),
-      validation: {
+      choices: splitCommaSeparated(option.choicesText), validation: {
         ...(option.validation?.minLength && { minLength: Number(option.validation.minLength) }),
         ...(option.validation?.maxLength && { maxLength: Number(option.validation.maxLength) }),
         ...(option.validation?.minSelections && { minSelections: Number(option.validation.minSelections) }),
@@ -135,8 +143,8 @@ const buildProductFormData = (values) => {
         ...(option.validation?.maxFileSizeMB && { maxFileSizeMB: Number(option.validation.maxFileSizeMB) }),
         ...(option.validation?.minDate && { minDate: option.validation.minDate }),
         ...(option.validation?.maxDate && { maxDate: option.validation.maxDate }),
-        ...(toArrayFromText(option.allowedFileTypesText).length && {
-          allowedFileTypes: toArrayFromText(option.allowedFileTypesText),
+        ...(splitCommaSeparated(option.allowedFileTypesText).length && {
+          allowedFileTypes: splitCommaSeparated(option.allowedFileTypesText),
         }),
       },
     }));
@@ -161,9 +169,9 @@ const buildResetValuesFromProduct = (p, { isDuplicate = false } = {}) => ({
   publishStatus: isDuplicate ? 'draft' : p.publishStatus || 'draft',
   isActive: isDuplicate ? true : p.isActive,
   isFeatured: isDuplicate ? false : p.isFeatured,
-  tagsText: (p.tags || []).join(', '),
-  occasionText: (p.occasion || []).join(', '),
-  recipientText: (p.recipient || []).join(', '),
+  tags: p.tags || [],
+  occasion: p.occasion || [],
+  recipient: p.recipient || [],
   weight: p.weight || { value: 0, unit: 'g' },
   dimensions: p.dimensions || { length: 0, width: 0, height: 0, unit: 'cm' },
   metaTitle: p.seo?.metaTitle || '',
@@ -303,9 +311,8 @@ const ProductFormPage = () => {
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === tab.id ? 'bg-primary-50 text-primary-700' : 'text-ink/50 hover:text-ink'
-            }`}
+            className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-colors ${activeTab === tab.id ? 'bg-primary-50 text-primary-700' : 'text-ink/50 hover:text-ink'
+              }`}
           >
             {tab.label}
             {tabHasError(tab.id) && <span className="h-1.5 w-1.5 rounded-full bg-red-500" aria-label="Has errors" />}
@@ -384,7 +391,7 @@ const ProductFormPage = () => {
         </div>
 
         <div className={activeTab === 'organization' ? 'card' : 'hidden'}>
-          <ProductOrganizationSection register={register} categories={categories} />
+          <ProductOrganizationSection register={register} control={control} categories={categories} />
         </div>
 
         <div className={activeTab === 'images' ? 'card' : 'hidden'}>

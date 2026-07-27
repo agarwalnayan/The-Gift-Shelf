@@ -2,6 +2,8 @@ import Banner from '../models/Banner.js';
 import FeaturedItem from '../models/FeaturedItem.js';
 import BudgetCollection from '../models/BudgetCollection.js';
 import SiteSettings from '../models/SiteSettings.js';
+import Category from '../models/Category.js';
+import Product from '../models/Product.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import ApiError from '../utils/ApiError.js';
 import ApiResponse from '../utils/ApiResponse.js';
@@ -481,7 +483,7 @@ export const updateWelcomePopup = asyncHandler(async (req, res) => {
  * ========================================================================= */
 
 export const getHomepageContent = asyncHandler(async (req, res) => {
-  const [heroBanners, promoBanners, featuredRecipients, featuredOccasions, budgetCollections, settings] =
+  const [heroBanners, promoBanners, featuredRecipients, featuredOccasions, budgetCollections, featuredCategories, featuredProducts, newArrivals, settings] =
     await Promise.all([
       Banner.find(Banner.liveFilter('hero')).sort({
         displayOrder: 1,
@@ -499,6 +501,17 @@ export const getHomepageContent = asyncHandler(async (req, res) => {
         .sort({ displayOrder: 1 })
         .limit(FeaturedItem.MAX_ITEMS_PER_TYPE),
       BudgetCollection.find({ isActive: true }).sort({ displayOrder: 1 }),
+      Category.find({ isActive: true, isDeleted: { $ne: true }, showOnHomepage: true })
+        .sort({ displayOrder: 1 })
+        .limit(6),
+      Product.find({ isActive: true, isDeleted: { $ne: true }, isFeatured: true, publishStatus: 'published' })
+        .sort({ displayOrder: 1, createdAt: -1 })
+        .limit(8)
+        .populate('category', 'name slug'),
+      Product.find({ isActive: true, isDeleted: { $ne: true }, publishStatus: 'published' })
+        .sort({ createdAt: -1 })
+        .limit(8)
+        .populate('category', 'name slug'),
       SiteSettings.getSingleton(),
     ]);
 
@@ -511,6 +524,9 @@ export const getHomepageContent = asyncHandler(async (req, res) => {
         featuredRecipients,
         featuredOccasions,
         budgetCollections,
+        featuredCategories,
+        featuredProducts,
+        newArrivals,
         announcementBar: settings.announcementBar,
         welcomePopup: settings.welcomePopup,
         commerce: settings.commerce,

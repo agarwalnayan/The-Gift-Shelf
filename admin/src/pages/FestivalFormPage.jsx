@@ -38,7 +38,6 @@ const FestivalFormPage = () => {
         textColor: '#FFFFFF',
         dismissible: true,
       },
-      featuredProducts: [],
       featuredCollections: [],
       displayOrder: 0,
       isActive: true,
@@ -94,11 +93,6 @@ const FestivalFormPage = () => {
       formData.append(
         "announcement",
         JSON.stringify(values.announcement)
-      );
-
-      formData.append(
-        "featuredProducts",
-        JSON.stringify(values.featuredProducts || [])
       );
 
       formData.append(
@@ -299,15 +293,6 @@ const FestivalFormPage = () => {
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-ink mb-4">Featured Content</h3>
           <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-ink mb-2">Featured Products</label>
-              <select multiple {...form.register('featuredProducts')} className="w-full rounded-lg border border-ink/10 p-2 h-32">
-                {products.map((p) => (
-                  <option key={p._id} value={p._id}>{p.name}</option>
-                ))}
-              </select>
-              <p className="mt-1 text-xs text-ink/50">Hold Ctrl/Cmd to select multiple</p>
-            </div>
             <div>
               <label className="block text-sm font-medium text-ink mb-2">Featured Collections</label>
               <select multiple {...form.register('featuredCollections')} className="w-full rounded-lg border border-ink/10 p-2 h-32">

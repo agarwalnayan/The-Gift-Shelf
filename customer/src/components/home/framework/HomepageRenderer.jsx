@@ -19,6 +19,7 @@ import PromoBannerSection from '../PromoBannerSection.jsx';
 import InstagramGallery from '../InstagramGallery.jsx';
 import WhyChooseSection from '../WhyChooseSection.jsx';
 import TrustSection from '../TrustSection.jsx';
+import HorizontalProductSection from '../HorizontalProductSection.jsx';
 
 /**
  * Homepage Renderer
@@ -32,6 +33,9 @@ const HomepageRenderer = () => {
     featuredRecipients,
     featuredOccasions,
     budgetCollections,
+    featuredCategories,
+    featuredProducts,
+    newArrivals,
     activeFestival,
     isLoading: isMarketingLoading,
   } = useMarketing();
@@ -132,8 +136,36 @@ const HomepageRenderer = () => {
       {/* Trust Strip - If enabled */}
       {isSectionEnabled('trustStrip') && <TrustStrip />}
 
-      {/* Featured Categories - If enabled */}
-      {isSectionEnabled('featuredCategories') && <FeaturedCategories />}
+      {/* Featured Categories - If enabled and has data */}
+      {shouldRenderSection('featuredCategories', featuredCategories) && (
+        <SectionContainer>
+          <FeaturedCategories categories={featuredCategories} />
+        </SectionContainer>
+      )}
+
+      {/* Featured Products - If enabled and has data */}
+      {shouldRenderSection('featuredProducts', featuredProducts) && (
+        <SectionContainer background="cream">
+          <HorizontalProductSection
+            title="Featured Products"
+            description="Handpicked favorites loved by our customers"
+            products={featuredProducts}
+            viewAllLink="/products?featured=true"
+          />
+        </SectionContainer>
+      )}
+
+      {/* New Arrivals - If enabled and has data */}
+      {shouldRenderSection('newArrivals', newArrivals) && (
+        <SectionContainer>
+          <HorizontalProductSection
+            title="New Arrivals"
+            description="Fresh additions to our collection"
+            products={newArrivals}
+            viewAllLink="/products?sort=newest"
+          />
+        </SectionContainer>
+      )}
 
       {/* Featured Recipients - If enabled and has data */}
       {shouldRenderSection('featuredRecipients', featuredRecipients) && (

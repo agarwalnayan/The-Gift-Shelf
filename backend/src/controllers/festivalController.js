@@ -13,7 +13,7 @@ export const createFestival = asyncHandler(async (req, res) => {
   endDate,
   themeColor,
   announcement,
-  featuredProducts,
+  featuredTags,
   featuredCollections,
   displayOrder,
   isActive,
@@ -67,7 +67,7 @@ if (req.files?.festivalBadge?.[0]) {
     festivalBadge,
     themeColor,
     announcement,
-    featuredProducts,
+    featuredTags,
     featuredCollections,
     displayOrder,
     isActive,
@@ -80,7 +80,7 @@ if (req.files?.festivalBadge?.[0]) {
 
 export const getFestivals = asyncHandler(async (req, res) => {
 const festivals = await Festival.find()    
-  .populate('featuredProducts', 'name images price')
+  .populate('featuredTags', 'name images price')
   .populate('featuredCollections', 'name tier image')
   .sort({ displayOrder: 1, createdAt: -1 });
 
@@ -89,7 +89,7 @@ const festivals = await Festival.find()
 
 export const getFestivalById = asyncHandler(async (req, res) => {
   const festival = await Festival.findById(req.params.id)
-    .populate('featuredProducts', 'name images price')
+    .populate('featuredTags', 'name images price')
     .populate('featuredCollections', 'name tier image')
 
   if (!festival) throw new ApiError(404, 'Festival not found');
@@ -109,7 +109,7 @@ export const updateFestival = asyncHandler(async (req, res) => {
     endDate,
     themeColor,
     announcement,
-    featuredProducts,
+    featuredTags,
     featuredCollections,
     displayOrder,
     isActive,
@@ -140,7 +140,7 @@ export const updateFestival = asyncHandler(async (req, res) => {
   if (endDate !== undefined) festival.endDate = endDate;
   if (themeColor !== undefined) festival.themeColor = themeColor;
   if (announcement !== undefined) festival.announcement = announcement;
-  if (featuredProducts !== undefined) festival.featuredProducts = featuredProducts;
+  if (featuredTags !== undefined) festival.featuredTags = featuredTags;
   if (featuredCollections !== undefined) festival.featuredCollections = featuredCollections;
   if (displayOrder !== undefined) festival.displayOrder = displayOrder;
   if (isActive !== undefined) festival.isActive = isActive;
@@ -174,7 +174,7 @@ export const getActiveFestival = asyncHandler(async (req, res) => {
     startDate: { $lte: now },
     endDate: { $gte: now },
   })
-    .populate('featuredProducts', 'name images price stock')
+    .populate('featuredTags', 'name images price stock')
     .populate('featuredCollections', 'name tier image')
 
   if (!festival) {

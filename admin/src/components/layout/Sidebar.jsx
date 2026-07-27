@@ -31,6 +31,7 @@ const navGroups = [
     items: [
       { label: 'Products', to: '/products', icon: HiOutlineShoppingBag },
       { label: 'Categories', to: '/categories', icon: HiOutlineTag },
+      { label: 'Catalog Masters', to: '/catalog-masters', icon: HiOutlineArchiveBox },
     ],
   },
   {

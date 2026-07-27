@@ -52,11 +52,10 @@ const festivalSchema = new mongoose.Schema(
       textColor: { type: String, trim: true, default: '#FFFFFF' },
       dismissible: { type: Boolean, default: true },
     },
-    featuredProducts: {
-      type: [mongoose.Schema.Types.ObjectId],
-      ref: 'Product',
-      default: [],
-    },
+    featuredTags: [{
+      type: String,
+      trim: true,
+    }],
     featuredCollections: {
       type: [mongoose.Schema.Types.ObjectId],
       ref: 'BudgetCollection',

@@ -20,7 +20,9 @@ export const createFestivalSchema = Joi.object({
     dismissible: Joi.boolean(),
   }),
 
-  featuredProducts: Joi.array().items(Joi.string()).default([]),
+  featuredTags: Joi.array()
+    .items(Joi.string().trim())
+    .default([]),
 
   featuredCollections: Joi.array().items(Joi.string()).default([]),
 
@@ -49,7 +51,9 @@ export const updateFestivalSchema = Joi.object({
     dismissible: Joi.boolean(),
   }),
 
-  featuredProducts: Joi.array().items(Joi.string()),
+  featuredTags: Joi.array()
+    .items(Joi.string().trim())
+    .default([]),
 
   featuredCollections: Joi.array().items(Joi.string()),
 

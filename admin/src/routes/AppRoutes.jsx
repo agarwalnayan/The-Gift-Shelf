@@ -20,6 +20,8 @@ import FestivalPage from '../pages/FestivalPage.jsx';
 import FestivalFormPage from '../pages/FestivalFormPage.jsx';
 import HomepageManagementPage from '../pages/HomepageManagementPage.jsx';
 import NotFoundPage from '../pages/NotFoundPage.jsx';
+import CatalogMastersPage from "../pages/CatalogMastersPage";
+import CatalogMasterFormPage from "../pages/CatalogMasterFormPage";
 
 const AppRoutes = () => {
   return (
@@ -41,6 +43,9 @@ const AppRoutes = () => {
           <Route path="festivals/new" element={<FestivalFormPage />} />
           <Route path="festivals/:id" element={<FestivalFormPage />} />
           <Route path="homepage" element={<HomepageManagementPage />} />
+          <Route path="/catalog-masters" element={<CatalogMastersPage />} />
+          <Route path="/catalog-masters/new" element={<CatalogMasterFormPage />} />
+          <Route path="/catalog-masters/:id/edit" element={<CatalogMasterFormPage />} />
           <Route path="orders" element={<OrdersPage />} />
           <Route path="orders/:id" element={<OrderDetailPage />} />
           <Route path="customers" element={<CustomersPage />} />

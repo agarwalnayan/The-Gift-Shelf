@@ -8,6 +8,7 @@ import { env } from './config/env.js';
 import apiRoutes from './routes/index.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import sitemapRoutes from './routes/sitemapRoutes.js';
+import catalogMasterRoutes from "./routes/catalogMasterRoutes.js";
 
 const app = express();
 
@@ -49,6 +50,8 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/', sitemapRoutes);
+
+app.use("/api/v1/catalog-masters", catalogMasterRoutes);
 
 app.use('/api/v1', apiRoutes);
 

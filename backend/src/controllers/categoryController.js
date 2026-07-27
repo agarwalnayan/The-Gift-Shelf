@@ -104,6 +104,7 @@ export const getAllCategories = asyncHandler(async (req, res) => {
   } else {
     filter.isDeleted = { $ne: true };
     filter.isActive = true;
+    if (showOnHomepage !== undefined) filter.showOnHomepage = showOnHomepage === 'true';
   }
 
   if (parentCategory !== undefined) {

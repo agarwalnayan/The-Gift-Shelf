@@ -1,6 +1,7 @@
 import Input from '../common/Input.jsx';
+import CatalogMasterMultiSelect from "../catalogMaster/CatalogMasterMultiSelect";
 
-const ProductOrganizationSection = ({ register, categories }) => {
+const ProductOrganizationSection = ({ register, categories, control }) => {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-4">
@@ -32,9 +33,26 @@ const ProductOrganizationSection = ({ register, categories }) => {
       <Input label="Brand" placeholder="e.g. TGS Signature" {...register('brand')} />
 
       <div className="grid grid-cols-3 gap-4">
-        <Input label="Tags (comma separated)" placeholder="birthday, luxury" {...register('tagsText')} />
-        <Input label="Occasion (comma separated)" placeholder="Anniversary, Birthday" {...register('occasionText')} />
-        <Input label="Recipient (comma separated)" placeholder="Him, Her, Kids" {...register('recipientText')} />
+        <CatalogMasterMultiSelect
+          control={control}
+          name="tags"
+          type="tag"
+          label="Tags"
+        />
+
+        <CatalogMasterMultiSelect
+          control={control}
+          name="occasion"
+          type="occasion"
+          label="Occasions"
+        />
+
+        <CatalogMasterMultiSelect
+          control={control}
+          name="recipient"
+          type="recipient"
+          label="Recipients"
+        />
       </div>
 
       <Input label="Material" placeholder="e.g. Ceramic, Wood, Cotton" {...register('material')} />

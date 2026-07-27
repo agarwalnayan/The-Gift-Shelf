@@ -17,7 +17,6 @@ const FestivalFormPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [products, setProducts] = useState([]);
   const [collections, setCollections] = useState([]);
-  const [festivals, setFestivals] = useState([]);
   const [desktopBannerFile, setDesktopBannerFile] = useState(null);
   const [mobileBannerFile, setMobileBannerFile] = useState(null);
   const [badgeFile, setBadgeFile] = useState(null);
@@ -29,15 +28,7 @@ const FestivalFormPage = () => {
       enabled: false,
       startDate: '',
       endDate: '',
-      heroTitle: '',
-      heroSubtitle: '',
-      primaryCtaText: '',
-      primaryCtaLink: '',
-      secondaryCtaText: '',
-      secondaryCtaLink: '',
-      deliveryMessage: '',
-      countdownDate: '',
-      landingPage: '',
+      themeColor: '#C8A46B',
       announcement: {
         enabled: false,
         message: '',
@@ -49,7 +40,6 @@ const FestivalFormPage = () => {
       },
       featuredProducts: [],
       featuredCollections: [],
-      upcomingFestival: '',
       displayOrder: 0,
       isActive: true,
     },
@@ -58,14 +48,12 @@ const FestivalFormPage = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [productsRes, collectionsRes, festivalsRes] = await Promise.all([
+        const [productsRes, collectionsRes] = await Promise.all([
           getProductsApi({ limit: 100 }),
           getBudgetCollectionsApi(),
-          getFestivalsApi(),
         ]);
         setProducts(productsRes.data.data.products || []);
         setCollections(collectionsRes.data.data.collections || []);
-        setFestivals(festivalsRes.data.data.festivals || []);
 
         if (id) {
           const { data } = await getFestivalByIdApi(id);
@@ -74,8 +62,6 @@ const FestivalFormPage = () => {
             ...festival,
             startDate: festival.startDate ? festival.startDate.split('T')[0] : '',
             endDate: festival.endDate ? festival.endDate.split('T')[0] : '',
-            countdownDate: festival.countdownDate ? festival.countdownDate.split('T')[0] : '',
-            upcomingFestival: festival.upcomingFestival?._id || '',
           });
         }
       } catch (error) {
@@ -100,20 +86,7 @@ const FestivalFormPage = () => {
       formData.append("enabled", values.enabled);
       formData.append("startDate", values.startDate);
       formData.append("endDate", values.endDate);
-
-      formData.append("heroTitle", values.heroTitle || "");
-      formData.append("heroSubtitle", values.heroSubtitle || "");
-      formData.append("primaryCtaText", values.primaryCtaText || "");
-      formData.append("primaryCtaLink", values.primaryCtaLink || "");
-      formData.append("secondaryCtaText", values.secondaryCtaText || "");
-      formData.append("secondaryCtaLink", values.secondaryCtaLink || "");
-      formData.append("deliveryMessage", values.deliveryMessage || "");
-      formData.append("landingPage", values.landingPage || "");
-
-      if (values.countdownDate) {
-        formData.append("countdownDate", values.countdownDate);
-      }
-
+      formData.append("themeColor", values.themeColor);
       formData.append("displayOrder", values.displayOrder);
       formData.append("isActive", values.isActive);
 
@@ -132,14 +105,6 @@ const FestivalFormPage = () => {
         "featuredCollections",
         JSON.stringify(values.featuredCollections || [])
       );
-
-      // Only send if selected
-      if (values.upcomingFestival) {
-        formData.append(
-          "upcomingFestival",
-          values.upcomingFestival
-        );
-      }
 
       // Images
       if (desktopBannerFile) {
@@ -199,6 +164,7 @@ const FestivalFormPage = () => {
       </div>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+
         {/* Basic Information */}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-ink mb-4">Basic Information</h3>
@@ -207,6 +173,23 @@ const FestivalFormPage = () => {
             <Input label="Slug" {...form.register('slug', { required: 'Slug is required' })} error={form.formState.errors.slug?.message} placeholder="raksha-bandhan" />
             <Input label="Start Date" type="date" {...form.register('startDate', { required: 'Start date is required' })} error={form.formState.errors.startDate?.message} />
             <Input label="End Date" type="date" {...form.register('endDate', { required: 'End date is required' })} error={form.formState.errors.endDate?.message} />
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">
+                Theme Color
+              </label>
+
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  {...form.register("themeColor")}
+                  className="h-10 w-14 rounded border"
+                />
+
+                <span className="text-sm text-ink/70">
+                  {form.watch("themeColor")}
+                </span>
+              </div>
+            </div>
             <Input label="Display Order" type="number" {...form.register('displayOrder')} />
             <div className="flex items-center gap-6 pt-6">
               <Controller
@@ -236,42 +219,41 @@ const FestivalFormPage = () => {
           </div>
         </div>
 
-        {/* Hero Section */}
-        <div className="card p-6">
-          <h3 className="text-lg font-semibold text-ink mb-4">Hero Section</h3>
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <Input label="Hero Title" {...form.register('heroTitle')} placeholder="Raksha Bandhan Special" />
-              <Input label="Hero Subtitle" {...form.register('heroSubtitle')} placeholder="Celebrate the bond of love" />
-            </div>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <Input label="Primary CTA Text" {...form.register('primaryCtaText')} placeholder="Shop Now" />
-              <Input label="Primary CTA Link" {...form.register('primaryCtaLink')} placeholder="/raksha-bandhan-gifts" />
-            </div>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <Input label="Secondary CTA Text" {...form.register('secondaryCtaText')} />
-              <Input label="Secondary CTA Link" {...form.register('secondaryCtaLink')} />
-            </div>
-            <Input label="Delivery Message" {...form.register('deliveryMessage')} placeholder="Order by 31st July for delivery" />
-            <Input label="Countdown Date" type="date" {...form.register('countdownDate')} />
-            <Input label="Landing Page Slug" {...form.register('landingPage')} placeholder="raksha-bandhan" />
-          </div>
-        </div>
-
         {/* Banners */}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-ink mb-4">Banners</h3>
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-ink mb-2">Desktop Banner</label>
+              {id && form.getValues("desktopBanner")?.url && (
+                <img
+                  src={form.getValues("desktopBanner").url}
+                  alt="Desktop Banner"
+                  className="mb-3 h-28 rounded-lg border object-cover"
+                />
+              )}
               <input type="file" accept="image/*" onChange={(e) => setDesktopBannerFile(e.target.files[0])} className="w-full rounded-lg border border-ink/10 p-2" />
             </div>
             <div>
               <label className="block text-sm font-medium text-ink mb-2">Mobile Banner</label>
+              {id && form.getValues("mobileBanner")?.url && (
+                <img
+                  src={form.getValues("mobileBanner").url}
+                  alt="Mobile Banner"
+                  className="mb-3 h-28 rounded-lg border object-cover"
+                />
+              )}
               <input type="file" accept="image/*" onChange={(e) => setMobileBannerFile(e.target.files[0])} className="w-full rounded-lg border border-ink/10 p-2" />
             </div>
             <div>
               <label className="block text-sm font-medium text-ink mb-2">Festival Badge</label>
+              {id && form.getValues("festivalBadge")?.url && (
+                <img
+                  src={form.getValues("festivalBadge").url}
+                  alt="Festival Badge"
+                  className="mb-3 h-28 rounded-lg border object-cover"
+                />
+              )}
               <input type="file" accept="image/*" onChange={(e) => setBadgeFile(e.target.files[0])} className="w-full rounded-lg border border-ink/10 p-2" />
             </div>
           </div>
@@ -334,15 +316,6 @@ const FestivalFormPage = () => {
                 ))}
               </select>
               <p className="mt-1 text-xs text-ink/50">Hold Ctrl/Cmd to select multiple</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-ink mb-2">Upcoming Festival</label>
-              <select {...form.register('upcomingFestival')} className="w-full rounded-lg border border-ink/10 p-2">
-                <option value="">None</option>
-                {festivals.filter(f => f._id !== id).map((f) => (
-                  <option key={f._id} value={f._id}>{f.name}</option>
-                ))}
-              </select>
             </div>
           </div>
         </div>

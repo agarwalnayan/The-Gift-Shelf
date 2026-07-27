@@ -10,7 +10,6 @@ import CollectionGridSkeleton from './skeletons/CollectionGridSkeleton.jsx';
 
 // Import existing production components
 import HeroSlider from '../HeroSlider.jsx';
-import FestivalHero from '../FestivalHero.jsx';
 import TrustStrip from '../TrustStrip.jsx';
 import FeaturedCategories from '../FeaturedCategories.jsx';
 import FeaturedRecipients from '../FeaturedRecipients.jsx';
@@ -20,7 +19,6 @@ import PromoBannerSection from '../PromoBannerSection.jsx';
 import InstagramGallery from '../InstagramGallery.jsx';
 import WhyChooseSection from '../WhyChooseSection.jsx';
 import TrustSection from '../TrustSection.jsx';
-import UpcomingOccasions from '../UpcomingOccasions.jsx';
 
 /**
  * Homepage Renderer
@@ -82,6 +80,21 @@ const HomepageRenderer = () => {
   // Overall loading state
   const isLoading = isMarketingLoading || isLoadingSettings;
 
+  // Festival banner overrides marketing banners
+  const homepageBanners =
+    activeFestival?.desktopBanner?.url
+      ? [
+        {
+          _id: activeFestival._id,
+          title: activeFestival.name,
+          image: activeFestival.desktopBanner,
+          mobileImage: activeFestival.mobileBanner,
+          ctaText: "Shop Now",
+          ctaLink: "/shop",
+        },
+      ]
+      : heroBanners;
+
   // Error state - render gracefully
   if (error) {
     return (
@@ -108,12 +121,14 @@ const HomepageRenderer = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Slider - Always render if data exists */}
-      {hasData(heroBanners) && <HeroSlider banners={heroBanners} isLoading={isMarketingLoading} />}
-
-      {/* Festival Hero - Render if active festival */}
-      {activeFestival && <FestivalHero festival={activeFestival} />}
-
+      {/* Hero Banner */}
+      {hasData(homepageBanners) && (
+        <HeroSlider
+          banners={homepageBanners}
+          isLoading={isMarketingLoading}
+        />
+      )}
+     
       {/* Trust Strip - If enabled */}
       {isSectionEnabled('trustStrip') && <TrustStrip />}
 
@@ -147,9 +162,6 @@ const HomepageRenderer = () => {
           <PromoBannerSection banners={promoBanners} startIndex={0} />
         </SectionContainer>
       )}
-
-      {/* Upcoming Occasions - If active festival has upcoming */}
-      {activeFestival?.upcomingFestival && <UpcomingOccasions festival={activeFestival.upcomingFestival} />}
 
       {/* Promo Banner - If enabled and has data */}
       {shouldRenderSection('promoBanner', promoBanners) && (

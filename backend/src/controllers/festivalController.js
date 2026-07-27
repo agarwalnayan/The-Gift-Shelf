@@ -6,27 +6,55 @@ import { uploadImage, deleteImage } from '../services/cloudinaryService.js';
 
 export const createFestival = asyncHandler(async (req, res) => {
   const {
-    name,
-    slug,
-    enabled,
-    startDate,
-    endDate,
-    heroTitle,
-    heroSubtitle,
-    primaryCtaText,
-    primaryCtaLink,
-    secondaryCtaText,
-    secondaryCtaLink,
-    deliveryMessage,
-    countdownDate,
-    landingPage,
-    announcement,
-    featuredProducts,
-    featuredCollections,
-    upcomingFestival,
-    displayOrder,
-    isActive,
-  } = req.body;
+  name,
+  slug,
+  enabled,
+  startDate,
+  endDate,
+  themeColor,
+  announcement,
+  featuredProducts,
+  featuredCollections,
+  displayOrder,
+  isActive,
+} = req.body;
+
+// Upload images if provided
+let desktopBanner = {
+  url: '',
+  publicId: '',
+};
+
+let mobileBanner = {
+  url: '',
+  publicId: '',
+};
+
+let festivalBadge = {
+  url: '',
+  publicId: '',
+};
+
+if (req.files?.desktopBanner?.[0]) {
+  desktopBanner = await uploadImage(
+    req.files.desktopBanner[0].buffer,
+    'tgs/festivals'
+  );
+}
+
+if (req.files?.mobileBanner?.[0]) {
+  mobileBanner = await uploadImage(
+    req.files.mobileBanner[0].buffer,
+    'tgs/festivals'
+  );
+}
+
+if (req.files?.festivalBadge?.[0]) {
+  festivalBadge = await uploadImage(
+    req.files.festivalBadge[0].buffer,
+    'tgs/festivals/badges'
+  );
+}
 
   const festival = await Festival.create({
     name,
@@ -34,19 +62,13 @@ export const createFestival = asyncHandler(async (req, res) => {
     enabled,
     startDate,
     endDate,
-    heroTitle,
-    heroSubtitle,
-    primaryCtaText,
-    primaryCtaLink,
-    secondaryCtaText,
-    secondaryCtaLink,
-    deliveryMessage,
-    countdownDate,
-    landingPage,
+    desktopBanner,
+    mobileBanner,
+    festivalBadge,
+    themeColor,
     announcement,
     featuredProducts,
     featuredCollections,
-    upcomingFestival,
     displayOrder,
     isActive,
     createdBy: req.user._id,
@@ -57,11 +79,10 @@ export const createFestival = asyncHandler(async (req, res) => {
 });
 
 export const getFestivals = asyncHandler(async (req, res) => {
-  const festivals = await Festival.find({ isActive: true })
-    .populate('featuredProducts', 'name images price')
-    .populate('featuredCollections', 'name tier image')
-    .populate('upcomingFestival', 'name slug')
-    .sort({ displayOrder: 1, createdAt: -1 });
+const festivals = await Festival.find()    
+  .populate('featuredProducts', 'name images price')
+  .populate('featuredCollections', 'name tier image')
+  .sort({ displayOrder: 1, createdAt: -1 });
 
   res.status(200).json(new ApiResponse(200, { festivals }, 'Festivals fetched successfully'));
 });
@@ -70,7 +91,6 @@ export const getFestivalById = asyncHandler(async (req, res) => {
   const festival = await Festival.findById(req.params.id)
     .populate('featuredProducts', 'name images price')
     .populate('featuredCollections', 'name tier image')
-    .populate('upcomingFestival', 'name slug');
 
   if (!festival) throw new ApiError(404, 'Festival not found');
 
@@ -87,19 +107,10 @@ export const updateFestival = asyncHandler(async (req, res) => {
     enabled,
     startDate,
     endDate,
-    heroTitle,
-    heroSubtitle,
-    primaryCtaText,
-    primaryCtaLink,
-    secondaryCtaText,
-    secondaryCtaLink,
-    deliveryMessage,
-    countdownDate,
-    landingPage,
+    themeColor,
     announcement,
     featuredProducts,
     featuredCollections,
-    upcomingFestival,
     displayOrder,
     isActive,
   } = req.body;
@@ -127,19 +138,10 @@ export const updateFestival = asyncHandler(async (req, res) => {
   if (enabled !== undefined) festival.enabled = enabled;
   if (startDate !== undefined) festival.startDate = startDate;
   if (endDate !== undefined) festival.endDate = endDate;
-  if (heroTitle !== undefined) festival.heroTitle = heroTitle;
-  if (heroSubtitle !== undefined) festival.heroSubtitle = heroSubtitle;
-  if (primaryCtaText !== undefined) festival.primaryCtaText = primaryCtaText;
-  if (primaryCtaLink !== undefined) festival.primaryCtaLink = primaryCtaLink;
-  if (secondaryCtaText !== undefined) festival.secondaryCtaText = secondaryCtaText;
-  if (secondaryCtaLink !== undefined) festival.secondaryCtaLink = secondaryCtaLink;
-  if (deliveryMessage !== undefined) festival.deliveryMessage = deliveryMessage;
-  if (countdownDate !== undefined) festival.countdownDate = countdownDate;
-  if (landingPage !== undefined) festival.landingPage = landingPage;
+  if (themeColor !== undefined) festival.themeColor = themeColor;
   if (announcement !== undefined) festival.announcement = announcement;
   if (featuredProducts !== undefined) festival.featuredProducts = featuredProducts;
   if (featuredCollections !== undefined) festival.featuredCollections = featuredCollections;
-  if (upcomingFestival !== undefined) festival.upcomingFestival = upcomingFestival;
   if (displayOrder !== undefined) festival.displayOrder = displayOrder;
   if (isActive !== undefined) festival.isActive = isActive;
 
@@ -174,7 +176,6 @@ export const getActiveFestival = asyncHandler(async (req, res) => {
   })
     .populate('featuredProducts', 'name images price stock')
     .populate('featuredCollections', 'name tier image')
-    .populate('upcomingFestival', 'name slug startDate endDate');
 
   if (!festival) {
     return res.status(200).json(new ApiResponse(200, { festival: null }, 'No active festival found'));

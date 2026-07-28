@@ -1,9 +1,10 @@
 import Banner from '../models/Banner.js';
-import FeaturedItem from '../models/FeaturedItem.js';
 import BudgetCollection from '../models/BudgetCollection.js';
 import SiteSettings from '../models/SiteSettings.js';
 import Category from '../models/Category.js';
 import Product from '../models/Product.js';
+import CatalogMaster from '../models/CatalogMaster.js';
+import FeaturedItem from '../models/FeaturedItem.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import ApiError from '../utils/ApiError.js';
 import ApiResponse from '../utils/ApiResponse.js';
@@ -190,6 +191,10 @@ export const permanentlyDeleteBanner = asyncHandler(async (req, res) => {
 
 /* =========================================================================
  * FEATURED ITEMS (Featured Recipient + Featured Occasion sections)
+ * DEPRECATED: These endpoints are deprecated in favor of CatalogMaster.
+ * Homepage now uses CatalogMaster for recipients and occasions.
+ * Kept for backward compatibility with admin panel during migration.
+ * TODO: Remove after admin panel migration to CatalogMaster is complete.
  * ========================================================================= */
 
 export const createFeaturedItem = asyncHandler(async (req, res) => {
@@ -494,12 +499,12 @@ export const getHomepageContent = asyncHandler(async (req, res) => {
         displayOrder: 1,
         createdAt: 1,
       }),
-      FeaturedItem.find({ type: 'recipient', isDeleted: { $ne: true }, isActive: true })
+      CatalogMaster.find({ type: 'recipient', isActive: true })
         .sort({ displayOrder: 1 })
-        .limit(FeaturedItem.MAX_ITEMS_PER_TYPE),
-      FeaturedItem.find({ type: 'occasion', isDeleted: { $ne: true }, isActive: true })
+        .limit(6),
+      CatalogMaster.find({ type: 'occasion', isActive: true })
         .sort({ displayOrder: 1 })
-        .limit(FeaturedItem.MAX_ITEMS_PER_TYPE),
+        .limit(6),
       BudgetCollection.find({ isActive: true }).sort({ displayOrder: 1 }),
       Category.find({ isActive: true, isDeleted: { $ne: true }, showOnHomepage: true })
         .sort({ displayOrder: 1 })

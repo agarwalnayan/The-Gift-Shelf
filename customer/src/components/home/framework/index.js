@@ -4,7 +4,7 @@
  */
 
 // Core framework components
-export { default as SectionContainer } from './SectionContainer.jsx';
+export { default as HomeSection } from './HomeSection.jsx';
 export { default as SectionHeader } from './SectionHeader.jsx';
 export { default as EmptyState } from './EmptyState.jsx';
 export { default as HomepageRenderer } from './HomepageRenderer.jsx';

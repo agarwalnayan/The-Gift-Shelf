@@ -214,3 +214,31 @@ export const deleteCatalogMaster = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, null, "Catalog master deleted successfully"));
 });
+
+/**
+ * @desc    Get Catalog Masters for Homepage
+ * @route   GET /api/v1/catalog-masters/homepage
+ * @access  Public
+ */
+export const getHomepageCatalogMasters = asyncHandler(async (req, res) => {
+  const { type } = req.query;
+
+  if (!type || !['recipient', 'occasion'].includes(type)) {
+    throw new ApiError(400, 'Valid type (recipient or occasion) is required');
+  }
+
+  const masters = await CatalogMaster.find({
+    type,
+    isActive: true,
+  })
+    .sort({ displayOrder: 1 })
+    .limit(6);
+
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      { masters },
+      `Homepage ${type}s fetched successfully`
+    )
+  );
+});

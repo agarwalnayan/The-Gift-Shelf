@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { toggleWishlistApi } from '../../api/authApi.js';
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, compact = false }) => {
   const { user, setUser } = useAuth();
   const navigate = useNavigate();
   const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
@@ -46,7 +46,7 @@ const ProductCard = ({ product }) => {
 
   return (
     <Link to={`/products/${product.slug}`} className="group block min-w-0">
-      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-white shadow-sm transition-shadow duration-200 group-hover:shadow-lg">
+      <div className={`relative w-full overflow-hidden rounded-2xl bg-white shadow-sm transition-shadow duration-200 group-hover:shadow-lg ${compact ? 'aspect-[3/4]' : 'aspect-[4/5]'}`}>
         <img
           src={product.images?.[0]?.url}
           alt={product.name}
@@ -58,14 +58,14 @@ const ProductCard = ({ product }) => {
         <button
           onClick={handleWishlist}
           disabled={isTogglingWishlist}
-          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-charcoal/70 shadow-sm transition-all duration-200 hover:scale-110 hover:text-primary-600"
+          className={`absolute flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-charcoal/70 shadow-sm transition-all duration-200 hover:scale-110 hover:text-primary-600 ${compact ? 'right-2 top-2' : 'right-3 top-3'}`}
           aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
         >
-          {isWishlisted ? <HiHeart size={18} className="text-primary-600" /> : <HiOutlineHeart size={18} />}
+          {isWishlisted ? <HiHeart size={16} className="text-primary-600" /> : <HiOutlineHeart size={16} />}
         </button>
 
         {hasDiscount && (
-          <span className="absolute left-3 top-3 rounded-full bg-primary-600 px-3 py-1 text-xs font-semibold text-cream">
+          <span className={`absolute rounded-full bg-primary-600 px-2 py-0.5 text-xs font-semibold text-cream ${compact ? 'left-2 top-2 text-[10px]' : 'left-3 top-3'}`}>
             Sale
           </span>
         )}
@@ -73,19 +73,19 @@ const ProductCard = ({ product }) => {
         <div className="absolute inset-x-0 bottom-0 translate-y-full opacity-0 transition-all duration-200 ease-out group-hover:translate-y-0 group-hover:opacity-100">
           <button
             onClick={handleQuickAdd}
-            className="flex w-full items-center justify-center gap-1.5 bg-charcoal/90 px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-cream backdrop-blur transition-colors duration-200 hover:bg-primary-700 sm:text-sm"
+            className={`flex w-full items-center justify-center gap-1.5 bg-charcoal/90 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-cream backdrop-blur transition-colors duration-200 hover:bg-primary-700 ${compact ? 'py-1.5 text-[10px]' : 'py-2.5 sm:text-sm'}`}
           >
-            <HiOutlineShoppingBag size={16} />
+            <HiOutlineShoppingBag size={14} />
             Shop Now
           </button>
         </div>
       </div>
 
-      <div className="mt-3">
-        <h3 className="truncate text-sm font-medium text-charcoal">{product.name}</h3>
+      <div className={compact ? 'mt-2' : 'mt-3'}>
+        <h3 className={`truncate font-medium text-charcoal ${compact ? 'text-xs' : 'text-sm'}`}>{product.name}</h3>
         <div className="mt-1 flex items-center gap-2">
-          <span className="text-sm font-semibold text-charcoal">₹{finalPrice}</span>
-          {hasDiscount && <span className="text-xs text-charcoal/40 line-through">₹{product.price}</span>}
+          <span className={`font-semibold text-charcoal ${compact ? 'text-xs' : 'text-sm'}`}>₹{finalPrice}</span>
+          {hasDiscount && <span className={`text-charcoal/40 line-through ${compact ? 'text-[10px]' : 'text-xs'}`}>₹{product.price}</span>}
         </div>
       </div>
     </Link>

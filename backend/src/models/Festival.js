@@ -61,6 +61,37 @@ const festivalSchema = new mongoose.Schema(
       ref: 'BudgetCollection',
       default: [],
     },
+    homepage: {
+      showOnHomepage: {
+        type: Boolean,
+        default: false,
+      },
+      title: {
+        type: String,
+        trim: true,
+        default: '',
+      },
+      subtitle: {
+        type: String,
+        trim: true,
+        default: '',
+      },
+      ctaText: {
+        type: String,
+        trim: true,
+        default: '',
+      },
+      ctaLink: {
+        type: String,
+        trim: true,
+        default: '',
+      },
+      products: {
+        type: [mongoose.Schema.Types.ObjectId],
+        ref: 'Product',
+        default: [],
+      },
+    },
     displayOrder: {
       type: Number,
       default: 0,

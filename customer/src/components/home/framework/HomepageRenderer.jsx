@@ -1,7 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useMarketing } from '../../../context/MarketingContext.jsx';
 import { getSiteSettings } from '../../../api/siteSettingsApi.js';
-import SectionContainer from './SectionContainer.jsx';
 import EmptyState from './EmptyState.jsx';
 import HeroSkeleton from './skeletons/HeroSkeleton.jsx';
 import ProductGridSkeleton from './skeletons/ProductGridSkeleton.jsx';
@@ -19,7 +18,9 @@ import PromoBannerSection from '../PromoBannerSection.jsx';
 import InstagramGallery from '../InstagramGallery.jsx';
 import WhyChooseSection from '../WhyChooseSection.jsx';
 import TrustSection from '../TrustSection.jsx';
-import HorizontalProductSection from '../HorizontalProductSection.jsx';
+import ProductCarousel from '../ui/ProductCarousel.jsx';
+import CampaignSection from '../CampaignSection.jsx';
+import HomeSection from './HomeSection.jsx';
 
 /**
  * Homepage Renderer
@@ -113,12 +114,12 @@ const HomepageRenderer = () => {
     return (
       <div>
         <HeroSkeleton />
-        <SectionContainer>
+        <HomeSection>
           <ProductGridSkeleton count={4} />
-        </SectionContainer>
-        <SectionContainer background="cream">
+        </HomeSection>
+        <HomeSection background="warm">
           <CategoryGridSkeleton count={4} />
-        </SectionContainer>
+        </HomeSection>
       </div>
     );
   }
@@ -132,81 +133,86 @@ const HomepageRenderer = () => {
           isLoading={isMarketingLoading}
         />
       )}
-     
+
       {/* Trust Strip - If enabled */}
       {isSectionEnabled('trustStrip') && <TrustStrip />}
 
+      {/* Campaign Section - Festival/Campaign with homepage visibility */}
+      <CampaignSection festival={activeFestival} />
+
       {/* Featured Categories - If enabled and has data */}
       {shouldRenderSection('featuredCategories', featuredCategories) && (
-        <SectionContainer>
+        <HomeSection background="white">
           <FeaturedCategories categories={featuredCategories} />
-        </SectionContainer>
+        </HomeSection>
       )}
 
       {/* Featured Products - If enabled and has data */}
       {shouldRenderSection('featuredProducts', featuredProducts) && (
-        <SectionContainer background="cream">
-          <HorizontalProductSection
+        <HomeSection background="warm">
+          <ProductCarousel
             title="Featured Products"
             description="Handpicked favorites loved by our customers"
             products={featuredProducts}
             viewAllLink="/products?featured=true"
+            layout="grid"
           />
-        </SectionContainer>
+        </HomeSection>
       )}
 
       {/* New Arrivals - If enabled and has data */}
       {shouldRenderSection('newArrivals', newArrivals) && (
-        <SectionContainer>
-          <HorizontalProductSection
+        <HomeSection background="white">
+          <ProductCarousel
             title="New Arrivals"
             description="Fresh additions to our collection"
             products={newArrivals}
             viewAllLink="/products?sort=newest"
+            layout="carousel"
           />
-        </SectionContainer>
+        </HomeSection>
       )}
 
       {/* Featured Recipients - If enabled and has data */}
       {shouldRenderSection('featuredRecipients', featuredRecipients) && (
-        <SectionContainer background="cream">
+        <HomeSection background="warm">
           <FeaturedRecipients items={featuredRecipients} />
-        </SectionContainer>
+        </HomeSection>
       )}
 
       {/* Featured Occasions - If enabled and has data */}
       {shouldRenderSection('featuredOccasions', featuredOccasions) && (
-        <SectionContainer>
+        <HomeSection background="white">
           <FeaturedOccasions items={featuredOccasions} />
-        </SectionContainer>
+        </HomeSection>
       )}
 
       {/* Budget Collections - If enabled and has data */}
       {shouldRenderSection('budgetCollections', budgetCollections) && (
-        <SectionContainer background="cream">
+        <HomeSection background="warm">
           <BudgetCollections collections={budgetCollections} />
-        </SectionContainer>
+        </HomeSection>
       )}
 
       {/* Promo Banner - If enabled and has data */}
       {shouldRenderSection('promoBanner', promoBanners) && (
-        <SectionContainer>
+        <HomeSection background="white">
           <PromoBannerSection banners={promoBanners} startIndex={0} />
-        </SectionContainer>
+        </HomeSection>
       )}
 
       {/* Promo Banner - If enabled and has data */}
       {shouldRenderSection('promoBanner', promoBanners) && (
-        <SectionContainer>
+        <HomeSection background="white">
           <PromoBannerSection banners={promoBanners} startIndex={2} />
-        </SectionContainer>
+        </HomeSection>
       )}
 
       {/* Promo Banner - If enabled and has data */}
       {shouldRenderSection('promoBanner', promoBanners) && (
-        <SectionContainer>
+        <HomeSection background="white">
           <PromoBannerSection banners={promoBanners} startIndex={1} />
-        </SectionContainer>
+        </HomeSection>
       )}
 
       {/* Instagram Feed - If enabled */}

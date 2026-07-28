@@ -8,11 +8,10 @@ const imageSchema = new mongoose.Schema(
   { _id: false }
 );
 
-// Backs both the "Featured Recipient" and "Featured Occasion" homepage
-// sections (distinguished by `type`). `value` maps directly to the existing
-// Product.recipient / Product.occasion string-array fields so the storefront
-// tile can link straight into the existing /products?recipient=... or
-// /products?occasion=... filters with no new product-side taxonomy needed.
+// DEPRECATED: This model is deprecated in favor of CatalogMaster.
+// Homepage now uses CatalogMaster for recipients and occasions.
+// Kept for backward compatibility with admin panel during migration.
+// TODO: Remove after admin panel migration to CatalogMaster is complete.
 const featuredItemSchema = new mongoose.Schema(
   {
     type: {

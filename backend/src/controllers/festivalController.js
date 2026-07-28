@@ -15,6 +15,7 @@ export const createFestival = asyncHandler(async (req, res) => {
   announcement,
   featuredTags,
   featuredCollections,
+  homepage,
   displayOrder,
   isActive,
 } = req.body;
@@ -69,6 +70,7 @@ if (req.files?.festivalBadge?.[0]) {
     announcement,
     featuredTags,
     featuredCollections,
+    homepage,
     displayOrder,
     isActive,
     createdBy: req.user._id,
@@ -111,6 +113,7 @@ export const updateFestival = asyncHandler(async (req, res) => {
     announcement,
     featuredTags,
     featuredCollections,
+    homepage,
     displayOrder,
     isActive,
   } = req.body;
@@ -142,6 +145,7 @@ export const updateFestival = asyncHandler(async (req, res) => {
   if (announcement !== undefined) festival.announcement = announcement;
   if (featuredTags !== undefined) festival.featuredTags = featuredTags;
   if (featuredCollections !== undefined) festival.featuredCollections = featuredCollections;
+  if (homepage !== undefined) festival.homepage = homepage;
   if (displayOrder !== undefined) festival.displayOrder = displayOrder;
   if (isActive !== undefined) festival.isActive = isActive;
 
@@ -176,6 +180,7 @@ export const getActiveFestival = asyncHandler(async (req, res) => {
   })
     .populate('featuredTags', 'name images price stock')
     .populate('featuredCollections', 'name tier image')
+    .populate('homepage.products', 'name slug price discountPrice primaryImage category')
 
   if (!festival) {
     return res.status(200).json(new ApiResponse(200, { festival: null }, 'No active festival found'));

@@ -14,6 +14,7 @@ import {
   updateProductPublishStatusApi,
   updateProductFeatureApi,
   bulkProductActionApi,
+  bulkUpdateProductsApi,
   softDeleteProductApi,
   restoreProductApi,
   permanentlyDeleteProductApi,
@@ -27,6 +28,7 @@ import ConfirmDialog from '../components/common/ConfirmDialog.jsx';
 import { TableSkeleton } from '../components/common/Skeleton.jsx';
 import ProductFilters from '../components/product/ProductFilters.jsx';
 import ProductBulkActionsBar from '../components/product/ProductBulkActionsBar.jsx';
+import BulkEditModal from '../components/product/BulkEditModal.jsx';
 
 const baseFilters = {
   search: '',
@@ -56,6 +58,7 @@ const ProductsPage = () => {
 
   const [confirmState, setConfirmState] = useState({ isOpen: false, action: null, productId: null });
   const [isConfirming, setIsConfirming] = useState(false);
+  const [isBulkEditModalOpen, setIsBulkEditModalOpen] = useState(false);
 
   useEffect(() => {
     getCategoriesApi().then(({ data }) => setCategories(data.data.categories));
@@ -132,6 +135,11 @@ const ProductsPage = () => {
   };
 
   const handleBulkAction = async (action) => {
+    if (action === 'bulkEdit') {
+      setIsBulkEditModalOpen(true);
+      return;
+    }
+
     try {
       await bulkProductActionApi(selectedIds, action);
       toast.success('Bulk action applied');
@@ -139,6 +147,21 @@ const ProductsPage = () => {
       loadProducts();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Bulk action failed');
+    }
+  };
+
+  const handleBulkEditSubmit = async (data) => {
+    try {
+      await bulkUpdateProductsApi({
+        productIds: selectedIds,
+        ...data,
+      });
+      toast.success(`${selectedIds.length} products updated successfully`);
+      setSelectedIds([]);
+      loadProducts();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Bulk edit failed');
+      throw error;
     }
   };
 
@@ -345,6 +368,13 @@ const ProductsPage = () => {
         isLoading={isConfirming}
         onConfirm={handleConfirmedAction}
         onCancel={closeConfirm}
+      />
+
+      <BulkEditModal
+        isOpen={isBulkEditModalOpen}
+        onClose={() => setIsBulkEditModalOpen(false)}
+        productCount={selectedIds.length}
+        onSubmit={handleBulkEditSubmit}
       />
     </div>
   );

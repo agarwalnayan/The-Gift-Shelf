@@ -22,6 +22,8 @@ export const updateProductFeatureApi = (id, isFeatured) => axiosInstance.patch(`
 
 export const bulkProductActionApi = (ids, action) => axiosInstance.patch('/products/bulk', { ids, action });
 
+export const bulkUpdateProductsApi = (data) => axiosInstance.post('/products/bulk-update', data);
+
 export const softDeleteProductApi = (id) => axiosInstance.delete(`/products/${id}`);
 
 export const restoreProductApi = (id) => axiosInstance.patch(`/products/${id}/restore`);

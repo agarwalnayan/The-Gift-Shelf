@@ -6,6 +6,7 @@ import ApiError from '../utils/ApiError.js';
 import ApiResponse from '../utils/ApiResponse.js';
 import { uploadImage, uploadImages, deleteImage } from '../services/cloudinaryService.js';
 import { generateSku, generateVariantSku } from '../utils/generateSku.js';
+import ProductBulkService from '../services/productBulkService.js';
 import {
   variantsArraySchema,
   customizationOptionsArraySchema,
@@ -497,4 +498,44 @@ export const uploadCustomizationImage = asyncHandler(async (req, res) => {
   const image = await uploadImage(req.file.buffer, 'tgs/customizations');
 
   res.status(201).json(new ApiResponse(201, { url: image.url, publicId: image.publicId }, 'Image uploaded successfully'));
+});
+
+/**
+ * Bulk update products
+ * @route POST /api/v1/products/bulk-update
+ * @access Private (Admin)
+ */
+export const bulkUpdateProducts = asyncHandler(async (req, res) => {
+  const { productIds, operation, field, values } = req.body;
+
+  if (!productIds || !Array.isArray(productIds) || productIds.length === 0) {
+    throw new ApiError(400, 'Product IDs are required');
+  }
+
+  if (!operation || !['add', 'remove'].includes(operation)) {
+    throw new ApiError(400, 'Operation must be "add" or "remove"');
+  }
+
+  if (!field || !['tags', 'recipient', 'occasion'].includes(field)) {
+    throw new ApiError(400, 'Field must be "tags", "recipient", or "occasion"');
+  }
+
+  if (!values || !Array.isArray(values) || values.length === 0) {
+    throw new ApiError(400, 'Values are required');
+  }
+
+  const result = await ProductBulkService.bulkUpdate({
+    productIds,
+    operation,
+    field,
+    values,
+  });
+
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      { modifiedCount: result.modifiedCount, matchedCount: result.matchedCount },
+      `${result.modifiedCount} products updated successfully`
+    )
+  );
 });

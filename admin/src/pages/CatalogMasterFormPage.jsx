@@ -81,7 +81,16 @@ const CatalogMasterFormPage = () => {
 
     try {
       if (isEditMode) {
-        await updateCatalogMasterApi(id, values);
+        // Build clean payload with only editable fields
+        const updatePayload = {
+          name: values.name,
+          slug: values.slug,
+          type: values.type,
+          description: values.description,
+          displayOrder: values.displayOrder,
+          isActive: values.isActive,
+        };
+        await updateCatalogMasterApi(id, updatePayload);
 
         toast.success("Catalog master updated");
       } else {

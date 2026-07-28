@@ -9,6 +9,7 @@ import {
   updateProductPublishStatus,
   updateProductFeature,
   bulkProductAction,
+  bulkUpdateProducts,
   softDeleteProduct,
   restoreProduct,
   permanentlyDeleteProduct,
@@ -39,6 +40,7 @@ router.use(protect, authorizeRoles('admin', 'superadmin'));
 
 router.post('/', productImages, validate(createProductSchema), createProduct);
 
+router.post('/bulk-update', bulkUpdateProducts);
 router.patch('/bulk', validate(bulkActionSchema), bulkProductAction);
 router.patch('/:id/images', productImages, updateProductImages);
 router.patch('/:id/status', validate(productStatusSchema), updateProductStatus);

@@ -29,7 +29,7 @@ const HeroSlider = ({ banners, isLoading }) => {
     return () => clearInterval(timer);
   }, [banners.length]);
 
-  const heightClasses = 'h-[220px] sm:h-[340px] md:h-[440px] lg:h-[520px]';
+  const heightClasses = 'h-[220px] sm:h-[340px] md:h-[460px] lg:h-[650px]';
 
   if (isLoading) {
     return (

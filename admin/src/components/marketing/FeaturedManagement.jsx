@@ -2,15 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
   getFeaturedItemsApi,
-  createFeaturedItemApi,
   updateFeaturedItemApi,
   updateFeaturedItemStatusApi,
   reorderFeaturedItemsApi,
-  deleteFeaturedItemApi,
 } from '../../api/marketingApi.js';
 import MarketingListTable from './MarketingListTable.jsx';
-import FeaturedItemFormModal from './FeaturedItemFormModal.jsx';
-import ConfirmDialog from '../common/ConfirmDialog.jsx';
 import Button from '../common/Button.jsx';
 import { TableSkeleton } from '../common/Skeleton.jsx';
 
@@ -18,19 +14,15 @@ const FEATURED_MAX = 6;
 
 const FeaturedManagement = ({ type }) => {
   const [items, setItems] = useState([]);
+  const [allItems, setAllItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [confirmState, setConfirmState] = useState({ isOpen: false, id: null });
-  const [isConfirming, setIsConfirming] = useState(false);
 
   const loadItems = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data } = await getFeaturedItemsApi(type);
-      setItems(data.data.items);
+      setItems(data.data.items || []);
+      setAllItems(data.data.allItems || []);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to load items');
     } finally {
@@ -42,48 +34,10 @@ const FeaturedManagement = ({ type }) => {
     loadItems();
   }, [loadItems]);
 
-  const openAddModal = () => {
-    if (items.length >= FEATURED_MAX) {
-      toast.error(`Maximum ${FEATURED_MAX} items allowed`);
-      return;
-    }
-    setEditingItem(null);
-    setIsModalOpen(true);
-  };
-
-  const openEditModal = (item) => {
-    setEditingItem(item);
-    setIsModalOpen(true);
-  };
-
-  const handleSubmit = async (formData) => {
-    setIsSubmitting(true);
-    try {
-      if (editingItem) {
-        await updateFeaturedItemApi(editingItem._id, formData);
-        toast.success('Item updated');
-      } else {
-        if (items.length >= FEATURED_MAX) {
-          toast.error(`Maximum ${FEATURED_MAX} items allowed`);
-          return;
-        }
-        await createFeaturedItemApi(formData);
-        toast.success('Item created');
-      }
-      setIsModalOpen(false);
-      loadItems();
-    } catch (error) {
-      const messages = error.response?.data?.errors;
-      toast.error(messages?.[0] || error.response?.data?.message || 'Failed to save item');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleToggleStatus = async (id, isActive) => {
     try {
       await updateFeaturedItemStatusApi(id, isActive);
-      toast.success('Item status updated');
+      toast.success(isActive ? 'Item added to homepage' : 'Item removed from homepage');
       loadItems();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update status');
@@ -100,32 +54,14 @@ const FeaturedManagement = ({ type }) => {
     }
   };
 
-  const handleDelete = async () => {
-    setIsConfirming(true);
-    try {
-      await deleteFeaturedItemApi(confirmState.id);
-      toast.success('Item deleted');
-      setConfirmState({ isOpen: false, id: null });
-      loadItems();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to delete');
-    } finally {
-      setIsConfirming(false);
-    }
-  };
-
-  const openDeleteConfirm = (id) => {
-    setConfirmState({ isOpen: true, id });
-  };
-
   if (isLoading && items.length === 0) {
     return <TableSkeleton />;
   }
 
   const title = type === 'recipient' ? 'Featured Recipients' : 'Featured Occasions';
   const description = type === 'recipient'
-    ? 'Manage gift ideas organized by recipient type'
-    : 'Manage gift ideas organized by occasion';
+    ? 'Select recipients to show on homepage. Create entries in Catalog Master first.'
+    : 'Select occasions to show on homepage. Create entries in Catalog Master first.';
 
   return (
     <div className="space-y-6">
@@ -133,50 +69,80 @@ const FeaturedManagement = ({ type }) => {
         <div>
           <h2 className="text-xl font-semibold text-ink">{title}</h2>
           <p className="text-sm text-ink/60">{description}</p>
-          <p className="text-xs text-ink/40 mt-1">Maximum {FEATURED_MAX} items allowed</p>
+          <p className="text-xs text-ink/40 mt-1">
+            {items.length} / {FEATURED_MAX} featured • {allItems.length} total available
+          </p>
         </div>
-        <Button onClick={openAddModal} disabled={items.length >= FEATURED_MAX}>
-          Add Item
+        <Button
+          onClick={() => window.open('/catalog-masters', '_blank')}
+          variant="secondary"
+        >
+          Manage in Catalog Master
         </Button>
       </div>
 
-      {items.length === 0 && !isLoading ? (
+      {allItems.length === 0 && !isLoading ? (
         <div className="card p-12 text-center">
-          <p className="text-ink/60">No {type} items yet</p>
-          <Button onClick={openAddModal} className="mt-4">
-            Create your first item
+          <p className="text-ink/60">No {type} entries found in Catalog Master</p>
+          <Button
+            onClick={() => window.open('/catalog-masters', '_blank')}
+            className="mt-4"
+          >
+            Create entries in Catalog Master
           </Button>
+        </div>
+      ) : items.length === 0 && !isLoading ? (
+        <div className="card p-12 text-center">
+          <p className="text-ink/60">No items featured on homepage</p>
+          <p className="text-sm text-ink/40 mt-2">Toggle "Show on Homepage" on items below to feature them</p>
         </div>
       ) : (
         <MarketingListTable
           items={items}
           type={type}
-          onEdit={openEditModal}
           onToggleActive={handleToggleStatus}
           onReorder={handleReorder}
-          onDelete={openDeleteConfirm}
+          emptyLabel={`No featured ${type}s yet`}
         />
       )}
 
-      <FeaturedItemFormModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        item={editingItem}
-        itemType={type}
-        currentCount={items.length}
-        maxCount={FEATURED_MAX}
-        onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
-      />
-
-      <ConfirmDialog
-        isOpen={confirmState.isOpen}
-        title="Delete Item"
-        message="Are you sure you want to delete this item? This action cannot be undone."
-        onConfirm={handleDelete}
-        onCancel={() => setConfirmState({ isOpen: false, id: null })}
-        isConfirming={isConfirming}
-      />
+      {allItems.length > 0 && (
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-ink mb-4">All {type}s (toggle to feature)</h3>
+          <div className="space-y-2">
+            {allItems.map((item) => (
+              <div
+                key={item._id}
+                className="flex items-center justify-between p-3 rounded-lg border border-ink/10 hover:bg-ink/5 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  {item.image?.url && (
+                    <img
+                      src={item.image.url}
+                      alt={item.name}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  )}
+                  <div>
+                    <p className="font-medium text-ink">{item.name}</p>
+                    <p className="text-xs text-ink/40">{item.slug}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleToggleStatus(item._id, !item.showOnHomepage)}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    item.showOnHomepage
+                      ? 'bg-primary-100 text-primary-700 hover:bg-primary-200'
+                      : 'bg-ink/10 text-ink/60 hover:bg-ink/20'
+                  }`}
+                >
+                  {item.showOnHomepage ? 'Featured' : 'Feature'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

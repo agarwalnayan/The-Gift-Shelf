@@ -6,56 +6,33 @@ import { uploadImage, deleteImage } from '../services/cloudinaryService.js';
 
 export const createFestival = asyncHandler(async (req, res) => {
   const {
-  name,
-  slug,
-  enabled,
-  startDate,
-  endDate,
-  themeColor,
-  announcement,
-  featuredTags,
-  featuredCollections,
-  homepage,
-  displayOrder,
-  isActive,
-} = req.body;
+    name,
+    slug,
+    enabled,
+    startDate,
+    endDate,
+    themeColor,
+    announcement,
+    featuredTags,
+    featuredCollections,
+    heroBanners,
+    homepage,
+    displayOrder,
+    isActive,
+  } = req.body;
 
-// Upload images if provided
-let desktopBanner = {
-  url: '',
-  publicId: '',
-};
+  // Upload festival badge image if provided
+  let festivalBadge = {
+    url: '',
+    publicId: '',
+  };
 
-let mobileBanner = {
-  url: '',
-  publicId: '',
-};
-
-let festivalBadge = {
-  url: '',
-  publicId: '',
-};
-
-if (req.files?.desktopBanner?.[0]) {
-  desktopBanner = await uploadImage(
-    req.files.desktopBanner[0].buffer,
-    'tgs/festivals'
-  );
-}
-
-if (req.files?.mobileBanner?.[0]) {
-  mobileBanner = await uploadImage(
-    req.files.mobileBanner[0].buffer,
-    'tgs/festivals'
-  );
-}
-
-if (req.files?.festivalBadge?.[0]) {
-  festivalBadge = await uploadImage(
-    req.files.festivalBadge[0].buffer,
-    'tgs/festivals/badges'
-  );
-}
+  if (req.files?.festivalBadge?.[0]) {
+    festivalBadge = await uploadImage(
+      req.files.festivalBadge[0].buffer,
+      'tgs/festivals/badges'
+    );
+  }
 
   const festival = await Festival.create({
     name,
@@ -63,13 +40,12 @@ if (req.files?.festivalBadge?.[0]) {
     enabled,
     startDate,
     endDate,
-    desktopBanner,
-    mobileBanner,
     festivalBadge,
     themeColor,
     announcement,
     featuredTags,
     featuredCollections,
+    heroBanners,
     homepage,
     displayOrder,
     isActive,
@@ -81,18 +57,18 @@ if (req.files?.festivalBadge?.[0]) {
 });
 
 export const getFestivals = asyncHandler(async (req, res) => {
-const festivals = await Festival.find()    
-  .populate('featuredTags', 'name images price')
-  .populate('featuredCollections', 'name tier image')
-  .sort({ displayOrder: 1, createdAt: -1 });
+  const festivals = await Festival.find()
+    .populate('heroBanners')
+    .populate('featuredCollections', 'name tier image')
+    .sort({ displayOrder: 1, createdAt: -1 });
 
   res.status(200).json(new ApiResponse(200, { festivals }, 'Festivals fetched successfully'));
 });
 
 export const getFestivalById = asyncHandler(async (req, res) => {
   const festival = await Festival.findById(req.params.id)
-    .populate('featuredTags', 'name images price')
     .populate('featuredCollections', 'name tier image')
+    .populate('heroBanners');
 
   if (!festival) throw new ApiError(404, 'Festival not found');
 
@@ -113,22 +89,11 @@ export const updateFestival = asyncHandler(async (req, res) => {
     announcement,
     featuredTags,
     featuredCollections,
+    heroBanners,
     homepage,
     displayOrder,
     isActive,
   } = req.body;
-
-  // Handle desktop banner
-  if (req.files?.desktopBanner?.[0]) {
-    await deleteImage(festival.desktopBanner?.publicId);
-    festival.desktopBanner = await uploadImage(req.files.desktopBanner[0].buffer, 'tgs/festivals');
-  }
-
-  // Handle mobile banner
-  if (req.files?.mobileBanner?.[0]) {
-    await deleteImage(festival.mobileBanner?.publicId);
-    festival.mobileBanner = await uploadImage(req.files.mobileBanner[0].buffer, 'tgs/festivals');
-  }
 
   // Handle festival badge
   if (req.files?.festivalBadge?.[0]) {
@@ -145,6 +110,7 @@ export const updateFestival = asyncHandler(async (req, res) => {
   if (announcement !== undefined) festival.announcement = announcement;
   if (featuredTags !== undefined) festival.featuredTags = featuredTags;
   if (featuredCollections !== undefined) festival.featuredCollections = featuredCollections;
+  if (heroBanners !== undefined) { festival.heroBanners = heroBanners; }
   if (homepage !== undefined) festival.homepage = homepage;
   if (displayOrder !== undefined) festival.displayOrder = displayOrder;
   if (isActive !== undefined) festival.isActive = isActive;
@@ -159,11 +125,7 @@ export const deleteFestival = asyncHandler(async (req, res) => {
   const festival = await Festival.findById(req.params.id);
   if (!festival) throw new ApiError(404, 'Festival not found');
 
-  await Promise.all([
-    deleteImage(festival.desktopBanner?.publicId),
-    deleteImage(festival.mobileBanner?.publicId),
-    deleteImage(festival.festivalBadge?.publicId),
-  ]);
+  await deleteImage(festival.festivalBadge?.publicId);
 
   await festival.deleteOne();
 
@@ -178,7 +140,7 @@ export const getActiveFestival = asyncHandler(async (req, res) => {
     startDate: { $lte: now },
     endDate: { $gte: now },
   })
-    .populate('featuredTags', 'name images price stock')
+    .populate('heroBanners')
     .populate('featuredCollections', 'name tier image')
     .populate('homepage.products', 'name slug price discountPrice primaryImage category')
 

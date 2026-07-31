@@ -47,25 +47,60 @@ const HomepageRenderer = () => {
 
   // Fetch site settings for homepage configuration
   useEffect(() => {
+    let isMounted = true;
+
     const fetchSettings = async () => {
       try {
         const settings = await getSiteSettings();
-        setSiteSettings(settings);
+
+        if (isMounted) {
+          setSiteSettings(settings);
+        }
       } catch (err) {
-        console.error('[HomepageRenderer] Failed to fetch site settings:', err);
-        setError(err);
+        console.error(
+          "[HomepageRenderer] Failed to fetch site settings:",
+          err
+        );
+
+        if (isMounted) {
+          setError(err);
+        }
       } finally {
-        setIsLoadingSettings(false);
+        if (isMounted) {
+          setIsLoadingSettings(false);
+        }
       }
     };
 
     fetchSettings();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Get homepage configuration from site settings
   const homepageConfig = useMemo(() => {
     return siteSettings?.homepageConfig || {};
   }, [siteSettings]);
+
+  const [shuffledPromoBanners, setShuffledPromoBanners] = useState([]);
+
+  useEffect(() => {
+    if (!promoBanners?.length) {
+      setShuffledPromoBanners([]);
+      return;
+    }
+
+    const shuffled = [...promoBanners];
+
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    setShuffledPromoBanners(shuffled);
+  }, [promoBanners]);
 
   // Check if a section is enabled in Homepage Builder
   const isSectionEnabled = (sectionKey) => {
@@ -85,20 +120,10 @@ const HomepageRenderer = () => {
   // Overall loading state
   const isLoading = isMarketingLoading || isLoadingSettings;
 
-  // Festival banner overrides marketing banners
-  const homepageBanners =
-    activeFestival?.desktopBanner?.url
-      ? [
-        {
-          _id: activeFestival._id,
-          title: activeFestival.name,
-          image: activeFestival.desktopBanner,
-          mobileImage: activeFestival.mobileBanner,
-          ctaText: "Shop Now",
-          ctaLink: "/shop",
-        },
-      ]
-      : heroBanners;
+  // Homepage API already handles Festival hero banner override
+  // heroBanners from context will be Festival heroBanners when festival is active
+  // otherwise it will be Marketing heroBanners
+  const homepageBanners = heroBanners;
 
   // Error state - render gracefully
   if (error) {
@@ -147,6 +172,17 @@ const HomepageRenderer = () => {
         </HomeSection>
       )}
 
+      {/* Promo Banner 1 */}
+      {shouldRenderSection("promoBanner", shuffledPromoBanners) &&
+        shuffledPromoBanners[0] && (
+          <HomeSection background="white">
+            <PromoBannerSection
+              banners={shuffledPromoBanners}
+              startIndex={0}
+            />
+          </HomeSection>
+        )}
+
       {/* Featured Products - If enabled and has data */}
       {shouldRenderSection('featuredProducts', featuredProducts) && (
         <HomeSection background="warm">
@@ -160,6 +196,8 @@ const HomepageRenderer = () => {
         </HomeSection>
       )}
 
+
+
       {/* New Arrivals - If enabled and has data */}
       {shouldRenderSection('newArrivals', newArrivals) && (
         <HomeSection background="white">
@@ -172,6 +210,17 @@ const HomepageRenderer = () => {
           />
         </HomeSection>
       )}
+
+      {/* Promo Banner 2 */}
+      {shouldRenderSection("promoBanner", shuffledPromoBanners) &&
+        shuffledPromoBanners[1] && (
+          <HomeSection background="white">
+            <PromoBannerSection
+              banners={shuffledPromoBanners}
+              startIndex={1}
+            />
+          </HomeSection>
+        )}
 
       {/* Featured Recipients - If enabled and has data */}
       {shouldRenderSection('featuredRecipients', featuredRecipients) && (
@@ -187,6 +236,8 @@ const HomepageRenderer = () => {
         </HomeSection>
       )}
 
+
+
       {/* Budget Collections - If enabled and has data */}
       {shouldRenderSection('budgetCollections', budgetCollections) && (
         <HomeSection background="warm">
@@ -194,26 +245,16 @@ const HomepageRenderer = () => {
         </HomeSection>
       )}
 
-      {/* Promo Banner - If enabled and has data */}
-      {shouldRenderSection('promoBanner', promoBanners) && (
-        <HomeSection background="white">
-          <PromoBannerSection banners={promoBanners} startIndex={0} />
-        </HomeSection>
-      )}
-
-      {/* Promo Banner - If enabled and has data */}
-      {shouldRenderSection('promoBanner', promoBanners) && (
-        <HomeSection background="white">
-          <PromoBannerSection banners={promoBanners} startIndex={2} />
-        </HomeSection>
-      )}
-
-      {/* Promo Banner - If enabled and has data */}
-      {shouldRenderSection('promoBanner', promoBanners) && (
-        <HomeSection background="white">
-          <PromoBannerSection banners={promoBanners} startIndex={1} />
-        </HomeSection>
-      )}
+      {/* Promo Banner 3 */}
+      {shouldRenderSection("promoBanner", shuffledPromoBanners) &&
+        shuffledPromoBanners[2] && (
+          <HomeSection background="white">
+            <PromoBannerSection
+              banners={shuffledPromoBanners}
+              startIndex={2}
+            />
+          </HomeSection>
+        )}
 
       {/* Instagram Feed - If enabled */}
       {isSectionEnabled('instagramFeed') && <InstagramGallery />}

@@ -51,6 +51,10 @@ const CatalogMasterMultiSelect = ({
         <div className="rounded-xl border border-border bg-white p-4">
           <label className="mb-3 block text-sm font-medium text-ink">
             {label}
+
+            <span className="ml-2 text-xs text-ink/50">
+              ({field.value?.length || 0} selected)
+            </span>
           </label>
 
           <input
@@ -63,45 +67,47 @@ const CatalogMasterMultiSelect = ({
 
           <div className="max-h-52 overflow-y-auto space-y-2">
             {loading ? (
-              <p className="text-sm text-gray-500">
-                Loading...
-              </p>
+              <p className="text-sm text-gray-500">Loading...</p>
             ) : filtered.length === 0 ? (
               <p className="text-sm text-gray-500">
                 No {label.toLowerCase()} found.
               </p>
             ) : (
-              filtered.map((item) => {
-                const checked = field.value?.includes(item.name);
+              [...filtered]
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((item) => {
+                  const checked = field.value?.includes(item._id);
 
-                return (
-                  <label
-                    key={item._id}
-                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 hover:bg-gray-50"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          field.onChange([
-                            ...(field.value || []),
-                            item.name,
-                          ]);
-                        } else {
-                          field.onChange(
-                            (field.value || []).filter(
-                              (v) => v !== item.name
-                            )
-                          );
-                        }
-                      }}
-                    />
+                  return (
+                    <label
+                      key={item._id}
+                      className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 hover:bg-gray-50"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            field.onChange([
+                              ...(field.value || []),
+                              item._id,
+                            ]);
+                          } else {
+                            field.onChange(
+                              (field.value || []).filter(
+                                (v) => v !== item._id
+                              )
+                            );
+                          }
 
-                    <span>{item.name}</span>
-                  </label>
-                );
-              })
+                          setSearch("");
+                        }}
+                      />
+
+                      <span>{item.name}</span>
+                    </label>
+                  );
+                })
             )}
           </div>
         </div>

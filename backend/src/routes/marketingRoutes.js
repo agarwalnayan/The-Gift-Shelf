@@ -7,7 +7,6 @@ import {
   reorderBanners,
   deleteBanner,
   permanentlyDeleteBanner,
-  createFeaturedItem,
   getFeaturedItems,
   updateFeaturedItem,
   updateFeaturedItemStatus,
@@ -28,8 +27,6 @@ import { validate } from '../middleware/validateMiddleware.js';
 import {
   createBannerSchema,
   updateBannerSchema,
-  createFeaturedItemSchema,
-  updateFeaturedItemSchema,
   upsertBudgetCollectionSchema,
   statusSchema,
   reorderSchema,
@@ -66,11 +63,9 @@ router.patch('/banners/:id', bannerImages, validate(updateBannerSchema), updateB
 router.delete('/banners/:id/permanent', authorizeRoles('superadmin'), permanentlyDeleteBanner);
 router.delete('/banners/:id', deleteBanner);
 
-router.post('/featured-items', singleImage, validate(createFeaturedItemSchema), createFeaturedItem);
 router.patch('/featured-items/reorder', validate(reorderSchema), reorderFeaturedItems);
 router.patch('/featured-items/:id/status', validate(statusSchema), updateFeaturedItemStatus);
-router.put('/featured-items/:id', singleImage, validate(updateFeaturedItemSchema), updateFeaturedItem);
-router.patch('/featured-items/:id', singleImage, validate(updateFeaturedItemSchema), updateFeaturedItem);
+router.put('/featured-items/:id', updateFeaturedItem);
 router.delete('/featured-items/:id', deleteFeaturedItem);
 
 router.put(

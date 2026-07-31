@@ -48,16 +48,24 @@ const HeroSlider = ({ banners, isLoading }) => {
   return (
     <section className={`relative w-full overflow-hidden bg-charcoal/5 ${heightClasses}`}>
       {banners.map((banner, index) => {
-        const isExternal = /^https?:\/\//.test(banner.ctaLink || '');
+        const isExternal = /^https?:\/\//.test(banner.destinationUrl || '');
         const isActive = index === activeIndex;
 
+        const BannerWrapper = banner.destinationUrl ? (isExternal ? 'a' : Link) : 'div';
+        const wrapperProps = banner.destinationUrl
+          ? isExternal
+            ? { href: banner.destinationUrl, target: '_blank', rel: 'noreferrer' }
+            : { to: banner.destinationUrl }
+          : {};
+
         return (
-          <div
+          <BannerWrapper
             key={banner._id}
             aria-hidden={!isActive}
             className={`absolute inset-0 transition-opacity duration-700 ${
               isActive ? 'opacity-100' : 'pointer-events-none opacity-0'
             }`}
+            {...wrapperProps}
           >
             <picture>
               {banner.mobileImage?.url && <source media="(max-width: 767px)" srcSet={banner.mobileImage.url} />}
@@ -70,22 +78,7 @@ const HeroSlider = ({ banners, isLoading }) => {
                 />
               )}
             </picture>
-
-
-            {banner.ctaText && banner.ctaLink && (
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 sm:bottom-10 sm:left-10 sm:translate-x-0">
-                {isExternal ? (
-                  <a href={banner.ctaLink} target="_blank" rel="noreferrer" className="btn-primary inline-flex shadow-lg">
-                    {banner.ctaText}
-                  </a>
-                ) : (
-                  <Link to={banner.ctaLink} className="btn-primary inline-flex shadow-lg">
-                    {banner.ctaText}
-                  </Link>
-                )}
-              </div>
-            )}
-          </div>
+          </BannerWrapper>
         );
       })}
 

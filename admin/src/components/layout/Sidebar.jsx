@@ -11,6 +11,7 @@ import {
   HiOutlineDocumentText,
   HiOutlineChevronDown,
   HiOutlineChevronRight,
+  HiOutlineChevronLeft,
   HiXMark,
   HiOutlineCube,
   HiOutlineGift,
@@ -64,12 +65,37 @@ const navGroups = [
   },
 ];
 
-const NavItems = ({ onNavigate }) => {
+const NavItems = ({ onNavigate, isCollapsed = false }) => {
   const [expandedGroups, setExpandedGroups] = useState({});
 
   const toggleGroup = (label) => {
     setExpandedGroups((prev) => ({ ...prev, [label]: !prev[label] }));
   };
+
+  if (isCollapsed) {
+    return (
+      <nav className="space-y-1 px-2">
+        {navGroups.flatMap((group) =>
+          group.items.map(({ label, to, icon: Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === '/'}
+              onClick={onNavigate}
+              className={({ isActive }) =>
+                `flex items-center justify-center rounded-lg px-3 py-2.5 text-ink/60 transition-colors hover:bg-ink/5 ${
+                  isActive ? 'bg-primary-50 text-primary-700' : ''
+                }`
+              }
+              title={label}
+            >
+              <Icon size={20} />
+            </NavLink>
+          ))
+        )}
+      </nav>
+    );
+  }
 
   return (
     <nav className="space-y-1 px-3">
@@ -115,17 +141,32 @@ const NavItems = ({ onNavigate }) => {
 // Sidebar previously had no mobile presentation at all (`hidden md:block`),
 // meaning admins on a phone/tablet had no way to navigate between pages.
 // This adds a slide-in drawer for small screens while leaving the existing
-// desktop layout untouched.
-const Sidebar = ({ isMobileOpen = false, onMobileClose = () => {} }) => {
+// desktop layout untouched. Now also supports collapsible desktop sidebar.
+// On mobile, sidebar is always drawer-only (no 256px sidebar).
+const Sidebar = ({ isMobileOpen = false, onMobileClose = () => {}, isCollapsed = false, onToggleCollapse = () => {} }) => {
   return (
     <>
-      <aside className="hidden w-64 shrink-0 border-r border-ink/10 bg-white md:block">
+      {/* Desktop Sidebar - hidden on mobile, visible on md+ */}
+      <aside
+        className={`hidden shrink-0 border-r border-ink/10 bg-white transition-all duration-300 md:block ${
+          isCollapsed ? 'w-16' : 'w-64'
+        }`}
+      >
         <div className="flex h-20 items-center px-6">
-          <p className="text-lg font-semibold text-ink">TGS Admin</p>
+          {!isCollapsed && <p className="text-lg font-semibold text-ink">TGS Admin</p>}
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg text-ink/60 hover:bg-ink/5"
+            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {isCollapsed ? <HiOutlineChevronRight size={18} /> : <HiOutlineChevronLeft size={18} />}
+          </button>
         </div>
-        <NavItems />
+        <NavItems isCollapsed={isCollapsed} />
       </aside>
 
+      {/* Mobile Drawer - only on mobile, slides in when menu is opened */}
       {isMobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-ink/40" onClick={onMobileClose} aria-hidden="true" />

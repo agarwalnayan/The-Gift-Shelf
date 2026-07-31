@@ -14,6 +14,10 @@ export const createCatalogMasterSchema = Joi.object({
   displayOrder: Joi.number().default(0),
 
   isActive: Joi.boolean().default(true),
+
+  showOnHomepage: Joi.boolean().default(false),
+
+  homepageDisplayOrder: Joi.number().default(0),
 });
 
 export const updateCatalogMasterSchema = Joi.object({
@@ -28,4 +32,8 @@ export const updateCatalogMasterSchema = Joi.object({
   displayOrder: Joi.number(),
 
   isActive: Joi.boolean(),
+
+  showOnHomepage: Joi.boolean(),
+
+  homepageDisplayOrder: Joi.number(),
 }).min(1);

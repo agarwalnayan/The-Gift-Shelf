@@ -17,6 +17,8 @@ import {
   updateCatalogMasterSchema,
 } from "../validations/catalogMasterValidation.js";
 
+import { upload } from "../middleware/uploadMiddleware.js";
+
 const router = express.Router();
 
 router.use(protect);
@@ -25,14 +27,21 @@ router.use(authorizeRoles("admin", "superadmin"));
 router
   .route("/")
   .get(getCatalogMasters)
-  .post(validate(createCatalogMasterSchema), createCatalogMaster);
+  .post(
+    upload.single("image"),
+    validate(createCatalogMasterSchema),
+    createCatalogMaster
+  );
 
 router.route("/:id").get(getCatalogMasterById);
 
 router
   .route("/:id")
-  .patch(validate(updateCatalogMasterSchema), updateCatalogMaster)
-  .delete(deleteCatalogMaster);
+  .patch(
+    upload.single("image"),
+    validate(updateCatalogMasterSchema),
+    updateCatalogMaster
+  ).delete(deleteCatalogMaster);
 
 router.patch("/:id/status", updateCatalogMasterStatus);
 

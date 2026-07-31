@@ -9,19 +9,12 @@ import {
   updateBannerStatusApi,
   reorderBannersApi,
   deleteBannerApi,
-  getFeaturedItemsApi,
-  createFeaturedItemApi,
-  updateFeaturedItemApi,
-  updateFeaturedItemStatusApi,
-  reorderFeaturedItemsApi,
-  deleteFeaturedItemApi,
   getBudgetCollectionsApi,
   upsertBudgetCollectionApi,
   getSiteSettingsApi,
 } from '../api/marketingApi.js';
 import MarketingListTable from '../components/marketing/MarketingListTable.jsx';
 import BannerFormModal from '../components/marketing/BannerFormModal.jsx';
-import FeaturedItemFormModal from '../components/marketing/FeaturedItemFormModal.jsx';
 import BudgetCollectionFormModal from '../components/marketing/BudgetCollectionFormModal.jsx';
 import SiteSettingsForm from '../components/marketing/SiteSettingsForm.jsx';
 import StoreCheckoutSettingsForm from '../components/marketing/StoreCheckoutSettingsForm.jsx';
@@ -30,6 +23,10 @@ import HomepageBuilder from '../components/marketing/HomepageBuilder.jsx';
 import ConfirmDialog from '../components/common/ConfirmDialog.jsx';
 import Button from '../components/common/Button.jsx';
 import { TableSkeleton } from '../components/common/Skeleton.jsx';
+import FeaturedManagement from '../components/marketing/FeaturedManagement.jsx';
+import PageHeader from '../components/common/PageHeader.jsx';
+import Input from '../components/common/Input.jsx';
+import FormGrid from '../components/common/FormGrid.jsx';
 
 const TABS = [
   { key: 'hero', label: 'Hero Banners' },
@@ -73,9 +70,6 @@ const MarketingPage = () => {
       if (activeTab === 'hero' || activeTab === 'promo') {
         const { data } = await getBannersApi(activeTab);
         setBanners(data.data.banners);
-      } else if (activeTab === 'recipient' || activeTab === 'occasion') {
-        const { data } = await getFeaturedItemsApi(activeTab);
-        setFeaturedItems(data.data.items);
       } else if (activeTab === 'budget') {
         const { data } = await getBudgetCollectionsApi();
         setBudgetCollections(data.data.collections);
@@ -137,26 +131,6 @@ const MarketingPage = () => {
     }
   };
 
-  const handleFeaturedItemSubmit = async (formData) => {
-    setIsSubmitting(true);
-    try {
-      if (editingItem) {
-        await updateFeaturedItemApi(editingItem._id, formData);
-        toast.success('Item updated');
-      } else {
-        await createFeaturedItemApi(formData);
-        toast.success('Item created');
-      }
-      setIsModalOpen(false);
-      loadTabData();
-    } catch (error) {
-      const messages = error.response?.data?.errors;
-      toast.error(messages?.[0] || error.response?.data?.message || 'Failed to save item');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleBudgetSubmit = async (tier, formData) => {
     setIsSubmitting(true);
     try {
@@ -176,9 +150,6 @@ const MarketingPage = () => {
       if (isBannerTab) {
         await updateBannerStatusApi(id, value);
         setBanners((prev) => prev.map((b) => (b._id === id ? { ...b, isActive: value } : b)));
-      } else if (isFeaturedTab) {
-        await updateFeaturedItemStatusApi(id, value);
-        setFeaturedItems((prev) => prev.map((i) => (i._id === id ? { ...i, isActive: value } : i)));
       }
       toast.success('Status updated');
     } catch (error) {
@@ -192,10 +163,6 @@ const MarketingPage = () => {
         const reordered = items.map((item) => banners.find((b) => b._id === item.id));
         setBanners(reordered);
         await reorderBannersApi(items);
-      } else if (isFeaturedTab) {
-        const reordered = items.map((item) => featuredItems.find((i) => i._id === item.id));
-        setFeaturedItems(reordered);
-        await reorderFeaturedItemsApi(items);
       }
       toast.success('Order updated');
     } catch (error) {
@@ -212,8 +179,6 @@ const MarketingPage = () => {
     try {
       if (isBannerTab) {
         await deleteBannerApi(confirmState.id);
-      } else if (isFeaturedTab) {
-        await deleteFeaturedItemApi(confirmState.id);
       }
       toast.success('Removed successfully');
       closeConfirm();
@@ -225,12 +190,9 @@ const MarketingPage = () => {
     }
   };
 
-  const currentFeaturedCount = featuredItems.length;
-
   const getFilteredItems = () => {
     if (searchQuery.trim() === '') {
       if (isBannerTab) return banners;
-      if (isFeaturedTab) return featuredItems;
       if (activeTab === 'budget') return budgetCollections;
       return [];
     }
@@ -238,9 +200,6 @@ const MarketingPage = () => {
     const query = searchQuery.toLowerCase();
     if (isBannerTab) {
       return banners.filter(b => b.title?.toLowerCase().includes(query));
-    }
-    if (isFeaturedTab) {
-      return featuredItems.filter(f => f.title?.toLowerCase().includes(query));
     }
     if (activeTab === 'budget') {
       return budgetCollections.filter(c => c.label?.toLowerCase().includes(query));
@@ -251,21 +210,19 @@ const MarketingPage = () => {
   const filteredItems = getFilteredItems();
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-ink">Marketing &amp; Homepage</h1>
-        <p className="mt-1 text-sm text-ink/60">
-          Manage the storefront hero slider, popups, announcement bar, promo banners, and homepage sections.
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Marketing & Homepage"
+        description="Manage the storefront hero slider, popups, announcement bar, promo banners, and homepage sections"
+      />
 
-      <div className="mb-6 flex flex-wrap gap-2 border-b border-ink/10 pb-3">
+      <div className="flex flex-wrap gap-2 border-b border-ink/10 pb-3 overflow-x-auto">
         {TABS.map((tab) => (
           tab.external ? (
             <Link
               key={tab.key}
               to="/promotions"
-              className="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors text-ink/60 hover:bg-ink/5 flex items-center gap-1"
+              className="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors text-ink/60 hover:bg-ink/5 flex items-center gap-1 shrink-0"
             >
               {tab.label}
               <HiOutlineArrowRight size={14} />
@@ -277,7 +234,7 @@ const MarketingPage = () => {
                 setSearchQuery('');
                 setActiveTab(tab.key);
               }}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${activeTab === tab.key ? 'bg-primary-50 text-primary-700' : 'text-ink/60 hover:bg-ink/5'
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors shrink-0 ${activeTab === tab.key ? 'bg-primary-50 text-primary-700' : 'text-ink/60 hover:bg-ink/5'
                 }`}
             >
               {tab.label}
@@ -287,19 +244,18 @@ const MarketingPage = () => {
       </div>
 
       {(isBannerTab || isFeaturedTab || activeTab === 'budget') && (
-        <div className="mb-4 flex items-center justify-between">
-          <div className="relative flex-1 max-w-md">
-            <HiOutlineMagnifyingGlass size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/40" />
-            <input
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex-1 max-w-md">
+            <Input
               type="text"
               placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-lg border border-ink/20 py-2 pl-10 pr-4 text-sm focus:border-primary-500 focus:outline-none"
+              icon={<HiOutlineMagnifyingGlass size={18} />}
             />
           </div>
           {(isBannerTab || isFeaturedTab) && (
-            <>
+            <div className="flex items-center gap-4">
               <p className="text-sm text-ink/50">
                 {isFeaturedTab && `${currentFeaturedCount} / ${FEATURED_MAX} used`}
               </p>
@@ -309,7 +265,7 @@ const MarketingPage = () => {
               >
                 Add {activeTab === 'hero' ? 'Hero Banner' : activeTab === 'promo' ? 'Promo Banner' : 'Item'}
               </Button>
-            </>
+            </div>
           )}
         </div>
       )}
@@ -337,7 +293,7 @@ const MarketingPage = () => {
           emptyLabel={`No featured ${activeTab === 'recipient' ? 'recipients' : 'occasions'} yet.`}
         />
       ) : activeTab === 'budget' ? (
-        <div className="grid gap-4 sm:grid-cols-3">
+        <FormGrid columns={3}>
           {filteredItems.map((collection) => (
             <div key={collection._id} className="card space-y-3 p-5">
               <div className="h-24 w-full overflow-hidden rounded-lg bg-surface">
@@ -362,17 +318,19 @@ const MarketingPage = () => {
             </div>
           ))}
           {filteredItems.length === 0 && (
-            <div className="col-span-3 card p-8 text-center text-ink/60">
+            <div className="col-span-full card p-8 text-center text-ink/60">
               No budget collections found
             </div>
           )}
-        </div>
+        </FormGrid>
       ) : activeTab === 'homepage' ? (
         <HomepageBuilder />
       ) : activeTab === 'checkout' ? (
         <StoreCheckoutSettingsForm settings={settings} onSaved={setSettings} />
       ) : activeTab === 'coupons' ? (
         <CouponManager />
+      ) : activeTab === 'recipient' || activeTab === 'occasion' ? (
+        <FeaturedManagement type={activeTab} />
       ) : (
         <SiteSettingsForm settings={settings} onSaved={setSettings} />
       )}
@@ -385,19 +343,6 @@ const MarketingPage = () => {
           banner={editingItem}
           bannerType={activeTab}
           isSubmitting={isSubmitting}
-        />
-      )}
-
-      {isFeaturedTab && (
-        <FeaturedItemFormModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSubmit={handleFeaturedItemSubmit}
-          item={editingItem}
-          itemType={activeTab}
-          isSubmitting={isSubmitting}
-          currentCount={currentFeaturedCount}
-          maxCount={FEATURED_MAX}
         />
       )}
 

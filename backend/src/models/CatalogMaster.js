@@ -29,6 +29,12 @@ const catalogMasterSchema = new mongoose.Schema(
       required: true,
     },
 
+    description: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
     image: {
       type: imageSchema,
       default: () => ({}),
@@ -40,6 +46,16 @@ const catalogMasterSchema = new mongoose.Schema(
     },
 
     displayOrder: {
+      type: Number,
+      default: 0,
+    },
+
+    showOnHomepage: {
+      type: Boolean,
+      default: false,
+    },
+
+    homepageDisplayOrder: {
       type: Number,
       default: 0,
     },

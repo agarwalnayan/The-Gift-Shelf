@@ -46,17 +46,18 @@ const bannerSchema = new mongoose.Schema(
       type: imageSchema,
       default: () => ({}),
     },
-    ctaText: {
-      type: String,
-      trim: true,
-      maxlength: 40,
-      default: '',
-    },
-    ctaLink: {
+    destinationUrl: {
       type: String,
       trim: true,
       maxlength: 300,
       default: '',
+    },
+
+    festival: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Festival',
+      default: null,
+      index: true,
     },
     displayOrder: {
       type: Number,

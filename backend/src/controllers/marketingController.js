@@ -1,10 +1,10 @@
 import Banner from '../models/Banner.js';
 import BudgetCollection from '../models/BudgetCollection.js';
+import Festival from '../models/Festival.js';
 import SiteSettings from '../models/SiteSettings.js';
 import Category from '../models/Category.js';
 import Product from '../models/Product.js';
 import CatalogMaster from '../models/CatalogMaster.js';
-import FeaturedItem from '../models/FeaturedItem.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import ApiError from '../utils/ApiError.js';
 import ApiResponse from '../utils/ApiResponse.js';
@@ -22,8 +22,7 @@ export const createBanner = asyncHandler(async (req, res) => {
     title,
     subtitle,
     description,
-    ctaText,
-    ctaLink,
+    destinationUrl,
     displayOrder,
     isActive,
     startDate,
@@ -60,8 +59,7 @@ export const createBanner = asyncHandler(async (req, res) => {
     title,
     subtitle,
     description,
-    ctaText,
-    ctaLink,
+    destinationUrl,
     displayOrder: Number(finalDisplayOrder),
     isActive: isActive ?? true,
     startDate: startDate || null,
@@ -97,7 +95,7 @@ export const updateBanner = asyncHandler(async (req, res) => {
   const banner = await Banner.findOne({ _id: req.params.id, isDeleted: { $ne: true } });
   if (!banner) throw new ApiError(404, 'Banner not found');
 
-  const { type, title, subtitle, description, ctaText, ctaLink, displayOrder, isActive, startDate, endDate, removeImage, removeMobileImage } =
+  const { type, title, subtitle, description, destinationUrl, displayOrder, isActive, startDate, endDate, removeImage, removeMobileImage } =
     req.body;
 
   if (req.files?.image?.[0]) {
@@ -120,8 +118,7 @@ export const updateBanner = asyncHandler(async (req, res) => {
   if (title !== undefined) banner.title = title;
   if (subtitle !== undefined) banner.subtitle = subtitle;
   if (description !== undefined) banner.description = description;
-  if (ctaText !== undefined) banner.ctaText = ctaText;
-  if (ctaLink !== undefined) banner.ctaLink = ctaLink;
+  if (destinationUrl !== undefined) banner.destinationUrl = destinationUrl;
   if (displayOrder !== undefined && displayOrder !== '') banner.displayOrder = Number(displayOrder);
   if (isActive !== undefined) banner.isActive = isActive;
   if (startDate !== undefined) banner.startDate = startDate || null;
@@ -191,76 +188,41 @@ export const permanentlyDeleteBanner = asyncHandler(async (req, res) => {
 
 /* =========================================================================
  * FEATURED ITEMS (Featured Recipient + Featured Occasion sections)
- * DEPRECATED: These endpoints are deprecated in favor of CatalogMaster.
- * Homepage now uses CatalogMaster for recipients and occasions.
- * Kept for backward compatibility with admin panel during migration.
- * TODO: Remove after admin panel migration to CatalogMaster is complete.
+ * MIGRATED: Now uses CatalogMaster with showOnHomepage and homepageDisplayOrder.
+ * These endpoints maintain the same API signature for backward compatibility
+ * with the admin panel, but operate on CatalogMaster records.
  * ========================================================================= */
 
 export const createFeaturedItem = asyncHandler(async (req, res) => {
-  const { type, name, value, displayOrder, isActive } = req.body;
-
-  const activeCount = await FeaturedItem.countDocuments({ type, isDeleted: { $ne: true } });
-  if (activeCount >= FeaturedItem.MAX_ITEMS_PER_TYPE) {
-    throw new ApiError(
-      400,
-      `You can feature at most ${FeaturedItem.MAX_ITEMS_PER_TYPE} ${type === 'recipient' ? 'recipients' : 'occasions'} on the homepage. Remove one before adding another.`
-    );
-  }
-
-  let image = { url: '', publicId: '' };
-  if (req.files?.image?.[0]) {
-    image = await uploadImage(req.files.image[0].buffer, 'tgs/marketing/featured');
-  }
-
-  const item = await FeaturedItem.create({
-    type,
-    name,
-    value,
-    displayOrder: displayOrder ?? 0,
-    isActive: isActive ?? true,
-    image,
-    createdBy: req.user._id,
-    updatedBy: req.user._id,
-  });
-
-  res.status(201).json(new ApiResponse(201, { item }, 'Featured item created successfully'));
+  // DEPRECATED: Use CatalogMaster UI to create entries, then toggle showOnHomepage
+  throw new ApiError(400, 'Create entries via Catalog Master, then toggle "Show on Homepage"');
 });
 
 export const getFeaturedItems = asyncHandler(async (req, res) => {
-  const privileged = isAdminUser(req);
   const { type } = req.query;
 
   if (!type || !['recipient', 'occasion'].includes(type)) {
     throw new ApiError(400, 'A valid featured item type (recipient or occasion) is required');
   }
 
-  const filter = { type, isDeleted: { $ne: true } };
-  if (!privileged) filter.isActive = true;
+  // Get all CatalogMaster entries of this type
+  const allItems = await CatalogMaster.find({ type, isActive: true }).sort({ displayOrder: 1, name: 1 });
 
-  let query = FeaturedItem.find(filter).sort({ displayOrder: 1 });
-  if (!privileged) query = query.limit(FeaturedItem.MAX_ITEMS_PER_TYPE);
+  // Separate featured and non-featured
+  const featured = allItems.filter(item => item.showOnHomepage).sort((a, b) => a.homepageDisplayOrder - b.homepageDisplayOrder);
+  const nonFeatured = allItems.filter(item => !item.showOnHomepage);
 
-  const items = await query;
-
-  res.status(200).json(new ApiResponse(200, { items, count: items.length }, 'Featured items fetched successfully'));
+  res.status(200).json(new ApiResponse(200, { items: featured, allItems, count: featured.length }, 'Featured items fetched successfully'));
 });
 
 export const updateFeaturedItem = asyncHandler(async (req, res) => {
-  const item = await FeaturedItem.findOne({ _id: req.params.id, isDeleted: { $ne: true } });
-  if (!item) throw new ApiError(404, 'Featured item not found');
+  const item = await CatalogMaster.findById(req.params.id);
+  if (!item) throw new ApiError(404, 'CatalogMaster item not found');
 
-  const { name, value, displayOrder, isActive } = req.body;
+  const { showOnHomepage, homepageDisplayOrder } = req.body;
 
-  if (req.files?.image?.[0]) {
-    await deleteImage(item.image?.publicId);
-    item.image = await uploadImage(req.files.image[0].buffer, 'tgs/marketing/featured');
-  }
-
-  if (name !== undefined) item.name = name;
-  if (value !== undefined) item.value = value;
-  if (displayOrder !== undefined && displayOrder !== '') item.displayOrder = Number(displayOrder);
-  if (isActive !== undefined) item.isActive = isActive;
+  if (showOnHomepage !== undefined) item.showOnHomepage = showOnHomepage;
+  if (homepageDisplayOrder !== undefined && homepageDisplayOrder !== '') item.homepageDisplayOrder = Number(homepageDisplayOrder);
 
   item.updatedBy = req.user._id;
   await item.save();
@@ -269,10 +231,10 @@ export const updateFeaturedItem = asyncHandler(async (req, res) => {
 });
 
 export const updateFeaturedItemStatus = asyncHandler(async (req, res) => {
-  const item = await FeaturedItem.findOne({ _id: req.params.id, isDeleted: { $ne: true } });
-  if (!item) throw new ApiError(404, 'Featured item not found');
+  const item = await CatalogMaster.findById(req.params.id);
+  if (!item) throw new ApiError(404, 'CatalogMaster item not found');
 
-  item.isActive = req.body.isActive;
+  item.showOnHomepage = req.body.isActive;
   item.updatedBy = req.user._id;
   await item.save();
 
@@ -283,28 +245,27 @@ export const reorderFeaturedItems = asyncHandler(async (req, res) => {
   const { items } = req.body;
   const ids = items.map((item) => item.id);
 
-  const existingCount = await FeaturedItem.countDocuments({ _id: { $in: ids }, isDeleted: { $ne: true } });
+  const existingCount = await CatalogMaster.countDocuments({ _id: { $in: ids } });
   if (existingCount !== ids.length) throw new ApiError(404, 'One or more featured items could not be found');
 
   const bulkOps = items.map((item) => ({
     updateOne: {
       filter: { _id: item.id },
-      update: { $set: { displayOrder: item.displayOrder, updatedBy: req.user._id } },
+      update: { $set: { homepageDisplayOrder: item.displayOrder, updatedBy: req.user._id } },
     },
   }));
-  await FeaturedItem.bulkWrite(bulkOps);
+  await CatalogMaster.bulkWrite(bulkOps);
 
-  const updated = await FeaturedItem.find({ _id: { $in: ids } }).sort({ displayOrder: 1 });
+  const updated = await CatalogMaster.find({ _id: { $in: ids } }).sort({ homepageDisplayOrder: 1 });
   res.status(200).json(new ApiResponse(200, { items: updated }, 'Featured item order updated successfully'));
 });
 
 export const deleteFeaturedItem = asyncHandler(async (req, res) => {
-  const item = await FeaturedItem.findOne({ _id: req.params.id, isDeleted: { $ne: true } });
-  if (!item) throw new ApiError(404, 'Featured item not found');
+  const item = await CatalogMaster.findById(req.params.id);
+  if (!item) throw new ApiError(404, 'CatalogMaster item not found');
 
-  item.isDeleted = true;
-  item.isActive = false;
-  item.deletedAt = new Date();
+  // Soft delete from homepage by toggling showOnHomepage
+  item.showOnHomepage = false;
   item.updatedBy = req.user._id;
   await item.save();
 
@@ -486,24 +447,37 @@ export const updateWelcomePopup = asyncHandler(async (req, res) => {
  * otherwise be 7 separate client requests on every homepage load (the
  * source of the duplicate-request / 429 issue), cutting it to exactly 1.
  * ========================================================================= */
-
 export const getHomepageContent = asyncHandler(async (req, res) => {
+
+  const activeFestival = await Festival.findOne({
+    enabled: true,
+    isActive: true,
+    startDate: { $lte: new Date() },
+    endDate: { $gte: new Date() },
+  })
+    .sort({ displayOrder: 1 })
+    .populate("heroBanners");
+
   const [heroBanners, promoBanners, featuredRecipients, featuredOccasions, budgetCollections, featuredCategories, featuredProducts, newArrivals, settings] =
     await Promise.all([
-      Banner.find(Banner.liveFilter('hero')).sort({
-        displayOrder: 1,
-        createdAt: 1,
-      }),
+      activeFestival?.heroBanners?.length
+        ? activeFestival.heroBanners.filter(
+          (banner) => banner.isActive && !banner.isDeleted
+        )
+        : Banner.find(Banner.liveFilter("hero")).sort({
+          displayOrder: 1,
+          createdAt: 1,
+        }),
 
-      Banner.find(Banner.liveFilter('promo')).sort({
+      Banner.find(Banner.liveFilter("promo")).sort({
         displayOrder: 1,
         createdAt: 1,
       }),
-      CatalogMaster.find({ type: 'recipient', isActive: true })
-        .sort({ displayOrder: 1 })
+      CatalogMaster.find({ type: 'recipient', isActive: true, showOnHomepage: true })
+        .sort({ homepageDisplayOrder: 1 })
         .limit(6),
-      CatalogMaster.find({ type: 'occasion', isActive: true })
-        .sort({ displayOrder: 1 })
+      CatalogMaster.find({ type: 'occasion', isActive: true, showOnHomepage: true })
+        .sort({ homepageDisplayOrder: 1 })
         .limit(6),
       BudgetCollection.find({ isActive: true }).sort({ displayOrder: 1 }),
       Category.find({ isActive: true, isDeleted: { $ne: true }, showOnHomepage: true })

@@ -4,8 +4,10 @@ import { useForm, Controller } from 'react-hook-form'; import toast from 'react-
 import { HiOutlineArrowLeft } from 'react-icons/hi2';
 import { getFestivalByIdApi, createFestivalApi, updateFestivalApi, getFestivalsApi } from '../api/festivalApi.js';
 import { getProductsApi } from '../api/productApi.js';
-import { getBudgetCollectionsApi } from '../api/marketingApi.js';
-import Button from '../components/common/Button.jsx';
+import {
+  getBudgetCollectionsApi,
+  getBannersApi,
+} from '../api/marketingApi.js'; import Button from '../components/common/Button.jsx';
 import Input from '../components/common/Input.jsx';
 import Toggle from '../components/common/Toggle.jsx';
 import Loader from '../components/common/Loader.jsx';
@@ -17,8 +19,7 @@ const FestivalFormPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [products, setProducts] = useState([]);
   const [collections, setCollections] = useState([]);
-  const [desktopBannerFile, setDesktopBannerFile] = useState(null);
-  const [mobileBannerFile, setMobileBannerFile] = useState(null);
+  const [heroBanners, setHeroBanners] = useState([]);
   const [badgeFile, setBadgeFile] = useState(null);
 
   const form = useForm({
@@ -39,6 +40,7 @@ const FestivalFormPage = () => {
         dismissible: true,
       },
       featuredCollections: [],
+      heroBanners: [],
       displayOrder: 0,
       isActive: true,
     },
@@ -47,20 +49,41 @@ const FestivalFormPage = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [productsRes, collectionsRes] = await Promise.all([
+        const [productsRes, collectionsRes, bannersRes] = await Promise.all([
           getProductsApi({ limit: 100 }),
           getBudgetCollectionsApi(),
+          getBannersApi({ type: 'hero' }),
         ]);
         setProducts(productsRes.data.data.products || []);
         setCollections(collectionsRes.data.data.collections || []);
+        setHeroBanners(bannersRes.data.data.banners || []);
 
         if (id) {
           const { data } = await getFestivalByIdApi(id);
           const festival = data.data.festival;
           form.reset({
             ...festival,
-            startDate: festival.startDate ? festival.startDate.split('T')[0] : '',
-            endDate: festival.endDate ? festival.endDate.split('T')[0] : '',
+
+            startDate: festival.startDate
+              ? festival.startDate.split("T")[0]
+              : "",
+
+            endDate: festival.endDate
+              ? festival.endDate.split("T")[0]
+              : "",
+
+            featuredCollections:
+              festival.featuredCollections?.map((item) =>
+                typeof item === "string"
+                  ? item
+                  : item._id
+              ) || [],
+            heroBanners:
+              festival.heroBanners?.map((banner) =>
+                typeof banner === 'string'
+                  ? banner
+                  : banner._id
+              ) || [],
           });
         }
       } catch (error) {
@@ -97,24 +120,23 @@ const FestivalFormPage = () => {
 
       formData.append(
         "featuredCollections",
-        JSON.stringify(values.featuredCollections || [])
+        JSON.stringify(
+          (values.featuredCollections || []).map((item) =>
+            typeof item === "string"
+              ? item
+              : item._id
+          )
+        )
       );
 
-      // Images
-      if (desktopBannerFile) {
-        formData.append(
-          "desktopBanner",
-          desktopBannerFile
-        );
-      }
+      formData.append(
+        "heroBanners",
+        JSON.stringify(
+          values.heroBanners || []
+        )
+      );
 
-      if (mobileBannerFile) {
-        formData.append(
-          "mobileBanner",
-          mobileBannerFile
-        );
-      }
-
+      // Festival badge image
       if (badgeFile) {
         formData.append(
           "festivalBadge",
@@ -213,43 +235,20 @@ const FestivalFormPage = () => {
           </div>
         </div>
 
-        {/* Banners */}
+        {/* Festival Badge */}
         <div className="card p-6">
-          <h3 className="text-lg font-semibold text-ink mb-4">Banners</h3>
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-ink mb-2">Desktop Banner</label>
-              {id && form.getValues("desktopBanner")?.url && (
-                <img
-                  src={form.getValues("desktopBanner").url}
-                  alt="Desktop Banner"
-                  className="mb-3 h-28 rounded-lg border object-cover"
-                />
-              )}
-              <input type="file" accept="image/*" onChange={(e) => setDesktopBannerFile(e.target.files[0])} className="w-full rounded-lg border border-ink/10 p-2" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-ink mb-2">Mobile Banner</label>
-              {id && form.getValues("mobileBanner")?.url && (
-                <img
-                  src={form.getValues("mobileBanner").url}
-                  alt="Mobile Banner"
-                  className="mb-3 h-28 rounded-lg border object-cover"
-                />
-              )}
-              <input type="file" accept="image/*" onChange={(e) => setMobileBannerFile(e.target.files[0])} className="w-full rounded-lg border border-ink/10 p-2" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-ink mb-2">Festival Badge</label>
-              {id && form.getValues("festivalBadge")?.url && (
-                <img
-                  src={form.getValues("festivalBadge").url}
-                  alt="Festival Badge"
-                  className="mb-3 h-28 rounded-lg border object-cover"
-                />
-              )}
-              <input type="file" accept="image/*" onChange={(e) => setBadgeFile(e.target.files[0])} className="w-full rounded-lg border border-ink/10 p-2" />
-            </div>
+          <h3 className="text-lg font-semibold text-ink mb-4">Festival Badge</h3>
+          <div>
+            <label className="block text-sm font-medium text-ink mb-2">Badge Image</label>
+            {id && form.getValues("festivalBadge")?.url && (
+              <img
+                src={form.getValues("festivalBadge").url}
+                alt="Festival Badge"
+                className="mb-3 h-28 rounded-lg border object-cover"
+              />
+            )}
+            <input type="file" accept="image/*" onChange={(e) => setBadgeFile(e.target.files[0])} className="w-full rounded-lg border border-ink/10 p-2" />
+            <p className="mt-2 text-xs text-ink/50">Optional badge image displayed during the festival</p>
           </div>
         </div>
 
@@ -300,7 +299,29 @@ const FestivalFormPage = () => {
                   <option key={c._id} value={c._id}>{c.name}</option>
                 ))}
               </select>
+
               <p className="mt-1 text-xs text-ink/50">Hold Ctrl/Cmd to select multiple</p>
+            </div>
+            <div className="mt-6">
+              <label className="block text-sm font-medium text-ink mb-2">
+                Festival Hero Banners
+              </label>
+
+              <select
+                multiple
+                {...form.register("heroBanners")}
+                className="w-full rounded-lg border border-ink/10 p-2 h-32"
+              >
+                {heroBanners.map((banner) => (
+                  <option key={banner._id} value={banner._id}>
+                    {banner.title || "Untitled Hero Banner"}
+                  </option>
+                ))}
+              </select>
+
+              <p className="mt-1 text-xs text-ink/50">
+                Select the hero banners that should appear during this festival.
+              </p>
             </div>
           </div>
         </div>

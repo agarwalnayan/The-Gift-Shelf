@@ -20,6 +20,7 @@ import ConfirmDialog from '../components/common/ConfirmDialog.jsx';
 import Pagination from '../components/common/Pagination.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 import { TableSkeleton, GridSkeleton } from '../components/common/Skeleton.jsx';
+import PageHeader from '../components/common/PageHeader.jsx';
 
 const initialFilters = {
   search: '',
@@ -209,20 +210,19 @@ const CategoriesPage = () => {
   };
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-ink">Categories</h1>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Categories"
+        description="Manage product categories"
+      />
 
-      <div className="mb-6">
-        <CategoryFilters
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          view={view}
-          onViewChange={setView}
-          onAddClick={openAddModal}
-        />
-      </div>
+      <CategoryFilters
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        view={view}
+        onViewChange={setView}
+        onAddClick={openAddModal}
+      />
 
       {isLoading ? (
         view === 'table' ? (
@@ -250,13 +250,13 @@ const CategoriesPage = () => {
             onRestore={handleRestore}
             onPermanentDelete={(id) => askConfirm('permanent', id)}
           />
-          <div className="card mt-4 p-0">
+          <div className="card mt-4 p-4">
             <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
           </div>
         </>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {categories.map((category) => (
               <CategoryGridCard
                 key={category._id}
@@ -270,7 +270,7 @@ const CategoriesPage = () => {
               />
             ))}
           </div>
-          <div className="card mt-4 p-0">
+          <div className="card mt-4 p-4">
             <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
           </div>
         </>

@@ -9,8 +9,7 @@ const defaultValues = {
   title: '',
   subtitle: '',
   description: '',
-  ctaText: '',
-  ctaLink: '',
+  destinationUrl: '',
   displayOrder: 0,
   isActive: true,
   startDate: '',
@@ -45,8 +44,7 @@ const BannerFormModal = ({ isOpen, onClose, onSubmit, banner, bannerType, isSubm
         title: banner.title || '',
         subtitle: banner.subtitle || '',
         description: banner.description || '',
-        ctaText: banner.ctaText || '',
-        ctaLink: banner.ctaLink || '',
+        destinationUrl: banner.destinationUrl || '',
         displayOrder: banner.displayOrder ?? 0,
         isActive: banner.isActive ?? true,
         startDate: toDateInput(banner.startDate),
@@ -72,8 +70,7 @@ const BannerFormModal = ({ isOpen, onClose, onSubmit, banner, bannerType, isSubm
     formData.append('title', values.title || '');
     formData.append('subtitle', values.subtitle || '');
     formData.append('description', values.description || '');
-    formData.append('ctaText', values.ctaText || '');
-    formData.append('ctaLink', values.ctaLink || '');
+    formData.append('destinationUrl', values.destinationUrl || '');
     formData.append('displayOrder', values.displayOrder || 0);
     formData.append('isActive', values.isActive);
     if (values.startDate) formData.append('startDate', values.startDate);
@@ -107,10 +104,7 @@ const BannerFormModal = ({ isOpen, onClose, onSubmit, banner, bannerType, isSubm
             <textarea rows={2} className="input-field" {...register('description', { maxLength: 400 })} />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="CTA Text" placeholder="Shop Now" {...register('ctaText', { maxLength: 40 })} />
-            <Input label="CTA Link" placeholder="/products?occasion=Birthday" {...register('ctaLink', { maxLength: 300 })} />
-          </div>
+          <Input label="Destination URL" placeholder="/raksha-bandhan or /product/personalized-wallet" {...register('destinationUrl', { maxLength: 300 })} />
 
           <div className="grid grid-cols-2 gap-4">
             <div>

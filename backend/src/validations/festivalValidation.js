@@ -26,6 +26,10 @@ export const createFestivalSchema = Joi.object({
 
   featuredCollections: Joi.array().items(Joi.string()).default([]),
 
+  heroBanners: Joi.array()
+    .items(Joi.string().hex().length(24))
+    .default([]),
+
   displayOrder: Joi.number().min(0).default(0),
 
   isActive: Joi.boolean(),
@@ -56,6 +60,10 @@ export const updateFestivalSchema = Joi.object({
     .default([]),
 
   featuredCollections: Joi.array().items(Joi.string()),
+
+  heroBanners: Joi.array()
+    .items(Joi.string().hex().length(24))
+    .default([]),
 
   displayOrder: Joi.number().min(0),
 

@@ -13,6 +13,8 @@ import {
 } from 'react-icons/hi2';
 import { getDashboardStatsApi } from '../api/statsApi.js';
 import Loader from '../components/common/Loader.jsx';
+import PageHeader from '../components/common/PageHeader.jsx';
+import Button from '../components/common/Button.jsx';
 
 const StatCard = ({ label, value, icon: Icon, color = 'primary' }) => {
   const colorClasses = {
@@ -96,22 +98,27 @@ const DashboardPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-ink">Dashboard</h1>
-        <Link to="/products/new" className="btn-primary inline-flex items-center gap-1.5">
-          <HiOutlinePlus size={16} />
-          Add Product
-        </Link>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description="Overview of your store performance"
+        actions={
+          <Link to="/products/new">
+            <Button>
+              <HiOutlinePlus size={16} className="mr-1.5" />
+              Add Product
+            </Button>
+          </Link>
+        }
+      />
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Today's Orders" value={stats.todayOrders} icon={HiOutlineClipboardDocumentList} color="primary" />
         <StatCard label="Today's Revenue" value={`₹${stats.todayRevenue.toFixed(2)}`} icon={HiOutlineCurrencyRupee} color="green" />
         <StatCard label="Pending Orders" value={stats.pendingOrders} icon={HiOutlineClock} color="amber" />
         <StatCard label="Low Stock" value={lowStockCount} icon={HiOutlineCube} color="red" />
       </div>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total Orders" value={stats.totalOrders} icon={HiOutlineClipboardDocumentList} color="primary" />
         <StatCard label="Total Products" value={stats.totalProducts} icon={HiOutlineShoppingBag} color="primary" />
         <StatCard label="Total Users" value={stats.totalUsers} icon={HiOutlineUsers} color="primary" />
@@ -164,14 +171,14 @@ const DashboardPage = () => {
                 to={`/orders/${order._id}`}
                 className="flex items-center justify-between rounded-lg border border-ink/10 px-4 py-3 text-sm transition-colors hover:border-primary-300 hover:bg-primary-50"
               >
-                <div className="flex items-center gap-3">
-                  <HiOutlineTruck size={16} className="text-ink/40" />
-                  <div>
-                    <p className="font-medium text-ink">{order._id.slice(-8).toUpperCase()}</p>
+                <div className="flex items-center gap-3 min-w-0">
+                  <HiOutlineTruck size={16} className="text-ink/40 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="font-medium text-ink truncate">{order._id.slice(-8).toUpperCase()}</p>
                     <p className="text-xs text-ink/60">{new Date(order.createdAt).toLocaleDateString()}</p>
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-right shrink-0 ml-4">
                   <p className="font-medium text-ink">₹{order.totalPrice}</p>
                   <p className={`text-xs ${order.isPaid ? 'text-green-600' : 'text-amber-600'}`}>
                     {order.isPaid ? 'Paid' : 'Unpaid'}
@@ -185,7 +192,7 @@ const DashboardPage = () => {
 
       <div>
         <h2 className="mb-3 text-sm font-semibold text-ink/60">Quick Actions</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <QuickLink to="/products/new" label="Add a Product" icon={HiOutlineShoppingBag} />
           <QuickLink to="/categories" label="Manage Categories" icon={HiOutlineClipboardDocumentList} />
           <QuickLink to="/orders" label="Review Orders" icon={HiOutlineUsers} />

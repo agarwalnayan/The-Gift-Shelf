@@ -10,7 +10,7 @@ const PromoBannerSection = ({ banners, startIndex = 0 }) => {
   const banner = banners[startIndex];
   if (!banner) return null;
 
-  const isExternal = /^https?:\/\//.test(banner.ctaLink || '');
+  const isExternal = /^https?:\/\//.test(banner.destinationUrl || '');
   const content = (
     <div className="group relative aspect-[16/7] w-full overflow-hidden rounded-2xl bg-primary-100">
       {banner.image?.url && (
@@ -29,14 +29,14 @@ const PromoBannerSection = ({ banners, startIndex = 0 }) => {
     </div>
   );
 
-  if (!banner.ctaLink) return <div>{content}</div>;
+  if (!banner.destinationUrl) return <div>{content}</div>;
 
   return isExternal ? (
-    <a href={banner.ctaLink} target="_blank" rel="noreferrer">
+    <a href={banner.destinationUrl} target="_blank" rel="noreferrer">
       {content}
     </a>
   ) : (
-    <Link to={banner.ctaLink}>
+    <Link to={banner.destinationUrl}>
       {content}
     </Link>
   );

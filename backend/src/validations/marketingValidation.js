@@ -8,23 +8,21 @@ export const createBannerSchema = Joi.object({
   title: Joi.string().trim().max(150).allow('', null),
   subtitle: Joi.string().trim().max(200).allow('', null),
   description: Joi.string().trim().max(400).allow('', null),
-  ctaText: Joi.string().trim().max(40).allow('', null),
-  ctaLink: Joi.string().trim().max(300).allow('', null),
+  destinationUrl: Joi.string().trim().max(300).allow('', null),
   displayOrder: Joi.number().integer().min(0),
   isActive: Joi.boolean(),
   startDate: Joi.date().allow('', null),
   endDate: Joi.date().allow('', null),
   image: Joi.any().optional(),
   mobileImage: Joi.any().optional(),
-}).unknown(false);
+});
 
 export const updateBannerSchema = Joi.object({
   type: Joi.string().valid('hero', 'promo'),
   title: Joi.string().trim().max(150).allow('', null),
   subtitle: Joi.string().trim().max(200).allow('', null),
   description: Joi.string().trim().max(400).allow('', null),
-  ctaText: Joi.string().trim().max(40).allow('', null),
-  ctaLink: Joi.string().trim().max(300).allow('', null),
+  destinationUrl: Joi.string().trim().max(300).allow('', null),
   displayOrder: Joi.number().integer().min(0),
   isActive: Joi.boolean(),
   startDate: Joi.date().allow('', null),
@@ -33,25 +31,7 @@ export const updateBannerSchema = Joi.object({
   mobileImage: Joi.any().optional(),
   removeImage: Joi.boolean(),
   removeMobileImage: Joi.boolean(),
-}).unknown(false);
-
-// ---- Featured items (recipient + occasion) ----
-export const createFeaturedItemSchema = Joi.object({
-  type: Joi.string().valid('recipient', 'occasion').required(),
-  name: Joi.string().trim().min(1).max(80).required(),
-  value: Joi.string().trim().min(1).max(80).required(),
-  displayOrder: Joi.number().integer().min(0),
-  isActive: Joi.boolean(),
-  image: Joi.any().optional(),
-}).unknown(false);
-
-export const updateFeaturedItemSchema = Joi.object({
-  name: Joi.string().trim().min(1).max(80),
-  value: Joi.string().trim().min(1).max(80),
-  displayOrder: Joi.number().integer().min(0),
-  isActive: Joi.boolean(),
-  image: Joi.any().optional(),
-}).unknown(false);
+});
 
 // ---- Budget collections (fixed 3 tiers, upsert by tier) ----
 export const upsertBudgetCollectionSchema = Joi.object({

@@ -26,14 +26,13 @@ const festivalSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
-    desktopBanner: {
-      url: { type: String, default: '' },
-      publicId: { type: String, default: '' },
-    },
-    mobileBanner: {
-      url: { type: String, default: '' },
-      publicId: { type: String, default: '' },
-    },
+
+    heroBanners: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Banner",
+      },
+    ],
     festivalBadge: {
       url: { type: String, default: '' },
       publicId: { type: String, default: '' },

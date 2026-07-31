@@ -7,6 +7,7 @@ import {
   HiOutlineArrowUturnLeft,
   HiOutlineXCircle,
   HiOutlineDocumentDuplicate,
+  HiOutlinePlus,
 } from 'react-icons/hi2';
 import {
   getProductsApi,
@@ -26,6 +27,9 @@ import Toggle from '../components/common/Toggle.jsx';
 import Pagination from '../components/common/Pagination.jsx';
 import ConfirmDialog from '../components/common/ConfirmDialog.jsx';
 import { TableSkeleton } from '../components/common/Skeleton.jsx';
+import PageHeader from '../components/common/PageHeader.jsx';
+import Button from '../components/common/Button.jsx';
+import TableCard from '../components/common/TableCard.jsx';
 import ProductFilters from '../components/product/ProductFilters.jsx';
 import ProductBulkActionsBar from '../components/product/ProductBulkActionsBar.jsx';
 import BulkEditModal from '../components/product/BulkEditModal.jsx';
@@ -211,15 +215,231 @@ const ProductsPage = () => {
     },
   };
 
-  return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-ink">Products</h1>
+  const productColumns = [
+    { header: 'Product', width: '200px' },
+    { header: 'Category', width: '120px' },
+    { header: 'Price', width: '100px' },
+    { header: 'Stock', width: '100px' },
+    { header: 'Active', width: '80px' },
+    { header: 'Published', width: '96px' },
+    { header: 'Featured', width: '80px' },
+    { header: '', width: '128px' },
+  ];
+
+  const renderProductRow = (product) => [
+    <td key="product">
+      <div className="flex items-center gap-3 min-w-0">
+        <img
+          src={
+            product.primaryImage?.url ||
+            product.images?.[0]?.url ||
+            "/placeholder-product.png"
+          } alt={product.name}
+          className="h-10 w-10 shrink-0 rounded-lg object-cover"
+        />
+        <div className="min-w-0">
+          <span className="font-medium block truncate">{product.name}</span>
+          {product.isFeatured && (
+            <span className="mt-1 inline-flex rounded-full bg-primary-100 px-2 py-0.5 text-[10px] font-medium text-primary-700">
+              Featured
+            </span>
+          )}
+        </div>
+      </div>
+    </td>,
+    <td key="category" className="truncate">{product.category?.name}</td>,
+    <td key="price">₹{product.discountPrice > 0 ? product.discountPrice : product.price}</td>,
+    <td key="stock">
+      {product.stock}
+      {product.stockStatus === 'low_stock' && (
+        <span className="ml-1.5 inline-flex rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-medium text-yellow-700">
+          Low
+        </span>
+      )}
+      {product.stockStatus === 'out_of_stock' && (
+        <span className="ml-1.5 inline-flex rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-medium text-red-700">
+          Out
+        </span>
+      )}
+    </td>,
+    <td key="active">
+      <Toggle
+        checked={product.isActive}
+        disabled={product.isDeleted}
+        onChange={(v) => handleToggleActive(product._id, v)}
+      />
+    </td>,
+    <td key="published">
+      <Toggle
+        checked={product.publishStatus === 'published'}
+        disabled={product.isDeleted}
+        onChange={(v) => handleTogglePublish(product._id, v)}
+      />
+    </td>,
+    <td key="featured">
+      <Toggle
+        checked={product.isFeatured}
+        disabled={product.isDeleted}
+        onChange={(v) => handleToggleFeatured(product._id, v)}
+      />
+    </td>,
+    <td key="actions">
+      <div className="flex items-center gap-2">
+        {product.isDeleted ? (
+          <button onClick={() => handleRestore(product._id)} className="p-1.5 text-ink/50 hover:text-green-600 rounded hover:bg-green-50" title="Restore">
+            <HiOutlineArrowUturnLeft size={18} />
+          </button>
+        ) : (
+          <>
+            <Link to={`/products/${product._id}/edit`} className="p-1.5 text-ink/50 hover:text-primary-600 rounded hover:bg-primary-50" title="Edit">
+              <HiOutlinePencilSquare size={18} />
+            </Link>
+            <Link
+              to={`/products/new?duplicateFrom=${product._id}`}
+              className="p-1.5 text-ink/50 hover:text-primary-600 rounded hover:bg-primary-50"
+              title="Duplicate"
+            >
+              <HiOutlineDocumentDuplicate size={18} />
+            </Link>
+          </>
+        )}
+
+        {product.isDeleted ? (
+          <button
+            onClick={() => askConfirm('permanent', product._id)}
+            className="p-1.5 text-ink/50 hover:text-red-600 rounded hover:bg-red-50"
+            title="Delete permanently"
+          >
+            <HiOutlineXCircle size={18} />
+          </button>
+        ) : (
+          <button onClick={() => askConfirm('delete', product._id)} className="p-1.5 text-ink/50 hover:text-red-600 rounded hover:bg-red-50" title="Delete">
+            <HiOutlineTrash size={18} />
+          </button>
+        )}
+      </div>
+    </td>,
+  ];
+
+  const renderProductCard = (product) => (
+    <div className="space-y-4">
+      <div className="flex items-start gap-4">
+        <img
+          src={
+            product.primaryImage?.url ||
+            product.images?.[0]?.url ||
+            "/placeholder-product.png"
+          } alt={product.name}
+          className="h-16 w-16 shrink-0 rounded-lg object-cover"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-ink truncate">{product.name}</p>
+          {product.isFeatured && (
+            <span className="mt-1 inline-flex rounded-full bg-primary-100 px-2 py-0.5 text-[10px] font-medium text-primary-700">
+              Featured
+            </span>
+          )}
+          <p className="text-sm text-ink/60">{product.sku}</p>
+          <p className="text-sm font-medium text-ink mt-1">₹{product.discountPrice > 0 ? product.discountPrice : product.price}</p>
+        </div>
       </div>
 
-      <div className="mb-6">
-        <ProductFilters filters={filters} onFilterChange={handleFilterChange} categories={categories} />
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <span className="text-xs font-medium text-ink/50 uppercase tracking-wide">Stock</span>
+          <p className="text-sm text-ink mt-1">
+            {product.stock}
+            {product.stockStatus === 'low_stock' && (
+              <span className="ml-1.5 inline-flex rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-medium text-yellow-700">
+                Low
+              </span>
+            )}
+            {product.stockStatus === 'out_of_stock' && (
+              <span className="ml-1.5 inline-flex rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-medium text-red-700">
+                Out
+              </span>
+            )}
+          </p>
+        </div>
+        <div>
+          <span className="text-xs font-medium text-ink/50 uppercase tracking-wide">Category</span>
+          <p className="text-sm text-ink mt-1">{product.category?.name}</p>
+        </div>
       </div>
+
+      <div className="flex items-center justify-between gap-4 pt-2 border-t border-ink/10">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-ink/50">Active</span>
+            <Toggle
+              checked={product.isActive}
+              disabled={product.isDeleted}
+              onChange={(v) => handleToggleActive(product._id, v)}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-ink/50">Published</span>
+            <Toggle
+              checked={product.publishStatus === 'published'}
+              disabled={product.isDeleted}
+              onChange={(v) => handleTogglePublish(product._id, v)}
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1">
+          {product.isDeleted ? (
+            <button onClick={() => handleRestore(product._id)} className="p-2 text-ink/50 hover:text-green-600 rounded hover:bg-green-50" title="Restore">
+              <HiOutlineArrowUturnLeft size={18} />
+            </button>
+          ) : (
+            <>
+              <Link to={`/products/${product._id}/edit`} className="p-2 text-ink/50 hover:text-primary-600 rounded hover:bg-primary-50" title="Edit">
+                <HiOutlinePencilSquare size={18} />
+              </Link>
+              <Link
+                to={`/products/new?duplicateFrom=${product._id}`}
+                className="p-2 text-ink/50 hover:text-primary-600 rounded hover:bg-primary-50"
+                title="Duplicate"
+              >
+                <HiOutlineDocumentDuplicate size={18} />
+              </Link>
+            </>
+          )}
+          {product.isDeleted ? (
+            <button
+              onClick={() => askConfirm('permanent', product._id)}
+              className="p-2 text-ink/50 hover:text-red-600 rounded hover:bg-red-50"
+              title="Delete permanently"
+            >
+              <HiOutlineXCircle size={18} />
+            </button>
+          ) : (
+            <button onClick={() => askConfirm('delete', product._id)} className="p-2 text-ink/50 hover:text-red-600 rounded hover:bg-red-50" title="Delete">
+              <HiOutlineTrash size={18} />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Products"
+        description="Manage your product catalog"
+        actions={
+          <Link to="/products/new">
+            <Button>
+              <HiOutlinePlus size={16} className="mr-1.5" />
+              Add Product
+            </Button>
+          </Link>
+        }
+      />
+
+      <ProductFilters filters={filters} onFilterChange={handleFilterChange} categories={categories} />
 
       <ProductBulkActionsBar count={selectedIds.length} onAction={handleBulkAction} onClear={() => setSelectedIds([])} />
 
@@ -231,130 +451,15 @@ const ProductsPage = () => {
         <EmptyState title="No products found" description="Try adjusting your filters, or add your first product." />
       ) : (
         <>
-          <div className="card overflow-x-auto p-0">
-            <table className="table-base">
-              <thead>
-                <tr>
-                  <th className="w-8">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.length === products.length && products.length > 0}
-                      onChange={toggleSelectAll}
-                    />
-                  </th>
-                  <th>Product</th>
-                  <th>Category</th>
-                  <th>Price</th>
-                  <th>Stock</th>
-                  <th>Active</th>
-                  <th>Published</th>
-                  <th>Featured</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((product) => (
-                  <tr key={product._id} className={product.isDeleted ? 'opacity-50' : ''}>
-                    <td>
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.includes(product._id)}
-                        onChange={() => toggleSelect(product._id)}
-                        disabled={product.isDeleted}
-                      />
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={product.primaryImage?.url || product.images?.[0]?.url}
-                          alt=""
-                          className="h-10 w-10 rounded-lg object-cover"
-                        />
-                        <div>
-                          <span className="font-medium">{product.name}</span>
-                          <p className="text-xs text-ink/40">{product.sku}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td>{product.category?.name}</td>
-                    <td>₹{product.discountPrice > 0 ? product.discountPrice : product.price}</td>
-                    <td>
-                      {product.stock}
-                      {product.stockStatus === 'low_stock' && (
-                        <span className="ml-1.5 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-medium text-yellow-700">
-                          Low
-                        </span>
-                      )}
-                      {product.stockStatus === 'out_of_stock' && (
-                        <span className="ml-1.5 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-medium text-red-700">
-                          Out
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      <Toggle
-                        checked={product.isActive}
-                        disabled={product.isDeleted}
-                        onChange={(v) => handleToggleActive(product._id, v)}
-                      />
-                    </td>
-                    <td>
-                      <Toggle
-                        checked={product.publishStatus === 'published'}
-                        disabled={product.isDeleted}
-                        onChange={(v) => handleTogglePublish(product._id, v)}
-                      />
-                    </td>
-                    <td>
-                      <Toggle
-                        checked={product.isFeatured}
-                        disabled={product.isDeleted}
-                        onChange={(v) => handleToggleFeatured(product._id, v)}
-                      />
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-3">
-                        {product.isDeleted ? (
-                          <button onClick={() => handleRestore(product._id)} className="text-ink/50 hover:text-green-600" title="Restore">
-                            <HiOutlineArrowUturnLeft size={18} />
-                          </button>
-                        ) : (
-                          <>
-                            <Link to={`/products/${product._id}/edit`} className="text-ink/50 hover:text-primary-600" title="Edit">
-                              <HiOutlinePencilSquare size={18} />
-                            </Link>
-                            <Link
-                              to={`/products/new?duplicateFrom=${product._id}`}
-                              className="text-ink/50 hover:text-primary-600"
-                              title="Duplicate"
-                            >
-                              <HiOutlineDocumentDuplicate size={18} />
-                            </Link>
-                          </>
-                        )}
+          <TableCard
+            columns={productColumns}
+            data={products}
+            keyExtractor={(product) => product._id}
+            renderRow={renderProductRow}
+            renderCard={renderProductCard}
+          />
 
-                        {product.isDeleted ? (
-                          <button
-                            onClick={() => askConfirm('permanent', product._id)}
-                            className="text-ink/50 hover:text-red-600"
-                            title="Delete permanently"
-                          >
-                            <HiOutlineXCircle size={18} />
-                          </button>
-                        ) : (
-                          <button onClick={() => askConfirm('delete', product._id)} className="text-ink/50 hover:text-red-600" title="Delete">
-                            <HiOutlineTrash size={18} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="card mt-4 p-0">
+          <div className="card mt-4 p-4">
             <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
           </div>
         </>

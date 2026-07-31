@@ -14,6 +14,7 @@ import {
   weightSchema,
   dimensionsSchema,
 } from '../validations/productValidation.js';
+import CatalogMaster from '../models/CatalogMaster.js';
 
 const stringArraySchema = Joi.array().items(Joi.string().trim());
 
@@ -200,9 +201,31 @@ export const getAllProducts = asyncHandler(async (req, res) => {
   if (category) filter.category = category;
   if (subCategory) filter.subCategory = subCategory;
   if (brand) filter.brand = brand;
-  if (occasion) filter.occasion = occasion;
-  if (recipient) filter.recipient = recipient;
+
+  if (recipient) {
+    const recipientMaster = await CatalogMaster.findOne({
+      type: 'recipient',
+      slug: recipient.toLowerCase(),
+    });
+
+    filter.recipient = recipientMaster
+      ? recipientMaster.name
+      : recipient;
+  }
+
+  if (occasion) {
+    const occasionMaster = await CatalogMaster.findOne({
+      type: 'occasion',
+      slug: occasion.toLowerCase(),
+    });
+
+    filter.occasion = occasionMaster
+      ? occasionMaster.name
+      : occasion;
+  }
+
   if (tags) filter.tags = tags;
+  
   if (featured) filter.isFeatured = true;
   if (search) filter.$text = { $search: search };
   if (minPrice || maxPrice) {
@@ -347,6 +370,8 @@ export const updateProductImages = asyncHandler(async (req, res) => {
         order: keepMap.get(image.publicId).order ?? image.order,
         isPrimary: Boolean(keepMap.get(image.publicId).isPrimary),
       }));
+
+    retained.sort((a, b) => a.order - b.order);
 
     product.images = retained;
   }

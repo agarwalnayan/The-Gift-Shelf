@@ -2,6 +2,10 @@ import CatalogMaster from "../models/CatalogMaster.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
+import {
+  uploadImage,
+  deleteImage,
+} from "../services/cloudinaryService.js";
 
 /**
  * @desc    Create Catalog Master
@@ -13,14 +17,18 @@ export const createCatalogMaster = asyncHandler(async (req, res) => {
     name,
     slug,
     type,
+    description = "",
     displayOrder = 0,
     isActive = true,
-    description = "",
+    showOnHomepage = false,
+    homepageDisplayOrder = 0,
   } = req.body;
 
   const existing = await CatalogMaster.findOne({
-    slug,
-    type,
+    $or: [
+      { slug, type },
+      { name, type },
+    ],
   });
 
   if (existing) {
@@ -30,16 +38,28 @@ export const createCatalogMaster = asyncHandler(async (req, res) => {
     );
   }
 
+  let image;
+
+  if (req.file) {
+    image = await uploadImage(
+      req.file.buffer,
+      "tgs/catalog-masters"
+    );
+  }
+
   const master = await CatalogMaster.create({
-    name,
-    slug,
-    type,
-    description,
-    displayOrder,
-    isActive,
-    createdBy: req.user._id,
-    updatedBy: req.user._id,
-  });
+  name,
+  slug,
+  type,
+  description,
+  image,
+  displayOrder,
+  isActive,
+  showOnHomepage,
+  homepageDisplayOrder,
+  createdBy: req.user._id,
+  updatedBy: req.user._id,
+});
 
   res
     .status(201)
@@ -148,9 +168,33 @@ export const updateCatalogMaster = asyncHandler(async (req, res) => {
       );
     }
   }
+  if (req.file) {
 
-  Object.assign(master, req.body);
+    if (master.image?.publicId) {
+      await deleteImage(master.image.publicId);
+    }
 
+    master.image = await uploadImage(
+      req.file.buffer,
+      "tgs/catalog-masters"
+    );
+  }
+  const fields = [
+    "name",
+    "slug",
+    "type",
+    "description",
+    "displayOrder",
+    "isActive",
+    "showOnHomepage",
+    "homepageDisplayOrder",
+  ];
+
+  fields.forEach((field) => {
+    if (req.body[field] !== undefined) {
+      master[field] = req.body[field];
+    }
+  });
   master.updatedBy = req.user._id;
 
   await master.save();
@@ -207,7 +251,9 @@ export const deleteCatalogMaster = asyncHandler(async (req, res) => {
   if (!master) {
     throw new ApiError(404, "Catalog master not found");
   }
-
+  if (master.image?.publicId) {
+    await deleteImage(master.image.publicId);
+  }
   await master.deleteOne();
 
   res
@@ -230,8 +276,13 @@ export const getHomepageCatalogMasters = asyncHandler(async (req, res) => {
   const masters = await CatalogMaster.find({
     type,
     isActive: true,
+    showOnHomepage: true,
   })
-    .sort({ displayOrder: 1 })
+    .sort({
+  homepageDisplayOrder: 1,
+  displayOrder: 1,
+  name: 1,
+})
     .limit(6);
 
   res.status(200).json(

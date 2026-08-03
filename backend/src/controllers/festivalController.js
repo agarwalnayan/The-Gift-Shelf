@@ -4,6 +4,9 @@ import ApiError from '../utils/ApiError.js';
 import ApiResponse from '../utils/ApiResponse.js';
 import { uploadImage, deleteImage } from '../services/cloudinaryService.js';
 
+const getUploadedFile = (fieldname, files) =>
+  files?.find((file) => file.fieldname === fieldname);
+
 export const createFestival = asyncHandler(async (req, res) => {
   const {
     name,
@@ -28,9 +31,10 @@ export const createFestival = asyncHandler(async (req, res) => {
     publicId: '',
   };
 
-  if (req.files?.festivalBadge?.[0]) {
+  const badgeFile = getUploadedFile('festivalBadge', req.files);
+  if (badgeFile) {
     festivalBadge = await uploadImage(
-      req.files.festivalBadge[0].buffer,
+      badgeFile.buffer,
       'tgs/festivals/badges'
     );
   }
@@ -42,10 +46,11 @@ export const createFestival = asyncHandler(async (req, res) => {
       featuredSections.map(async (section, index) => {
         let sectionImage = { url: '', publicId: '' };
         const imageKey = `featuredSectionImage_${index}`;
+        const imageFile = getUploadedFile(imageKey, req.files);
         
-        if (req.files?.[imageKey]?.[0]) {
+        if (imageFile) {
           sectionImage = await uploadImage(
-            req.files[imageKey][0].buffer,
+            imageFile.buffer,
             'tgs/festivals/featured-sections'
           );
         }
@@ -122,9 +127,10 @@ export const updateFestival = asyncHandler(async (req, res) => {
   } = req.body;
 
   // Handle festival badge
-  if (req.files?.festivalBadge?.[0]) {
+  const badgeFile = getUploadedFile('festivalBadge', req.files);
+  if (badgeFile) {
     await deleteImage(festival.festivalBadge?.publicId);
-    festival.festivalBadge = await uploadImage(req.files.festivalBadge[0].buffer, 'tgs/festivals/badges');
+    festival.festivalBadge = await uploadImage(badgeFile.buffer, 'tgs/festivals/badges');
   }
 
   // Handle featured sections with image uploads/deletions
@@ -145,15 +151,16 @@ export const updateFestival = asyncHandler(async (req, res) => {
       featuredSections.map(async (section, index) => {
         let sectionImage = section.image || { url: '', publicId: '' };
         const imageKey = `featuredSectionImage_${index}`;
+        const imageFile = getUploadedFile(imageKey, req.files);
         
         // If new image uploaded, delete old one and upload new
-        if (req.files?.[imageKey]?.[0]) {
+        if (imageFile) {
           const oldImage = oldSections[index]?.image;
           if (oldImage?.publicId) {
             await deleteImage(oldImage.publicId);
           }
           sectionImage = await uploadImage(
-            req.files[imageKey][0].buffer,
+            imageFile.buffer,
             'tgs/festivals/featured-sections'
           );
         } else if (oldSections[index]?.image) {
@@ -229,4 +236,50 @@ export const getActiveFestival = asyncHandler(async (req, res) => {
   }
 
   res.status(200).json(new ApiResponse(200, { festival }, 'Active festival fetched successfully'));
+});
+
+export const getFeaturedSectionBySlug = asyncHandler(async (req, res) => {
+  const { slug } = req.params;
+  
+  const now = new Date();
+  const festival = await Festival.findOne({
+    enabled: true,
+    isActive: true,
+    startDate: { $lte: now },
+    endDate: { $gte: now },
+  });
+
+  if (!festival) {
+    throw new ApiError(404, 'No active festival found');
+  }
+
+  const featuredSection = festival.featuredSections?.find(
+    (section) => section.slug === slug && section.isActive
+  );
+
+  if (!featuredSection) {
+    throw new ApiError(404, 'Featured section not found');
+  }
+
+  // Populate products for the featured section
+  const populatedSection = await Festival.aggregate([
+    { $match: { _id: festival._id } },
+    { $unwind: '$featuredSections' },
+    { $match: { 'featuredSections.slug': slug, 'featuredSections.isActive': true } },
+    {
+      $lookup: {
+        from: 'products',
+        localField: 'featuredSections.products',
+        foreignField: '_id',
+        as: 'featuredSections.products',
+      },
+    },
+    { $project: { featuredSections: 1 } },
+  ]);
+
+  if (!populatedSection || populatedSection.length === 0) {
+    throw new ApiError(404, 'Featured section not found');
+  }
+
+  res.status(200).json(new ApiResponse(200, { featuredSection: populatedSection[0].featuredSections }, 'Featured section fetched successfully'));
 });

@@ -10,6 +10,7 @@ import {
   updateFestival,
   deleteFestival,
   getActiveFestival,
+  getFeaturedSectionBySlug,
 } from '../controllers/festivalController.js';
 import {
   createFestivalSchema,
@@ -20,6 +21,9 @@ const router = express.Router();
 
 // Public route for fetching active festival
 router.get('/active', attachUserIfPresent, getActiveFestival);
+
+// Public route for fetching featured section by slug
+router.get('/featured/:slug', attachUserIfPresent, getFeaturedSectionBySlug);
 
 // Admin-only routes
 router.use(protect, authorizeRoles('admin', 'superadmin'));
@@ -42,7 +46,17 @@ router.post(
 );
 router.put(
   '/:id',
+  (req, res, next) => {
+    console.log("=== BEFORE MULTER ===");
+    next();
+  },
   upload.any(),
+  (req, res, next) => {
+    console.log("=== AFTER MULTER ===");
+    console.log(req.files);
+    console.log(req.body);
+    next();
+  },
   parseMultipartJson([
     'announcement',
     'featuredTags',

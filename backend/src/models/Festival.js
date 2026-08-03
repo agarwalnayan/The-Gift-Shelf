@@ -93,6 +93,11 @@ const festivalSchema = new mongoose.Schema(
     },
     featuredSections: [
       {
+        slug: {
+          type: String,
+          trim: true,
+          required: true,
+        },
         title: {
           type: String,
           trim: true,
@@ -106,16 +111,6 @@ const festivalSchema = new mongoose.Schema(
         image: {
           url: { type: String, default: '' },
           publicId: { type: String, default: '' },
-        },
-        destinationType: {
-          type: String,
-          enum: ['products', 'url'],
-          default: 'url',
-        },
-        destinationUrl: {
-          type: String,
-          trim: true,
-          default: '',
         },
         products: {
           type: [mongoose.Schema.Types.ObjectId],

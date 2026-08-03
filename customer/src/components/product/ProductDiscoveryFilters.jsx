@@ -16,7 +16,14 @@ const sortOptions = [
  * exposed as plain text inputs rather than a picklist (there is no endpoint
  * that lists distinct values).
  */
-const ProductDiscoveryFilters = ({ filters, categories, onChange, onClear, hasActiveFilters }) => {
+const ProductDiscoveryFilters = ({ 
+  filters, 
+  categories = [], 
+  onChange, 
+  onClear, 
+  hasActiveFilters,
+  showCategoryFilter = true,
+}) => {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [searchDraft, setSearchDraft] = useState(filters.search);
   const [occasionDraft, setOccasionDraft] = useState(filters.occasion);
@@ -63,18 +70,20 @@ const ProductDiscoveryFilters = ({ filters, categories, onChange, onClear, hasAc
           />
         </form>
 
-        <select
-          value={filters.category}
-          onChange={(event) => onChange({ category: event.target.value })}
-          className="input-field w-auto"
-        >
-          <option value="">All Categories</option>
-          {categories.map((category) => (
-            <option key={category._id} value={category._id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
+        {showCategoryFilter && (
+          <select
+            value={filters.category}
+            onChange={(event) => onChange({ category: event.target.value })}
+            className="input-field w-auto"
+          >
+            <option value="">All Categories</option>
+            {categories.map((category) => (
+              <option key={category._id} value={category._id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        )}
 
         <select value={filters.sort} onChange={(event) => onChange({ sort: event.target.value })} className="input-field w-auto">
           {sortOptions.map((option) => (

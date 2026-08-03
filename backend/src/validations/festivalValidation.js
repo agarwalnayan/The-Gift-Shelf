@@ -32,10 +32,9 @@ export const createFestivalSchema = Joi.object({
 
   featuredSections: Joi.array().items(
     Joi.object({
+      slug: Joi.string().trim().required().max(100),
       title: Joi.string().trim().max(150).allow('', null),
       description: Joi.string().trim().max(400).allow('', null),
-      destinationType: Joi.string().valid('products', 'url').default('url'),
-      destinationUrl: Joi.string().trim().max(500).allow('', null),
       products: Joi.array().items(Joi.string().hex().length(24)).default([]),
       displayOrder: Joi.number().min(0).default(0),
       isActive: Joi.boolean().default(true),
@@ -79,10 +78,9 @@ export const updateFestivalSchema = Joi.object({
 
   featuredSections: Joi.array().items(
     Joi.object({
+      slug: Joi.string().trim().required().max(100),
       title: Joi.string().trim().max(150).allow('', null),
       description: Joi.string().trim().max(400).allow('', null),
-      destinationType: Joi.string().valid('products', 'url').default('url'),
-      destinationUrl: Joi.string().trim().max(500).allow('', null),
       products: Joi.array().items(Joi.string().hex().length(24)).default([]),
       displayOrder: Joi.number().min(0).default(0),
       isActive: Joi.boolean().default(true),

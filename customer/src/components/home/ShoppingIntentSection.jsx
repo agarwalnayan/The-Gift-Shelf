@@ -3,19 +3,6 @@ import { Link } from 'react-router-dom';
 const ShoppingIntentSection = ({ featuredSections = [] }) => {
   if (!featuredSections || featuredSections.length === 0) return null;
 
-  const getDestinationLink = (section) => {
-    if (section.destinationType === 'products' && section.products && section.products.length > 0) {
-      const productIds = section.products.map((p) => typeof p === 'string' ? p : p._id).join(',');
-      return `/products?ids=${productIds}`;
-    }
-    return section.destinationUrl || '#';
-  };
-
-  const getCTAText = (section) => {
-    if (section.destinationType === 'products') return 'Shop Now →';
-    return 'Explore →';
-  };
-
   return (
     <div className="bg-gradient-to-b from-[#FAF7F2] to-white py-16 lg:py-24">
       <div className="container-tgs">
@@ -36,7 +23,7 @@ const ShoppingIntentSection = ({ featuredSections = [] }) => {
           {featuredSections.map((section, index) => (
             <Link
               key={section._id || index}
-              to={getDestinationLink(section)}
+              to={`/featured/${section.slug}`}
               className="group block h-[520px] overflow-hidden rounded-3xl bg-white shadow-lg transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl"
               style={{
                 animation: `fadeUp 0.6s ease-out ${index * 0.15}s both`,
@@ -68,7 +55,7 @@ const ShoppingIntentSection = ({ featuredSections = [] }) => {
                   {section.description}
                 </p>
                 <span className="inline-flex items-center text-sm font-medium text-primary-700 transition-transform duration-300 group-hover:translate-x-1">
-                  {getCTAText(section)}
+                  Shop Now →
                 </span>
               </div>
             </Link>

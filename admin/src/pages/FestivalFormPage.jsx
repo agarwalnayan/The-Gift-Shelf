@@ -359,10 +359,9 @@ const FestivalFormPage = () => {
                 form.setValue('featuredSections', [
                   ...currentSections,
                   {
+                    slug: '',
                     title: '',
                     description: '',
-                    destinationType: 'url',
-                    destinationUrl: '',
                     products: [],
                     displayOrder: currentSections.length,
                     isActive: true,
@@ -399,6 +398,13 @@ const FestivalFormPage = () => {
                 </div>
 
                 <div className="space-y-4">
+                  <Input
+                    label="Slug *"
+                    {...form.register(`featuredSections.${index}.slug`, { required: 'Slug is required' })}
+                    placeholder="personalised-rakhis"
+                    error={form.formState.errors.featuredSections?.[index]?.slug?.message}
+                  />
+
                   <Input
                     label="Title"
                     {...form.register(`featuredSections.${index}.title`)}
@@ -437,52 +443,31 @@ const FestivalFormPage = () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-ink/80">Destination Type</label>
-                      <select
-                        {...form.register(`featuredSections.${index}.destinationType`)}
-                        className="input-field"
-                      >
-                        <option value="url">URL</option>
-                        <option value="products">Products</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-ink/80">Display Order</label>
-                      <input
-                        type="number"
-                        {...form.register(`featuredSections.${index}.displayOrder`)}
-                        className="input-field"
-                        defaultValue={index}
-                      />
-                    </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-ink/80">Products</label>
+                    <select
+                      multiple
+                      {...form.register(`featuredSections.${index}.products`)}
+                      className="w-full rounded-lg border border-ink/10 p-2 h-32"
+                    >
+                      {products.map((p) => (
+                        <option key={p._id} value={p._id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-1 text-xs text-ink/50">Hold Ctrl/Cmd to select multiple</p>
                   </div>
 
-                  {form.watch(`featuredSections.${index}.destinationType`) === 'url' ? (
-                    <Input
-                      label="Destination URL"
-                      {...form.register(`featuredSections.${index}.destinationUrl`)}
-                      placeholder="/categories/personalised-rakhis"
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-ink/80">Display Order</label>
+                    <input
+                      type="number"
+                      {...form.register(`featuredSections.${index}.displayOrder`)}
+                      className="input-field"
+                      defaultValue={index}
                     />
-                  ) : (
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-ink/80">Products</label>
-                      <select
-                        multiple
-                        {...form.register(`featuredSections.${index}.products`)}
-                        className="w-full rounded-lg border border-ink/10 p-2 h-32"
-                      >
-                        {products.map((p) => (
-                          <option key={p._id} value={p._id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </select>
-                      <p className="mt-1 text-xs text-ink/50">Hold Ctrl/Cmd to select multiple</p>
-                    </div>
-                  )}
+                  </div>
 
                   <Controller
                     control={form.control}

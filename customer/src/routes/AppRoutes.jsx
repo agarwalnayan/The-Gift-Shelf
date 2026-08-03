@@ -7,6 +7,7 @@ import RakshaBandhanPage from '../pages/RakshaBandhanPage.jsx';
 import ProductListingPage from '../pages/ProductListingPage.jsx';
 import ProductDetailPage from '../pages/ProductDetailPage.jsx';
 import CategoriesPage from '../pages/CategoriesPage.jsx';
+import CategoryDetailPage from '../pages/CategoryDetailPage.jsx';
 import CartPage from '../pages/CartPage.jsx';
 import CheckoutPage from '../pages/CheckoutPage.jsx';
 import LoginPage from '../pages/LoginPage.jsx';
@@ -25,6 +26,7 @@ import HelpSupportPage from '../pages/HelpSupportPage.jsx';
 import AboutPage from '../pages/AboutPage.jsx';
 import StaticInfoPage from '../pages/StaticInfoPage.jsx';
 import LandingPage from '../pages/LandingPage.jsx';
+import FeaturedSectionPage from '../pages/FeaturedSectionPage.jsx';
 import NotFoundPage from '../pages/NotFoundPage.jsx';
 import { useEffect } from 'react';
 import { trackPageView } from '../services/analytics';
@@ -42,10 +44,12 @@ const AppRoutes = () => {
         <Route element={<MainLayout />}>
           <Route index element={<HomePage />} />
           <Route path=":slug" element={<LandingPage />} />
+          <Route path="featured/:slug" element={<FeaturedSectionPage />} />
           <Route path="raksha-bandhan" element={<RakshaBandhanPage />} />
           <Route path="products" element={<ProductListingPage />} />
           <Route path="products/:slug" element={<ProductDetailPage />} />
           <Route path="categories" element={<CategoriesPage />} />
+          <Route path="categories/:slug" element={<CategoryDetailPage />} />
           <Route path="wishlist" element={<WishlistPage />} />
           <Route path="cart" element={<CartPage />} />
           <Route path="login" element={<LoginPage />} />

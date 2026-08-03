@@ -17,6 +17,7 @@ export const createFestival = asyncHandler(async (req, res) => {
     featuredCollections,
     heroBanners,
     homepage,
+    featuredSections,
     displayOrder,
     isActive,
   } = req.body;
@@ -34,6 +35,29 @@ export const createFestival = asyncHandler(async (req, res) => {
     );
   }
 
+  // Process featured sections with image uploads
+  let processedFeaturedSections = [];
+  if (featuredSections && Array.isArray(featuredSections)) {
+    processedFeaturedSections = await Promise.all(
+      featuredSections.map(async (section, index) => {
+        let sectionImage = { url: '', publicId: '' };
+        const imageKey = `featuredSectionImage_${index}`;
+        
+        if (req.files?.[imageKey]?.[0]) {
+          sectionImage = await uploadImage(
+            req.files[imageKey][0].buffer,
+            'tgs/festivals/featured-sections'
+          );
+        }
+
+        return {
+          ...section,
+          image: sectionImage,
+        };
+      })
+    );
+  }
+
   const festival = await Festival.create({
     name,
     slug,
@@ -47,6 +71,7 @@ export const createFestival = asyncHandler(async (req, res) => {
     featuredCollections,
     heroBanners,
     homepage,
+    featuredSections: processedFeaturedSections,
     displayOrder,
     isActive,
     createdBy: req.user._id,
@@ -91,6 +116,7 @@ export const updateFestival = asyncHandler(async (req, res) => {
     featuredCollections,
     heroBanners,
     homepage,
+    featuredSections,
     displayOrder,
     isActive,
   } = req.body;
@@ -99,6 +125,50 @@ export const updateFestival = asyncHandler(async (req, res) => {
   if (req.files?.festivalBadge?.[0]) {
     await deleteImage(festival.festivalBadge?.publicId);
     festival.festivalBadge = await uploadImage(req.files.festivalBadge[0].buffer, 'tgs/festivals/badges');
+  }
+
+  // Handle featured sections with image uploads/deletions
+  if (featuredSections !== undefined && Array.isArray(featuredSections)) {
+    // Delete old images for sections that are being removed or replaced
+    const oldSections = festival.featuredSections || [];
+    const newSectionIds = featuredSections.map((_, index) => index);
+    
+    // Delete images for sections that no longer exist
+    for (let i = 0; i < oldSections.length; i++) {
+      if (!newSectionIds.includes(i)) {
+        await deleteImage(oldSections[i].image?.publicId);
+      }
+    }
+
+    // Process new/updated sections with image uploads
+    const processedFeaturedSections = await Promise.all(
+      featuredSections.map(async (section, index) => {
+        let sectionImage = section.image || { url: '', publicId: '' };
+        const imageKey = `featuredSectionImage_${index}`;
+        
+        // If new image uploaded, delete old one and upload new
+        if (req.files?.[imageKey]?.[0]) {
+          const oldImage = oldSections[index]?.image;
+          if (oldImage?.publicId) {
+            await deleteImage(oldImage.publicId);
+          }
+          sectionImage = await uploadImage(
+            req.files[imageKey][0].buffer,
+            'tgs/festivals/featured-sections'
+          );
+        } else if (oldSections[index]?.image) {
+          // Keep existing image if no new upload
+          sectionImage = oldSections[index].image;
+        }
+
+        return {
+          ...section,
+          image: sectionImage,
+        };
+      })
+    );
+
+    festival.featuredSections = processedFeaturedSections;
   }
 
   if (name !== undefined) festival.name = name;
@@ -125,7 +195,17 @@ export const deleteFestival = asyncHandler(async (req, res) => {
   const festival = await Festival.findById(req.params.id);
   if (!festival) throw new ApiError(404, 'Festival not found');
 
+  // Delete festival badge
   await deleteImage(festival.festivalBadge?.publicId);
+
+  // Delete featured section images
+  if (festival.featuredSections && Array.isArray(festival.featuredSections)) {
+    await Promise.all(
+      festival.featuredSections.map((section) =>
+        deleteImage(section.image?.publicId)
+      )
+    );
+  }
 
   await festival.deleteOne();
 

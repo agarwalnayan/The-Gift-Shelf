@@ -28,30 +28,28 @@ router.get('/', getFestivals);
 router.get('/:id', getFestivalById);
 router.post(
   '/',
-  upload.fields([
-    { name: 'festivalBadge', maxCount: 1 },
-  ]),
+  upload.any(),
   parseMultipartJson([
     'announcement',
     'featuredTags',
     'featuredCollections',
     'heroBanners',
     'homepage',
+    'featuredSections',
   ]),
   validate(createFestivalSchema),
   createFestival
 );
 router.put(
   '/:id',
-  upload.fields([
-    { name: 'festivalBadge', maxCount: 1 },
-  ]),
+  upload.any(),
   parseMultipartJson([
     'announcement',
     'featuredTags',
     'featuredCollections',
     'heroBanners',
     'homepage',
+    'featuredSections',
   ]),
   validate(updateFestivalSchema),
   updateFestival

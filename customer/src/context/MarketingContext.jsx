@@ -13,6 +13,7 @@ const emptyContent = {
   featuredCategories: [],
   featuredProducts: [],
   newArrivals: [],
+  featuredSections: [],
   announcementBar: { enabled: false },
   welcomePopup: { enabled: false },
   globalConfig: {},

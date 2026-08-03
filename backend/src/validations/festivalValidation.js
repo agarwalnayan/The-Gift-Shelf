@@ -30,6 +30,18 @@ export const createFestivalSchema = Joi.object({
     .items(Joi.string().hex().length(24))
     .default([]),
 
+  featuredSections: Joi.array().items(
+    Joi.object({
+      title: Joi.string().trim().max(150).allow('', null),
+      description: Joi.string().trim().max(400).allow('', null),
+      destinationType: Joi.string().valid('products', 'url').default('url'),
+      destinationUrl: Joi.string().trim().max(500).allow('', null),
+      products: Joi.array().items(Joi.string().hex().length(24)).default([]),
+      displayOrder: Joi.number().min(0).default(0),
+      isActive: Joi.boolean().default(true),
+    })
+  ).default([]),
+
   displayOrder: Joi.number().min(0).default(0),
 
   isActive: Joi.boolean(),
@@ -64,6 +76,18 @@ export const updateFestivalSchema = Joi.object({
   heroBanners: Joi.array()
     .items(Joi.string().hex().length(24))
     .default([]),
+
+  featuredSections: Joi.array().items(
+    Joi.object({
+      title: Joi.string().trim().max(150).allow('', null),
+      description: Joi.string().trim().max(400).allow('', null),
+      destinationType: Joi.string().valid('products', 'url').default('url'),
+      destinationUrl: Joi.string().trim().max(500).allow('', null),
+      products: Joi.array().items(Joi.string().hex().length(24)).default([]),
+      displayOrder: Joi.number().min(0).default(0),
+      isActive: Joi.boolean().default(true),
+    })
+  ).default([]),
 
   displayOrder: Joi.number().min(0),
 

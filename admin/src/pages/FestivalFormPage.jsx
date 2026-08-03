@@ -21,6 +21,7 @@ const FestivalFormPage = () => {
   const [collections, setCollections] = useState([]);
   const [heroBanners, setHeroBanners] = useState([]);
   const [badgeFile, setBadgeFile] = useState(null);
+  const [featuredSectionFiles, setFeaturedSectionFiles] = useState({});
 
   const form = useForm({
     defaultValues: {
@@ -41,6 +42,7 @@ const FestivalFormPage = () => {
       },
       featuredCollections: [],
       heroBanners: [],
+      featuredSections: [],
       displayOrder: 0,
       isActive: true,
     },
@@ -84,6 +86,7 @@ const FestivalFormPage = () => {
                   ? banner
                   : banner._id
               ) || [],
+            featuredSections: festival.featuredSections || [],
           });
         }
       } catch (error) {
@@ -136,6 +139,18 @@ const FestivalFormPage = () => {
         )
       );
 
+      formData.append(
+        "featuredSections",
+        JSON.stringify(
+          (values.featuredSections || []).map((section, index) => ({
+            ...section,
+            products: (section.products || []).map((p) =>
+              typeof p === 'string' ? p : p._id
+            ),
+          }))
+        )
+      );
+
       // Festival badge image
       if (badgeFile) {
         formData.append(
@@ -143,6 +158,13 @@ const FestivalFormPage = () => {
           badgeFile
         );
       }
+
+      // Featured section images
+      Object.entries(featuredSectionFiles).forEach(([index, file]) => {
+        if (file) {
+          formData.append(`featuredSectionImage_${index}`, file);
+        }
+      });
 
       if (id) {
         await updateFestivalApi(id, formData);
@@ -323,6 +345,163 @@ const FestivalFormPage = () => {
                 Select the hero banners that should appear during this festival.
               </p>
             </div>
+          </div>
+        </div>
+
+        {/* Featured Sections */}
+        <div className="card p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-ink">Featured Sections</h3>
+            <button
+              type="button"
+              onClick={() => {
+                const currentSections = form.getValues('featuredSections') || [];
+                form.setValue('featuredSections', [
+                  ...currentSections,
+                  {
+                    title: '',
+                    description: '',
+                    destinationType: 'url',
+                    destinationUrl: '',
+                    products: [],
+                    displayOrder: currentSections.length,
+                    isActive: true,
+                  },
+                ]);
+              }}
+              className="rounded-lg bg-primary-50 px-3 py-1.5 text-sm font-medium text-primary-700 hover:bg-primary-100"
+            >
+              + Add Section
+            </button>
+          </div>
+
+          <div className="space-y-6">
+            {(form.watch('featuredSections') || []).map((section, index) => (
+              <div key={index} className="rounded-xl border border-ink/10 p-4">
+                <div className="mb-4 flex items-center justify-between">
+                  <span className="text-sm font-medium text-ink">Section {index + 1}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentSections = form.getValues('featuredSections') || [];
+                      const newSections = currentSections.filter((_, i) => i !== index);
+                      form.setValue('featuredSections', newSections);
+                      setFeaturedSectionFiles((prev) => {
+                        const updated = { ...prev };
+                        delete updated[index];
+                        return updated;
+                      });
+                    }}
+                    className="text-sm text-red-600 hover:text-red-700"
+                  >
+                    Delete
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <Input
+                    label="Title"
+                    {...form.register(`featuredSections.${index}.title`)}
+                    placeholder="Personalised Rakhis"
+                  />
+
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-ink/80">Description</label>
+                    <textarea
+                      rows={2}
+                      className="input-field"
+                      {...form.register(`featuredSections.${index}.description`)}
+                      placeholder="Handcrafted resin, evil eye & custom name rakhis..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-ink/80">Section Image</label>
+                    {section.image?.url && !featuredSectionFiles[index] && (
+                      <img
+                        src={section.image.url}
+                        alt="Section"
+                        className="mb-2 h-24 w-full rounded-lg border object-cover"
+                      />
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        setFeaturedSectionFiles((prev) => ({
+                          ...prev,
+                          [index]: e.target.files[0],
+                        }));
+                      }}
+                      className="w-full rounded-lg border border-ink/10 p-2"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-ink/80">Destination Type</label>
+                      <select
+                        {...form.register(`featuredSections.${index}.destinationType`)}
+                        className="input-field"
+                      >
+                        <option value="url">URL</option>
+                        <option value="products">Products</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-ink/80">Display Order</label>
+                      <input
+                        type="number"
+                        {...form.register(`featuredSections.${index}.displayOrder`)}
+                        className="input-field"
+                        defaultValue={index}
+                      />
+                    </div>
+                  </div>
+
+                  {form.watch(`featuredSections.${index}.destinationType`) === 'url' ? (
+                    <Input
+                      label="Destination URL"
+                      {...form.register(`featuredSections.${index}.destinationUrl`)}
+                      placeholder="/categories/personalised-rakhis"
+                    />
+                  ) : (
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-ink/80">Products</label>
+                      <select
+                        multiple
+                        {...form.register(`featuredSections.${index}.products`)}
+                        className="w-full rounded-lg border border-ink/10 p-2 h-32"
+                      >
+                        {products.map((p) => (
+                          <option key={p._id} value={p._id}>
+                            {p.name}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="mt-1 text-xs text-ink/50">Hold Ctrl/Cmd to select multiple</p>
+                    </div>
+                  )}
+
+                  <Controller
+                    control={form.control}
+                    name={`featuredSections.${index}.isActive`}
+                    render={({ field }) => (
+                      <Toggle
+                        checked={field.value}
+                        onChange={field.onChange}
+                        label="Active"
+                      />
+                    )}
+                  />
+                </div>
+              </div>
+            ))}
+
+            {(form.watch('featuredSections') || []).length === 0 && (
+              <p className="text-sm text-ink/50">No featured sections added yet. Click "+ Add Section" to create one.</p>
+            )}
           </div>
         </div>
 

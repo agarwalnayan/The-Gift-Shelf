@@ -91,6 +91,47 @@ const festivalSchema = new mongoose.Schema(
         default: [],
       },
     },
+    featuredSections: [
+      {
+        title: {
+          type: String,
+          trim: true,
+          default: '',
+        },
+        description: {
+          type: String,
+          trim: true,
+          default: '',
+        },
+        image: {
+          url: { type: String, default: '' },
+          publicId: { type: String, default: '' },
+        },
+        destinationType: {
+          type: String,
+          enum: ['products', 'url'],
+          default: 'url',
+        },
+        destinationUrl: {
+          type: String,
+          trim: true,
+          default: '',
+        },
+        products: {
+          type: [mongoose.Schema.Types.ObjectId],
+          ref: 'Product',
+          default: [],
+        },
+        displayOrder: {
+          type: Number,
+          default: 0,
+        },
+        isActive: {
+          type: Boolean,
+          default: true,
+        },
+      },
+    ],
     displayOrder: {
       type: Number,
       default: 0,

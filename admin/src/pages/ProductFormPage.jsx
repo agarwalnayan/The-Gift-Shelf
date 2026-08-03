@@ -391,7 +391,12 @@ const ProductFormPage = () => {
         </div>
 
         <div className={activeTab === 'organization' ? 'card' : 'hidden'}>
-          <ProductOrganizationSection register={register} control={control} categories={categories} />
+          <ProductOrganizationSection
+            register={register}
+            control={control}
+            watch={watch}
+            categories={categories}
+          />
         </div>
 
         <div className={activeTab === 'images' ? 'card' : 'hidden'}>

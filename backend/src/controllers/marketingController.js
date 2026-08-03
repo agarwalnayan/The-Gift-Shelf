@@ -458,6 +458,13 @@ export const getHomepageContent = asyncHandler(async (req, res) => {
     .sort({ displayOrder: 1 })
     .populate("heroBanners");
 
+  // Get featured sections from active festival, filter by isActive and sort by displayOrder
+  const featuredSections = activeFestival?.featuredSections
+    ? activeFestival.featuredSections
+        .filter((section) => section.isActive)
+        .sort((a, b) => a.displayOrder - b.displayOrder)
+    : [];
+
   const [heroBanners, promoBanners, featuredRecipients, featuredOccasions, budgetCollections, featuredCategories, featuredProducts, newArrivals, settings] =
     await Promise.all([
       activeFestival?.heroBanners?.length
@@ -506,6 +513,7 @@ export const getHomepageContent = asyncHandler(async (req, res) => {
         featuredCategories,
         featuredProducts,
         newArrivals,
+        featuredSections,
         announcementBar: settings.announcementBar,
         welcomePopup: settings.welcomePopup,
         commerce: settings.commerce,

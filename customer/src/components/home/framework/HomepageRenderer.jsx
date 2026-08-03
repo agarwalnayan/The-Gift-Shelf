@@ -18,6 +18,7 @@ import PromoBannerSection from '../PromoBannerSection.jsx';
 import InstagramGallery from '../InstagramGallery.jsx';
 import WhyChooseSection from '../WhyChooseSection.jsx';
 import TrustSection from '../TrustSection.jsx';
+import ShoppingIntentSection from '../ShoppingIntentSection.jsx';
 import ProductCarousel from '../ui/ProductCarousel.jsx';
 import CampaignSection from '../CampaignSection.jsx';
 import HomeSection from './HomeSection.jsx';
@@ -37,6 +38,7 @@ const HomepageRenderer = () => {
     featuredCategories,
     featuredProducts,
     newArrivals,
+    featuredSections,
     activeFestival,
     isLoading: isMarketingLoading,
   } = useMarketing();
@@ -157,6 +159,11 @@ const HomepageRenderer = () => {
           banners={homepageBanners}
           isLoading={isMarketingLoading}
         />
+      )}
+
+      {/* Shopping Intent Section - Festival Featured Sections */}
+      {featuredSections && featuredSections.length > 0 && (
+        <ShoppingIntentSection featuredSections={featuredSections} />
       )}
 
       {/* Trust Strip - If enabled */}

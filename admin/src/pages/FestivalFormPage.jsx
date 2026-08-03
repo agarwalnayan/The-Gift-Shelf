@@ -11,6 +11,7 @@ import {
 import Input from '../components/common/Input.jsx';
 import Toggle from '../components/common/Toggle.jsx';
 import Loader from '../components/common/Loader.jsx';
+import ProductMultiSelect from '../components/product/ProductMultiSelect.jsx';
 
 const FestivalFormPage = () => {
   const { id } = useParams();
@@ -142,11 +143,15 @@ const FestivalFormPage = () => {
       formData.append(
         "featuredSections",
         JSON.stringify(
-          (values.featuredSections || []).map((section, index) => ({
-            ...section,
+          (values.featuredSections || []).map((section) => ({
+            slug: section.slug,
+            title: section.title,
+            description: section.description,
             products: (section.products || []).map((p) =>
               typeof p === 'string' ? p : p._id
             ),
+            displayOrder: section.displayOrder,
+            isActive: section.isActive,
           }))
         )
       );
@@ -443,21 +448,18 @@ const FestivalFormPage = () => {
                     />
                   </div>
 
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-ink/80">Products</label>
-                    <select
-                      multiple
-                      {...form.register(`featuredSections.${index}.products`)}
-                      className="w-full rounded-lg border border-ink/10 p-2 h-32"
-                    >
-                      {products.map((p) => (
-                        <option key={p._id} value={p._id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="mt-1 text-xs text-ink/50">Hold Ctrl/Cmd to select multiple</p>
-                  </div>
+                  <Controller
+                    control={form.control}
+                    name={`featuredSections.${index}.products`}
+                    render={({ field }) => (
+                      <ProductMultiSelect
+                        products={products}
+                        selectedProducts={field.value || []}
+                        onChange={field.onChange}
+                        placeholder="Search products..."
+                      />
+                    )}
+                  />
 
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-ink/80">Display Order</label>

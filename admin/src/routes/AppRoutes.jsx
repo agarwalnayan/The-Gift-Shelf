@@ -22,6 +22,8 @@ import HomepageManagementPage from '../pages/HomepageManagementPage.jsx';
 import NotFoundPage from '../pages/NotFoundPage.jsx';
 import CatalogMastersPage from "../pages/CatalogMastersPage";
 import CatalogMasterFormPage from "../pages/CatalogMasterFormPage";
+import BadgesPage from "../pages/BadgesPage";
+import BadgeFormPage from "../pages/BadgeFormPage";
 
 const AppRoutes = () => {
   return (
@@ -39,6 +41,9 @@ const AppRoutes = () => {
           <Route path="promotions" element={<PromotionsPage />} />
           <Route path="promotions/new" element={<PromotionFormPage />} />
           <Route path="promotions/:id" element={<PromotionFormPage />} />
+          <Route path="badges" element={<BadgesPage />} />
+          <Route path="badges/create" element={<BadgeFormPage />} />
+          <Route path="badges/:id/edit" element={<BadgeFormPage />} />
           <Route path="festivals" element={<FestivalPage />} />
           <Route path="festivals/new" element={<FestivalFormPage />} />
           <Route path="festivals/:id" element={<FestivalFormPage />} />

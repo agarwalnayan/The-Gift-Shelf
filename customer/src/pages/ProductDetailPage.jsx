@@ -65,6 +65,15 @@ const ProductDetailPage = () => {
   const displayPrice = activeVariant?.price ?? basePrice;
   const hasDiscount = product?.discountPrice > 0 && product?.discountPrice < product?.price && !activeVariant?.price;
 
+  // Sort badges and promotions by priority
+  const sortedBadges = (product?.badges || [])
+    .filter(b => b.active)
+    .sort((a, b) => (b.priority || 0) - (a.priority || 0));
+
+  const sortedPromotions = (product?.promotions || [])
+    .filter(p => p.isActive !== false)
+    .sort((a, b) => (b.priority || 0) - (a.priority || 0));
+
   const customizationSurcharge = useMemo(() => {
     return customizationOptions.reduce((sum, option) => {
       const value = customizationValues[option.key];
@@ -335,7 +344,51 @@ const ProductDetailPage = () => {
               {product.name}
             </h1>
 
-            <PromotionBadge productId={product._id} categoryId={product.category?._id} />
+            <PromotionBadge badges={sortedBadges} promotions={sortedPromotions} />
+
+            {/* Promotions Section */}
+            {sortedPromotions.length > 0 && (
+              <div className="rounded-2xl border border-primary-100 bg-primary-50 p-4">
+                <h3 className="mb-3 text-sm font-semibold uppercase tracking-widest text-primary-700">Offers</h3>
+                <div className="space-y-2">
+                  {sortedPromotions.map((promotion) => (
+                    <div
+                      key={promotion._id}
+                      className="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium"
+                      style={{
+                        backgroundColor: promotion.backgroundColor || '#10B981',
+                        color: promotion.textColor || '#FFFFFF',
+                      }}
+                    >
+                      {promotion.icon && <span className="mr-1.5">{promotion.icon}</span>}
+                      {promotion.badgeText}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Badges Section */}
+            {sortedBadges.length > 0 && (
+              <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
+                <h3 className="mb-3 text-sm font-semibold uppercase tracking-widest text-amber-700">Highlights</h3>
+                <div className="space-y-2">
+                  {sortedBadges.map((badge) => (
+                    <div
+                      key={badge._id}
+                      className="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium"
+                      style={{
+                        backgroundColor: badge.backgroundColor || '#F59E0B',
+                        color: badge.textColor || '#FFFFFF',
+                      }}
+                    >
+                      {badge.icon && <span className="mr-1.5">{badge.icon}</span>}
+                      {badge.badgeText}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div>
               <div className="flex flex-wrap items-center gap-3">

@@ -9,6 +9,7 @@ import marketingRoutes from './marketingRoutes.js';
 import couponRoutes from './couponRoutes.js';
 import siteSettingsRoutes from './siteSettingsRoutes.js';
 import promotionRoutes from './promotionRoutes.js';
+import badgeRoutes from './badgeRoutes.js';
 import festivalRoutes from './festivalRoutes.js';
 import statsRoutes from './statsRoutes.js';
 
@@ -24,6 +25,7 @@ router.use('/marketing', marketingRoutes);
 router.use('/coupons', couponRoutes);
 router.use('/site-settings', siteSettingsRoutes);
 router.use('/promotions', promotionRoutes);
+router.use('/badges', badgeRoutes);
 router.use('/festivals', festivalRoutes);
 router.use('/stats', statsRoutes);
 

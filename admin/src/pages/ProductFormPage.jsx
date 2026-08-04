@@ -4,6 +4,8 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { createProductApi, updateProductApi, getProductByIdApi } from '../api/productApi.js';
 import { getCategoriesApi } from '../api/categoryApi.js';
+import { getBadgesApi } from '../api/badgeApi.js';
+import { getPromotionsApi } from '../api/promotionApi.js';
 import Input from '../components/common/Input.jsx';
 import Button from '../components/common/Button.jsx';
 import Toggle from '../components/common/Toggle.jsx';
@@ -13,6 +15,7 @@ import ProductSeoSection from '../components/product/ProductSeoSection.jsx';
 import ProductVariantsManager from '../components/product/ProductVariantsManager.jsx';
 import ProductCustomizationManager from '../components/product/ProductCustomizationManager.jsx';
 import ProductImagesManager, { NewProductImagesPicker } from '../components/product/ProductImagesManager.jsx';
+import ProductMultiSelect from '../components/product/ProductMultiSelect.jsx';
 
 const TABS = [
   { id: 'basic', label: 'Basic Info' },
@@ -57,6 +60,8 @@ const defaultValues = {
   keywordsText: '',
   variants: [],
   customizationOptions: [],
+  badges: [],
+  promotions: [],
 };
 
 const splitCommaSeparated = (text = "") =>
@@ -149,6 +154,9 @@ const buildProductFormData = (values) => {
       },
     }));
   formData.append('customizationOptions', JSON.stringify(customizationOptions));
+  
+  formData.append('badges', JSON.stringify(values.badges || []));
+  formData.append('promotions', JSON.stringify(values.promotions || []));
 
   return formData;
 };
@@ -192,6 +200,8 @@ const buildResetValuesFromProduct = (p, { isDuplicate = false } = {}) => ({
     allowedFileTypesText: (option.validation?.allowedFileTypes || []).join(', '),
     validation: option.validation || {},
   })),
+  badges: (p.badges || []).map((b) => b._id),
+  promotions: (p.promotions || []).map((p) => p._id),
 });
 
 const ProductFormPage = () => {
@@ -203,6 +213,8 @@ const ProductFormPage = () => {
 
   const [activeTab, setActiveTab] = useState('basic');
   const [categories, setCategories] = useState([]);
+  const [badges, setBadges] = useState([]);
+  const [promotions, setPromotions] = useState([]);
   const [product, setProduct] = useState(null);
   const [newImageFiles, setNewImageFiles] = useState([]);
   const [isLoading, setIsLoading] = useState(isEditMode || Boolean(duplicateFromId));
@@ -221,6 +233,8 @@ const ProductFormPage = () => {
 
   useEffect(() => {
     getCategoriesApi().then(({ data }) => setCategories(data.data.categories));
+    getBadgesApi({ active: 'true' }).then(({ data }) => setBadges(data.data.badges || []));
+    getPromotionsApi({ status: 'active' }).then(({ data }) => setPromotions(data.data.promotions || []));
   }, []);
 
   useEffect(() => {
@@ -397,6 +411,34 @@ const ProductFormPage = () => {
             watch={watch}
             categories={categories}
           />
+          
+          <div className="mt-6 space-y-6">
+            <Controller
+              control={control}
+              name="badges"
+              render={({ field }) => (
+                <ProductMultiSelect
+                  products={badges.map(b => ({ _id: b._id, name: b.name, badgeText: b.badgeText }))}
+                  selectedProducts={field.value || []}
+                  onChange={field.onChange}
+                  placeholder="Search badges..."
+                />
+              )}
+            />
+            
+            <Controller
+              control={control}
+              name="promotions"
+              render={({ field }) => (
+                <ProductMultiSelect
+                  products={promotions.map(p => ({ _id: p._id, name: p.name, badgeText: p.badgeText }))}
+                  selectedProducts={field.value || []}
+                  onChange={field.onChange}
+                  placeholder="Search promotions..."
+                />
+              )}
+            />
+          </div>
         </div>
 
         <div className={activeTab === 'images' ? 'card' : 'hidden'}>

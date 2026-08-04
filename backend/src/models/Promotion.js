@@ -280,7 +280,15 @@ const promotionSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Promotion name is required'],
       trim: true,
+      unique: true,
       maxlength: 200,
+    },
+    slug: {
+      type: String,
+      required: [true, 'Promotion slug is required'],
+      trim: true,
+      unique: true,
+      lowercase: true,
     },
     description: {
       type: String,
@@ -384,6 +392,23 @@ const promotionSchema = new mongoose.Schema(
       maxlength: 50,
       default: '',
     },
+    backgroundColor: {
+      type: String,
+      trim: true,
+      default: '#10B981',
+      match: [/^#[0-9A-Fa-f]{6}$/, 'Background color must be a valid hex color'],
+    },
+    textColor: {
+      type: String,
+      trim: true,
+      default: '#FFFFFF',
+      match: [/^#[0-9A-Fa-f]{6}$/, 'Text color must be a valid hex color'],
+    },
+    icon: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     showOnProductPage: {
       type: Boolean,
       default: true,
@@ -469,8 +494,15 @@ promotionSchema.methods.checkUserUsageLimit = async function (userId) {
   return false;
 };
 
-// Pre-save hook to update status based on dates
+// Pre-save hook to update status based on dates and generate slug
 promotionSchema.pre('save', function (next) {
+  if (this.isModified('name') && !this.slug) {
+    this.slug = this.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+  
   if (this.isModified('startDate') || this.isModified('endDate') || this.isModified('status')) {
     const now = new Date();
     

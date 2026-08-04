@@ -221,6 +221,18 @@ const productSchema = new mongoose.Schema(
       type: [customizationOptionSchema],
       default: [],
     },
+    badges: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Badge',
+      },
+    ],
+    promotions: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Promotion',
+      },
+    ],
     seo: {
       type: seoSchema,
       default: () => ({}),

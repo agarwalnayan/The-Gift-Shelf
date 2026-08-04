@@ -246,6 +246,11 @@ export const getAllProducts = asyncHandler(async (req, res) => {
     Product.find(filter)
       .populate('category', 'name slug')
       .populate('subCategory', 'name slug')
+      .populate('badges')
+      .populate({
+        path: 'promotions',
+        match: { status: 'active' },
+      })
       .sort(sortOptions[sort] || { createdAt: -1 })
       .skip(skip)
       .limit(Number(limit)),
@@ -280,6 +285,11 @@ export const getProductByIdOrSlug = asyncHandler(async (req, res) => {
   const product = await Product.findOne(filter)
     .populate('category', 'name slug')
     .populate('subCategory', 'name slug')
+    .populate('badges')
+    .populate({
+      path: 'promotions',
+      match: { status: 'active' },
+    })
     .populate('createdBy', 'name email')
     .populate('updatedBy', 'name email');
 

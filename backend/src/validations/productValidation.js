@@ -27,6 +27,8 @@ const scalarProductFields = {
   dimensions: Joi.string().allow('', null),
   variants: Joi.string().allow('', null),
   customizationOptions: Joi.string().allow('', null),
+  badges: Joi.array().items(objectId).default([]),
+  promotions: Joi.array().items(objectId).default([]),
   seo: Joi.string().allow('', null),
 };
 

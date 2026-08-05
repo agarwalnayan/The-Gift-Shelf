@@ -289,6 +289,7 @@ const promotionSchema = new mongoose.Schema(
       trim: true,
       unique: true,
       lowercase: true,
+      index: true,
     },
     description: {
       type: String,

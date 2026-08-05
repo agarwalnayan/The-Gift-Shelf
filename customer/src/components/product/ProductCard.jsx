@@ -4,6 +4,8 @@ import { HiHeart, HiOutlineHeart, HiOutlineShoppingBag } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { toggleWishlistApi } from '../../api/authApi.js';
+import PromotionRibbon from './PromotionRibbon.jsx';
+import BadgeChip from './BadgeChip.jsx';
 
 const ProductCard = ({ product, compact = false }) => {
   const { user, setUser } = useAuth();
@@ -13,19 +15,18 @@ const ProductCard = ({ product, compact = false }) => {
   const finalPrice = product.discountPrice > 0 ? product.discountPrice : product.price;
   const hasDiscount = product.discountPrice > 0 && product.discountPrice < product.price;
 
-  // Get and sort badges and promotions by priority
-  const sortedBadges = (product.badges || [])
-    .filter(b => b.active)
-    .sort((a, b) => (b.priority || 0) - (a.priority || 0))
-    .slice(0, 2);
-
-  const sortedPromotions = (product.promotions || [])
+  // Get highest priority promotion and badge
+  const topPromotion = (product.promotions || [])
     .filter(p => p.isActive !== false)
-    .sort((a, b) => (b.priority || 0) - (a.priority || 0))
-    .slice(0, 2);
+    .sort((a, b) => (b.priority || 0) - (a.priority || 0))[0];
 
-  // Combine: promotions first, then badges
-  const allLabels = [...sortedPromotions, ...sortedBadges];
+  const topBadge = (product.badges || [])
+    .filter(b => b.active)
+    .sort((a, b) => (b.priority || 0) - (a.priority || 0))[0];
+
+  // Priority: Promotion first, then Badge (only show one)
+  const showPromotion = topPromotion;
+  const showBadge = !showPromotion && topBadge;
 
   const isWishlisted = (user?.wishlist || []).some(
     (id) => (typeof id === 'string' ? id : id?.toString()) === product._id
@@ -78,26 +79,9 @@ const ProductCard = ({ product, compact = false }) => {
           {isWishlisted ? <HiHeart size={16} className="text-primary-600" /> : <HiOutlineHeart size={16} />}
         </button>
 
-        {/* Badge and Promotion Labels */}
-        {allLabels.length > 0 && (
-          <div className={`absolute left-2 top-2 flex flex-col gap-1 ${compact ? 'left-2 top-2' : 'left-3 top-3'}`}>
-            {allLabels.map((label) => (
-              <span
-                key={label._id}
-                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
-                  compact ? 'text-[10px]' : ''
-                }`}
-                style={{
-                  backgroundColor: label.backgroundColor || '#F59E0B',
-                  color: label.textColor || '#FFFFFF',
-                }}
-              >
-                {label.icon && <span className="mr-1">{label.icon}</span>}
-                {label.badgeText}
-              </span>
-            ))}
-          </div>
-        )}
+        {/* Promotion Ribbon or Badge Chip - Priority: Promotion first, then Badge */}
+        {showPromotion && <PromotionRibbon promotion={showPromotion} compact={compact} />}
+        {showBadge && <BadgeChip badge={showBadge} compact={compact} />}
 
         <div className="absolute inset-x-0 bottom-0 translate-y-full opacity-0 transition-all duration-200 ease-out group-hover:translate-y-0 group-hover:opacity-100">
           <button

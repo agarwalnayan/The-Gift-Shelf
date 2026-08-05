@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { createProductApi, updateProductApi, getProductByIdApi } from '../api/productApi.js';
@@ -232,9 +232,17 @@ const ProductFormPage = () => {
   } = useForm({ defaultValues });
 
   useEffect(() => {
-    getCategoriesApi().then(({ data }) => setCategories(data.data.categories));
-    getBadgesApi({ active: 'true' }).then(({ data }) => setBadges(data.data.badges || []));
-    getPromotionsApi({ status: 'active' }).then(({ data }) => setPromotions(data.data.promotions || []));
+    getCategoriesApi()
+      .then(({ data }) => setCategories(data.data.categories))
+      .catch(() => setCategories([]));
+    
+    getBadgesApi({ active: 'true' })
+      .then(({ data }) => setBadges(data.data.badges || []))
+      .catch(() => setBadges([]));
+    
+    getPromotionsApi({ status: 'active' })
+      .then(({ data }) => setPromotions(data.data.promotions || []))
+      .catch(() => setPromotions([]));
   }, []);
 
   useEffect(() => {

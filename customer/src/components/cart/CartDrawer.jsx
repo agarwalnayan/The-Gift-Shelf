@@ -9,7 +9,7 @@ import CrossSellProducts from './CrossSellProducts.jsx';
 import Button from '../common/Button.jsx';
 
 const CartDrawer = () => {
-    const { cart, isDrawerOpen, closeDrawer, discount } = useCart();
+    const { cart, isDrawerOpen, closeDrawer, discount, appliedPromotion } = useCart();
     const { commerce } = useMarketing();
     const navigate = useNavigate();
     const items = cart.items || [];
@@ -27,6 +27,33 @@ const CartDrawer = () => {
 
     const personalizedCount = items.filter((item) => item.customizations?.length > 0).length;
     const productIds = items.map((item) => item.product?._id).filter(Boolean);
+
+    // Calculate promotion threshold messaging
+    const getPromotionMessage = () => {
+        if (!appliedPromotion) return null;
+
+        const { type, buyMoreTiers, discountValue, discountUnit } = appliedPromotion;
+
+        if (type === 'buy_more_save_more' && buyMoreTiers?.length > 0) {
+            const firstTier = buyMoreTiers[0];
+            const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+            const buyQuantity = firstTier.buyQuantity;
+            const saveValue = firstTier.discountUnit === 'percentage' 
+                ? `${firstTier.discountValue}%` 
+                : `₹${firstTier.discountValue}`;
+
+            if (totalQuantity < buyQuantity) {
+                const itemsNeeded = buyQuantity - totalQuantity;
+                return `Add ${itemsNeeded} more item${itemsNeeded > 1 ? 's' : ''} to unlock ${saveValue} off.`;
+            } else {
+                return `Congratulations! ${saveValue} discount unlocked.`;
+            }
+        }
+
+        return null;
+    };
+
+    const promotionMessage = getPromotionMessage();
 
     const goToCheckout = () => {
         closeDrawer();
@@ -125,6 +152,12 @@ const CartDrawer = () => {
                                     <span>₹{total.toFixed(2)}</span>
                                 </div>
                             </div>
+
+                            {promotionMessage && (
+                                <div className="mt-3 rounded-lg bg-[#FFF8F4] border border-[#F0D8CC] px-3 py-2 text-xs font-medium text-[#B85C38]">
+                                    {promotionMessage}
+                                </div>
+                            )}
 
                             <Button onClick={goToCheckout} className="mt-4 w-full">
                                 Checkout

@@ -15,6 +15,7 @@ const badgeSchema = new mongoose.Schema(
       trim: true,
       unique: true,
       lowercase: true,
+      index: true,
     },
     badgeText: {
       type: String,
@@ -82,7 +83,6 @@ const badgeSchema = new mongoose.Schema(
 
 // Indexes for efficient queries
 badgeSchema.index({ active: 1, priority: -1 });
-badgeSchema.index({ slug: 1 });
 
 // Pre-save hook to generate slug from name if not provided
 badgeSchema.pre('save', function (next) {

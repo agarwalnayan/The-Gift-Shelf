@@ -76,6 +76,8 @@ const buildNestedFieldsFromBody = (body, baseSku) => {
     customizationOptionsArraySchema,
     'Customization options'
   );
+  const badges = parseJsonField(body.badges, Joi.array().items(Joi.string().trim()), 'Badges');
+  const promotions = parseJsonField(body.promotions, Joi.array().items(Joi.string().trim()), 'Promotions');
 
   if (tags !== undefined) nested.tags = tags;
   if (occasion !== undefined) nested.occasion = occasion;
@@ -89,6 +91,8 @@ const buildNestedFieldsFromBody = (body, baseSku) => {
     assertUniqueCustomizationKeys(customizationOptions);
     nested.customizationOptions = customizationOptions;
   }
+  if (badges !== undefined) nested.badges = badges;
+  if (promotions !== undefined) nested.promotions = promotions;
 
   return nested;
 };

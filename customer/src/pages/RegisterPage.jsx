@@ -26,12 +26,9 @@ const RegisterPage = () => {
 
       await register(form);
 
-      const destination = location.state?.from?.pathname || '/';
-      if (hasGuestCart) {
-        navigate('/cart');
-      } else {
-        navigate(destination);
-      }
+      const redirectTo =
+        location.state?.from?.pathname || (hasGuestCart ? '/cart' : '/');
+      navigate(redirectTo);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Registration failed');
     } finally {
@@ -39,11 +36,19 @@ const RegisterPage = () => {
     }
   };
 
+  const isCheckoutFlow = location.state?.from?.pathname === '/checkout';
+
   return (
     <div className="container-tgs flex min-h-[70vh] items-center justify-center py-16">
       <div className="w-full max-w-sm">
-        <h1 className="font-display text-3xl font-semibold text-charcoal">Create your account</h1>
-        <p className="mt-2 text-sm text-charcoal/60">Join The Gift Shelf community</p>
+        <h1 className="font-display text-3xl font-semibold text-charcoal">
+          {isCheckoutFlow ? 'One last step' : 'Create your account'}
+        </h1>
+        <p className="mt-2 text-sm text-charcoal/60">
+          {isCheckoutFlow
+            ? 'Create an account to complete your order — your bag is saved.'
+            : 'Join The Gift Shelf community'}
+        </p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <Input label="Full Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
@@ -69,7 +74,7 @@ const RegisterPage = () => {
 
         <p className="mt-6 text-center text-sm text-charcoal/60">
           Already have an account?{' '}
-          <Link to="/login" className="font-medium text-primary-600 hover:underline">
+          <Link to="/login" state={location.state} className="font-medium text-primary-600 hover:underline">
             Sign in
           </Link>
         </p>

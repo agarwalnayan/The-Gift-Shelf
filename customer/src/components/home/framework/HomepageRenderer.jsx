@@ -161,41 +161,22 @@ const HomepageRenderer = () => {
         />
       )}
 
-      {/* Shopping Intent Section - Festival Featured Sections */}
-      {featuredSections && featuredSections.length > 0 && (
-        <ShoppingIntentSection featuredSections={featuredSections} />
-      )}
-
-      {/* Trust Strip - If enabled */}
+      {/* Trust Strip — immediate reassurance after hero */}
       {isSectionEnabled('trustStrip') && <TrustStrip />}
 
-      {/* Campaign Section - Festival/Campaign with homepage visibility */}
-      <CampaignSection festival={activeFestival} />
-
-      {/* Featured Categories - If enabled and has data */}
+      {/* Featured Categories — primary discovery paths */}
       {shouldRenderSection('featuredCategories', featuredCategories) && (
         <HomeSection background="white">
           <FeaturedCategories categories={featuredCategories} />
         </HomeSection>
       )}
 
-      {/* Promo Banner 1 */}
-      {shouldRenderSection("promoBanner", shuffledPromoBanners) &&
-        shuffledPromoBanners[0] && (
-          <HomeSection background="white">
-            <PromoBannerSection
-              banners={shuffledPromoBanners}
-              startIndex={0}
-            />
-          </HomeSection>
-        )}
-
-      {/* Featured Products - If enabled and has data */}
+      {/* Best-loved gifts — highest-intent merchandise */}
       {shouldRenderSection('featuredProducts', featuredProducts) && (
         <HomeSection background="warm">
           <ProductCarousel
-            title="Featured Products"
-            description="Handpicked favorites loved by our customers"
+            title="Best Loved Gifts"
+            description="Handpicked favorites our customers adore"
             products={featuredProducts}
             viewAllLink="/products?featured=true"
             layout="grid"
@@ -203,9 +184,15 @@ const HomepageRenderer = () => {
         </HomeSection>
       )}
 
+      {/* Seasonal campaign — when an active festival is configured */}
+      <CampaignSection festival={activeFestival} />
 
+      {/* Festival curated collections */}
+      {featuredSections && featuredSections.length > 0 && (
+        <ShoppingIntentSection featuredSections={featuredSections} festival={activeFestival} />
+      )}
 
-      {/* New Arrivals - If enabled and has data */}
+      {/* New Arrivals */}
       {shouldRenderSection('newArrivals', newArrivals) && (
         <HomeSection background="white">
           <ProductCarousel
@@ -218,58 +205,35 @@ const HomepageRenderer = () => {
         </HomeSection>
       )}
 
-      {/* Promo Banner 2 */}
-      {shouldRenderSection("promoBanner", shuffledPromoBanners) &&
-        shuffledPromoBanners[1] && (
-          <HomeSection background="white">
-            <PromoBannerSection
-              banners={shuffledPromoBanners}
-              startIndex={1}
-            />
-          </HomeSection>
-        )}
-
-      {/* Featured Recipients - If enabled and has data */}
+      {/* Shop by recipient & occasion */}
       {shouldRenderSection('featuredRecipients', featuredRecipients) && (
         <HomeSection background="warm">
           <FeaturedRecipients items={featuredRecipients} />
         </HomeSection>
       )}
 
-      {/* Featured Occasions - If enabled and has data */}
       {shouldRenderSection('featuredOccasions', featuredOccasions) && (
         <HomeSection background="white">
           <FeaturedOccasions items={featuredOccasions} />
         </HomeSection>
       )}
 
-
-
-      {/* Budget Collections - If enabled and has data */}
+      {/* Budget tiers */}
       {shouldRenderSection('budgetCollections', budgetCollections) && (
         <HomeSection background="warm">
           <BudgetCollections collections={budgetCollections} />
         </HomeSection>
       )}
 
-      {/* Promo Banner 3 */}
-      {shouldRenderSection("promoBanner", shuffledPromoBanners) &&
-        shuffledPromoBanners[2] && (
-          <HomeSection background="white">
-            <PromoBannerSection
-              banners={shuffledPromoBanners}
-              startIndex={2}
-            />
-          </HomeSection>
-        )}
+      {/* Single promo banner — avoid scroll fatigue from repeated interruptions */}
+      {shouldRenderSection('promoBanner', shuffledPromoBanners) && shuffledPromoBanners[0] && (
+        <HomeSection background="white">
+          <PromoBannerSection banners={shuffledPromoBanners} startIndex={0} />
+        </HomeSection>
+      )}
 
-      {/* Instagram Feed - If enabled */}
       {isSectionEnabled('instagramFeed') && <InstagramGallery />}
-
-      {/* Why Choose Section - If enabled */}
       {isSectionEnabled('whyChoose') && <WhyChooseSection />}
-
-      {/* Trust Section - If enabled */}
       {isSectionEnabled('trustSection') && <TrustSection />}
     </div>
   );

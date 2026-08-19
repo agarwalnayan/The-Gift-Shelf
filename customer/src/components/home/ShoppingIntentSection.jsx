@@ -1,36 +1,34 @@
 import { Link } from 'react-router-dom';
 
-const ShoppingIntentSection = ({ featuredSections = [] }) => {
+const ShoppingIntentSection = ({ featuredSections = [], festival }) => {
   if (!featuredSections || featuredSections.length === 0) return null;
 
+  const sectionTitle = festival?.homepage?.title || (festival?.name ? `Gifts for ${festival.name}` : 'Curated Collections');
+  const sectionSubtitle =
+    festival?.homepage?.subtitle || 'Thoughtfully curated gift ideas for every moment';
+
   return (
-    <div className="bg-gradient-to-b from-[#FAF7F2] to-white py-16 lg:py-24">
+    <div className="bg-gradient-to-b from-[#FAF7F2] to-white py-12 lg:py-20">
       <div className="container-tgs">
-        {/* Section Header */}
-        <div className="mb-12 text-center lg:mb-16">
-          <h2 className="mb-4 font-display text-4xl font-semibold leading-tight text-charcoal lg:text-5xl">
-            Find the Perfect
-            <br />
-            Raksha Bandhan Gift
+        <div className="mb-8 text-center lg:mb-12">
+          <h2 className="font-display text-3xl font-semibold leading-tight text-charcoal sm:text-4xl lg:text-5xl">
+            {sectionTitle}
           </h2>
-          <p className="mx-auto max-w-[500px] text-sm leading-relaxed text-neutral-600 lg:text-base">
-            Thoughtfully curated for every sibling bond.
-          </p>
+          {sectionSubtitle && (
+            <p className="mx-auto mt-3 max-w-[500px] text-sm leading-relaxed text-neutral-600 lg:text-base">
+              {sectionSubtitle}
+            </p>
+          )}
         </div>
 
-        {/* Cards Grid */}
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
           {featuredSections.map((section, index) => (
             <Link
               key={section._id || index}
               to={`/featured/${section.slug}`}
-              className="group block h-[520px] overflow-hidden rounded-3xl bg-white shadow-lg transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl"
-              style={{
-                animation: `fadeUp 0.6s ease-out ${index * 0.15}s both`,
-              }}
+              className="group block overflow-hidden rounded-3xl bg-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
             >
-              {/* Image Container - ~72% height */}
-              <div className="relative h-[375px] overflow-hidden bg-neutral-100">
+              <div className="relative aspect-[4/3] overflow-hidden bg-neutral-100">
                 {section.image?.url ? (
                   <img
                     src={section.image.url}
@@ -42,39 +40,22 @@ const ShoppingIntentSection = ({ featuredSections = [] }) => {
                     {section.title?.[0] || '?'}
                   </div>
                 )}
-                {/* Gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
               </div>
 
-              {/* Content - ~28% height */}
-              <div className="flex h-[145px] flex-col justify-center px-6 py-6">
-                <h3 className="mb-3 font-display text-xl font-semibold text-charcoal">
-                  {section.title}
-                </h3>
-                <p className="mb-4 text-sm leading-6 text-neutral-600">
-                  {section.description}
-                </p>
-                <span className="inline-flex items-center text-sm font-medium text-primary-700 transition-transform duration-300 group-hover:translate-x-1">
-                  Shop Now →
+              <div className="px-5 py-5 sm:px-6 sm:py-6">
+                <h3 className="font-display text-lg font-semibold text-charcoal sm:text-xl">{section.title}</h3>
+                {section.description && (
+                  <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-neutral-600">{section.description}</p>
+                )}
+                <span className="mt-4 inline-flex items-center text-sm font-medium text-primary-700 transition-transform duration-300 group-hover:translate-x-1">
+                  Shop collection →
                 </span>
               </div>
             </Link>
           ))}
         </div>
       </div>
-
-      <style>{`
-        @keyframes fadeUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </div>
   );
 };

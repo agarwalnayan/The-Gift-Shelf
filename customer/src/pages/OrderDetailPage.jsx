@@ -1,13 +1,20 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { getOrderByIdApi } from '../api/orderApi.js';
+import { useAuth } from '../context/AuthContext.jsx';
+import { useCart } from '../context/CartContext.jsx';
 import Loader from '../components/common/Loader.jsx';
 import { HiOutlineCheckCircle, HiOutlineClock, HiOutlineDocumentText, HiOutlineTruck, HiOutlineCube, HiOutlineHome, HiOutlineArrowPath } from 'react-icons/hi2';
 
 const OrderDetailPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { addItem } = useCart();
   const [order, setOrder] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isReordering, setIsReordering] = useState(false);
 
   useEffect(() => {
     getOrderByIdApi(id)
@@ -51,6 +58,43 @@ const OrderDetailPage = () => {
     { icon: HiOutlineHome, label: 'Out For Delivery' },
     { icon: HiOutlineCheckCircle, label: 'Delivered' }
   ];
+
+  const handleDownloadInvoice = () => {
+    window.print();
+  };
+
+  const handleReorder = async () => {
+    if (!user) {
+      navigate('/login', { state: { from: { pathname: `/account/orders/${id}` } } });
+      return;
+    }
+
+    setIsReordering(true);
+    try {
+      for (const item of order.orderItems) {
+        const product = item.product;
+        if (!product) continue;
+
+        await addItem(product._id, item.quantity, {
+          variantSku: item.variantSku || null,
+          customizations: item.customizations || [],
+          product: {
+            _id: product._id,
+            name: product.name,
+            images: product.images || [],
+            finalPrice: product.discountPrice > 0 ? product.discountPrice : product.price,
+            price: product.price,
+          },
+        });
+      }
+      toast.success('All items added to cart');
+      navigate('/cart');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to reorder items');
+    } finally {
+      setIsReordering(false);
+    }
+  };
 
   const currentStep = getTrackingStatus(order?.orderStatus);
 
@@ -129,15 +173,22 @@ const OrderDetailPage = () => {
           </div>
 
           <div className="mt-6 flex gap-3">
-            <button className="flex-1 flex items-center justify-center gap-2 rounded-xl border-2 border-charcoal/20 px-4 py-3 text-sm font-medium text-charcoal transition-colors duration-300 hover:border-primary-500 hover:text-primary-600">
+            <button
+              onClick={handleDownloadInvoice}
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl border-2 border-charcoal/20 px-4 py-3 text-sm font-medium text-charcoal transition-colors duration-300 hover:border-primary-500 hover:text-primary-600"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
               Download Invoice
             </button>
-            <button className="flex-1 flex items-center justify-center gap-2 rounded-xl border-2 border-charcoal/20 px-4 py-3 text-sm font-medium text-charcoal transition-colors duration-300 hover:border-primary-500 hover:text-primary-600">
+            <button
+              onClick={handleReorder}
+              disabled={isReordering}
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl border-2 border-charcoal/20 px-4 py-3 text-sm font-medium text-charcoal transition-colors duration-300 hover:border-primary-500 hover:text-primary-600 disabled:opacity-50"
+            >
               <HiOutlineArrowPath size={18} />
-              Reorder
+              {isReordering ? 'Adding to cart…' : 'Reorder'}
             </button>
           </div>
         </div>

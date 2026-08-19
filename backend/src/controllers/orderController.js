@@ -47,7 +47,7 @@ const decrementStock = async (item) => {
 export const createOrder = asyncHandler(async (req, res) => {
   const { shippingAddress, paymentMethod, giftMessage = '', orderNotes = '', promotionId } = req.body;
 
-  if (!['razorpay', 'whatsapp'].includes(paymentMethod)) {
+  if (!['razorpay', 'whatsapp', 'gpay'].includes(paymentMethod)) {
     throw new ApiError(400, 'Please select a valid payment method');
   }
 
@@ -361,7 +361,9 @@ export const getMyOrders = asyncHandler(async (req, res) => {
 });
 
 export const getOrderById = asyncHandler(async (req, res) => {
-  const order = await Order.findById(req.params.id).populate('user', 'name email');
+  const order = await Order.findById(req.params.id)
+    .populate('user', 'name email')
+    .populate('orderItems.product', 'name images price discountPrice stock variants');
   if (!order) throw new ApiError(404, 'Order not found');
 
   const isOwner = order.user._id.toString() === req.user._id.toString();

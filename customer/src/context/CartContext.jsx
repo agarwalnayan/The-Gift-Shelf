@@ -188,6 +188,10 @@ export const CartProvider = ({ children }) => {
 
       const normalisedIncoming = normaliseCustomizations(customizations);
       const incomingKey = JSON.stringify(normalisedIncoming);
+      const customizationPrice = customizations.reduce(
+        (sum, c) => sum + (c.additionalPrice || 0),
+        0
+      );
 
       const existingItemIndex = (cart.items || []).findIndex((item) => {
         if (item.product._id !== product._id) return false;
@@ -216,7 +220,7 @@ export const CartProvider = ({ children }) => {
               variantSku,
               customizations,
               priceAtAddition: product.finalPrice ?? product.price,
-              customizationPrice: 0,
+              customizationPrice,
             },
           ],
         };
@@ -335,14 +339,21 @@ export const CartProvider = ({ children }) => {
       return;
     }
 
-    const subtotal = cart.items.reduce((sum, item) => sum + (item.priceAtAddition || item.product?.finalPrice || item.product?.price || 0) * item.quantity, 0);
+    const subtotal = cart.items.reduce((sum, item) => {
+      const unitPrice =
+        (item.priceAtAddition || item.product?.finalPrice || item.product?.price || 0) +
+        (item.customizationPrice || 0);
+      return sum + unitPrice * item.quantity;
+    }, 0);
 
     try {
       const cartData = {
         cartItems: cart.items.map((item) => ({
           productId: item.product._id,
           quantity: item.quantity,
-          price: item.priceAtAddition || item.product?.finalPrice || item.product?.price || 0,
+          price:
+            (item.priceAtAddition || item.product?.finalPrice || item.product?.price || 0) +
+            (item.customizationPrice || 0),
           categoryId: item.product?.category?._id || null,
           variantSku: item.variantSku || null,
         })),

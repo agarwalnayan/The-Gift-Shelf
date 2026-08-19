@@ -1,15 +1,26 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { HiArrowLeft, HiOutlineShoppingBag } from 'react-icons/hi2';
 import { useCart } from '../context/CartContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 import CartItem from '../components/cart/CartItem.jsx';
 import CartSummary from '../components/cart/CartSummary.jsx';
+import CrossSellProducts from '../components/cart/CrossSellProducts.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 import Button from '../components/common/Button.jsx';
 import Loader from '../components/common/Loader.jsx';
 
 const CartPage = () => {
   const { cart, isLoading } = useCart();
+  const { user } = useAuth();
   const navigate = useNavigate();
+
+  const handleCheckout = () => {
+    if (!user) {
+      navigate('/login', { state: { from: { pathname: '/checkout' } } });
+      return;
+    }
+    navigate('/checkout');
+  };
 
   if (isLoading) return <Loader fullScreen />;
 
@@ -52,9 +63,10 @@ const CartPage = () => {
           {cart.items.map((item) => (
             <CartItem key={item._id} item={item} />
           ))}
+          <CrossSellProducts excludeProductIds={cart.items.map((item) => item.product._id)} limit={4} />
         </div>
 
-        <CartSummary items={cart.items} onCheckout={() => navigate('/checkout')} sticky />
+        <CartSummary items={cart.items} onCheckout={handleCheckout} isGuest={!user} sticky />
       </div>
     </div>
   );

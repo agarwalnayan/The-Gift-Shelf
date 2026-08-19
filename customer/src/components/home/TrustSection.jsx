@@ -7,7 +7,7 @@ import {
 } from 'react-icons/hi2';
 
 const badges = [
-  { icon: HiOutlineShieldCheck, title: 'Secure Payments', description: 'Razorpay-protected checkout' },
+  { icon: HiOutlineShieldCheck, title: 'Secure Payments', description: 'Safe & encrypted checkout' },
   { icon: HiOutlineGiftTop, title: 'Premium Packaging', description: 'Gift-ready presentation' },
   { icon: HiOutlineChatBubbleLeftRight, title: 'Easy Support', description: "We're here to help" },
   { icon: HiOutlineTruck, title: 'Fast Delivery', description: '4–7 business days' },

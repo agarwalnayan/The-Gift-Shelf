@@ -47,6 +47,7 @@ const navGroups = [
     label: 'Orders',
     items: [
       { label: 'Orders', to: '/orders', icon: HiOutlineClipboardDocumentList },
+      { label: 'Social Orders', to: '/social-orders', icon: HiOutlineChatBubbleLeftRight },
       { label: 'Customers', to: '/customers', icon: HiOutlineUsers },
     ],
   },
@@ -66,7 +67,7 @@ const navGroups = [
 ];
 
 const NavItems = ({ onNavigate, isCollapsed = false }) => {
-  const [expandedGroups, setExpandedGroups] = useState({});
+  const [expandedGroups, setExpandedGroups] = useState({ 'Orders': true });
 
   const toggleGroup = (label) => {
     setExpandedGroups((prev) => ({ ...prev, [label]: !prev[label] }));

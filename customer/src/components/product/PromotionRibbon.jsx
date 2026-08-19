@@ -1,53 +1,10 @@
+import { renderProductCardBenefit } from '../../utils/promotionRenderer.js';
+
 const PromotionRibbon = ({ promotion, compact = false }) => {
   if (!promotion) return null;
 
-  const getDisplayText = (promo) => {
-    // If custom badgeText is set, use it
-    if (promo.badgeText) return promo.badgeText;
+  const displayText = renderProductCardBenefit(promotion);
 
-    // Otherwise, generate customer-friendly text from promotion data
-    const { type, discountValue, discountUnit, buyMoreTiers, name } = promo;
-
-    if (type === 'flat_discount') {
-      const value = discountUnit === 'percentage' ? `${discountValue}%` : `₹${discountValue}`;
-      return `Save ${value}`;
-    }
-
-    if (type === 'percentage_discount') {
-      return `${discountValue}% off`;
-    }
-
-    if (type === 'buy_more_save_more' && buyMoreTiers?.length > 0) {
-      const firstTier = buyMoreTiers[0];
-      const buyQty = firstTier.buyQuantity;
-      const saveValue = firstTier.discountUnit === 'percentage' 
-        ? `${firstTier.discountValue}%` 
-        : `₹${firstTier.discountValue}`;
-      return `Buy ${buyQty} save ${saveValue}`;
-    }
-
-    if (type === 'category_discount') {
-      const value = discountUnit === 'percentage' ? `${discountValue}%` : `₹${discountValue}`;
-      return `${value} off`;
-    }
-
-    if (type === 'collection_discount') {
-      const value = discountUnit === 'percentage' ? `${discountValue}%` : `₹${discountValue}`;
-      return `${value} off`;
-    }
-
-    // Never show generic "Offer" - use promotion name or meaningful fallback
-    if (name && name !== 'Offer' && name !== 'Special Offer') {
-      return name;
-    }
-
-    // Last resort: don't show ribbon if we can't communicate benefit
-    return null;
-  };
-
-  const displayText = getDisplayText(promotion);
-
-  // Don't render if we can't communicate a clear benefit
   if (!displayText) return null;
 
   return (

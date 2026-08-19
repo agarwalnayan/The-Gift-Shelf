@@ -23,7 +23,7 @@ const CategoriesPage = () => {
         {categories.map((category) => (
           <Link
             key={category._id}
-            to={`/products?category=${category._id}`}
+            to={`/categories/${category.slug}`}
             className="group overflow-hidden rounded-2xl bg-white"
           >
             <div className="aspect-square overflow-hidden bg-primary-50">

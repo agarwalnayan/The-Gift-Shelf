@@ -78,8 +78,13 @@ const orderSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ['razorpay', 'whatsapp', 'cod'],
+      enum: ['razorpay', 'whatsapp', 'cod', 'gpay'],
       required: true,
+    },
+    orderSource: {
+      type: String,
+      enum: ['website', 'instagram', 'whatsapp'],
+      default: 'website',
     },
     paymentResult: {
       razorpayOrderId: { type: String },

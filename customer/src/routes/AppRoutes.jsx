@@ -28,6 +28,7 @@ import StaticInfoPage from '../pages/StaticInfoPage.jsx';
 import LandingPage from '../pages/LandingPage.jsx';
 import FeaturedSectionPage from '../pages/FeaturedSectionPage.jsx';
 import NotFoundPage from '../pages/NotFoundPage.jsx';
+import SocialOrderCompletionPage from '../pages/SocialOrderCompletionPage.jsx';
 import { useEffect } from 'react';
 import { trackPageView } from '../services/analytics';
 
@@ -77,6 +78,8 @@ const AppRoutes = () => {
 
           <Route path="*" element={<NotFoundPage />} />
         </Route>
+
+        <Route path="social-order/:token" element={<SocialOrderCompletionPage />} />
       </Routes>
     </>
   );

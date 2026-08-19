@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import ProductCard from '../../product/ProductCard.jsx';
 import { transitions } from '../design/tokens.js';
 
@@ -18,12 +19,9 @@ const ProductCarousel = ({ products, title, description, viewAllLink, viewAllTex
           {description && <p className="mt-1.5 text-sm text-charcoal/60">{description}</p>}
         </div>
         {viewAllLink && (
-          <a
-            href={viewAllLink}
-            className="text-sm font-medium text-primary-600 hover:underline"
-          >
+          <Link to={viewAllLink} className="text-sm font-medium text-primary-600 hover:underline">
             {viewAllText}
-          </a>
+          </Link>
         )}
       </div>
 

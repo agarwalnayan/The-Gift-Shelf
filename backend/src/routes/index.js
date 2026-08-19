@@ -12,6 +12,7 @@ import promotionRoutes from './promotionRoutes.js';
 import badgeRoutes from './badgeRoutes.js';
 import festivalRoutes from './festivalRoutes.js';
 import statsRoutes from './statsRoutes.js';
+import { adminOrderRequestRoutes, publicOrderRequestRoutes } from './orderRequestRoutes.js';
 
 const router = express.Router();
 
@@ -21,6 +22,8 @@ router.use('/categories', categoryRoutes);
 router.use('/products', productRoutes);
 router.use('/cart', cartRoutes);
 router.use('/orders', orderRoutes);
+router.use('/order-requests', adminOrderRequestRoutes);
+router.use('/order-requests', publicOrderRequestRoutes);
 router.use('/marketing', marketingRoutes);
 router.use('/coupons', couponRoutes);
 router.use('/site-settings', siteSettingsRoutes);

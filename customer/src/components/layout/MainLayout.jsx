@@ -4,7 +4,6 @@ import AnnouncementBar from './AnnouncementBar.jsx';
 import Navbar from './Navbar.jsx';
 import Footer from './Footer.jsx';
 import MobileBottomNav from './MobileBottomNav.jsx';
-import FirstVisitWelcomeScreen from './FirstVisitWelcomeScreen.jsx';
 import WelcomePopup from './WelcomePopup.jsx';
 import CartDrawer from '../cart/CartDrawer.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -12,42 +11,30 @@ import { useAuth } from '../../context/AuthContext.jsx';
 const FIRST_NAME_KEY = 'tgs_first_name';
 
 /**
- * Sequencing for the first-visit experience:
- * 1. Wait for auth to resolve (avoids a flash of the name screen for
- *    already-logged-in customers).
- * 2. If logged in, use the account name — never ask.
- * 3. Else, if a name was already saved locally, use it — never ask again.
- * 4. Otherwise show the fullscreen FirstVisitWelcomeScreen exactly once;
- *    only after it completes does the Welcome Popup ever mount.
+ * First-visit experience:
+ * - Logged-in customers are greeted by account name.
+ * - Returning guests use a locally saved name when available.
+ * - Browsing is never blocked for name collection — premium brands
+ *   let customers explore before asking for personal details.
  */
 const MainLayout = () => {
   const { user, isLoading: isAuthLoading } = useAuth();
-  const [firstName, setFirstName] = useState(null);
-  const [isNameReady, setIsNameReady] = useState(false);
+  const [firstName, setFirstName] = useState('');
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     if (isAuthLoading) return;
 
     if (user?.name) {
       setFirstName(user.name.trim().split(' ')[0]);
-      setIsNameReady(true);
+      setIsReady(true);
       return;
     }
 
     const savedName = localStorage.getItem(FIRST_NAME_KEY);
-    if (savedName) {
-      setFirstName(savedName);
-      setIsNameReady(true);
-    }
+    setFirstName(savedName || '');
+    setIsReady(true);
   }, [user, isAuthLoading]);
-
-  const handleNameCaptured = (name) => {
-    localStorage.setItem(FIRST_NAME_KEY, name);
-    setFirstName(name);
-    setIsNameReady(true);
-  };
-
-  const showFirstVisitScreen = !isAuthLoading && !isNameReady;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -60,8 +47,7 @@ const MainLayout = () => {
       <MobileBottomNav />
       <CartDrawer />
 
-      {showFirstVisitScreen && <FirstVisitWelcomeScreen onComplete={handleNameCaptured} />}
-      {isNameReady && <WelcomePopup firstName={firstName} />}
+      {isReady && <WelcomePopup firstName={firstName} />}
     </div>
   );
 };

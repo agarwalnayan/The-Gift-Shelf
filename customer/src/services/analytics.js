@@ -32,3 +32,9 @@ export const trackEvent = ({
         value,
     });
 };
+
+export const trackEcommerceEvent = (eventName, params) => {
+    if (!measurementId) return;
+
+    ReactGA.event(eventName, params);
+};

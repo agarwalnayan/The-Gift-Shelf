@@ -1,9 +1,12 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { HiOutlineTag, HiOutlineXMark } from 'react-icons/hi2';
 import { useCart } from '../../context/CartContext.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 const CouponInput = ({ couponCode }) => {
     const { applyCoupon, removeCoupon } = useCart();
+    const { user } = useAuth();
     const [code, setCode] = useState('');
     const [isApplying, setIsApplying] = useState(false);
     const [isRemoving, setIsRemoving] = useState(false);
@@ -49,6 +52,21 @@ const CouponInput = ({ couponCode }) => {
                     <HiOutlineXMark size={14} />
                     Remove
                 </button>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return (
+            <div className="rounded-xl border border-charcoal/10 bg-charcoal/[0.02] px-4 py-3 text-center">
+                <p className="text-sm text-charcoal/70">Have a coupon code?</p>
+                <Link
+                    to="/login"
+                    state={{ from: { pathname: '/cart' } }}
+                    className="mt-1 inline-block text-sm font-medium text-primary-600 hover:underline"
+                >
+                    Sign in to apply it
+                </Link>
             </div>
         );
     }

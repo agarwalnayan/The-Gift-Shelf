@@ -15,6 +15,9 @@ import FreeShippingBar from '../components/cart/FreeShippingBar.jsx';
 import Button from '../components/common/Button.jsx';
 import Loader from '../components/common/Loader.jsx';
 import CustomizationValue from '../components/common/CustomizationValue.jsx';
+import OrderReviewModal from '../components/checkout/OrderReviewModal.jsx';
+import { renderProductCardBenefit } from '../utils/promotionRenderer.js';
+import { trackEcommerceEvent } from '../services/analytics.js';
 
 const loadRazorpayScript = () =>
   new Promise((resolve) => {
@@ -39,6 +42,8 @@ const CheckoutPage = () => {
   const [orderNotes, setOrderNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('razorpay');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [hasTrackedCheckout, setHasTrackedCheckout] = useState(false);
 
   const addresses = user?.addresses || [];
   const items = cart.items || [];
@@ -78,6 +83,24 @@ const CheckoutPage = () => {
   const surcharge = paymentMethod === 'whatsapp' ? whatsappCharge : 0;
   const total = Number((discountedSubtotal + shipping + surcharge).toFixed(2));
 
+  useEffect(() => {
+    if (items.length > 0 && total > 0 && !hasTrackedCheckout && !isCartLoading) {
+      trackEcommerceEvent('begin_checkout', {
+        currency: 'INR',
+        value: total,
+        items: items.map(item => ({
+          item_id: item.product._id,
+          item_name: item.product.name,
+          item_category: item.product.category?.name,
+          item_variant: item.variantSku || undefined,
+          price: item.priceAtAddition + (item.customizationPrice || 0),
+          quantity: item.quantity
+        }))
+      });
+      setHasTrackedCheckout(true);
+    }
+  }, [items, total, hasTrackedCheckout, isCartLoading]);
+
   const personalizedItems = items.filter((item) => item.customizations?.length > 0);
 
   const handleAddressSaved = (updatedAddresses) => {
@@ -105,9 +128,17 @@ const CheckoutPage = () => {
     return { fullName, phone, line1, line2, city, state, postalCode, country };
   };
 
-  const placeOrder = async () => {
+  const handleReviewClick = () => {
+    if (!selectedAddressId) {
+      toast.error('Please select or add a delivery address');
+      return;
+    }
+    setIsReviewModalOpen(true);
+  };
+
+  const confirmAndPlaceOrder = async () => {
     if (isPlacingOrder) {
-      return; // Prevent double-click
+      return;
     }
 
     if (!selectedAddressId) {
@@ -128,8 +159,24 @@ const CheckoutPage = () => {
       const { order } = data.data;
 
       if (paymentMethod === 'whatsapp') {
+        trackEcommerceEvent('purchase', {
+          transaction_id: order._id,
+          currency: 'INR',
+          value: total,
+          shipping: shipping,
+          tax: 0,
+          items: items.map(item => ({
+            item_id: item.product._id,
+            item_name: item.product.name,
+            item_category: item.product.category?.name,
+            item_variant: item.variantSku || undefined,
+            price: item.priceAtAddition + (item.customizationPrice || 0),
+            quantity: item.quantity
+          }))
+        });
         toast.success('Order placed! Confirm it on WhatsApp to finish up.');
         if (data.data.whatsappLink) window.open(data.data.whatsappLink, '_blank', 'noopener,noreferrer');
+        setIsReviewModalOpen(false);
         navigate(`/account/orders/${order._id}`);
         return;
       }
@@ -156,6 +203,21 @@ const CheckoutPage = () => {
               razorpayPaymentId: response.razorpay_payment_id,
               razorpaySignature: response.razorpay_signature,
             });
+            trackEcommerceEvent('purchase', {
+              transaction_id: order._id,
+              currency: 'INR',
+              value: total,
+              shipping: shipping,
+              tax: 0,
+              items: items.map(item => ({
+                item_id: item.product._id,
+                item_name: item.product.name,
+                item_category: item.product.category?.name,
+                item_variant: item.variantSku || undefined,
+                price: item.priceAtAddition + (item.customizationPrice || 0),
+                quantity: item.quantity
+              }))
+            });
             toast.success('Payment successful! Your order is confirmed.');
             navigate(`/account/orders/${order._id}`);
           } catch (error) {
@@ -171,6 +233,7 @@ const CheckoutPage = () => {
         toast.error('Payment failed. Your cart has been preserved — please try again.');
       });
       razorpayCheckout.open();
+      setIsReviewModalOpen(false);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to place order');
     } finally {
@@ -315,7 +378,7 @@ const CheckoutPage = () => {
                     />
                     <div className="min-w-0">
                       <span className="flex items-center gap-1.5 text-sm font-medium text-charcoal">
-                        <HiOutlineShieldCheck className="shrink-0" size={17} /> <span className="truncate">Pay Online (Razorpay)</span>
+                        <HiOutlineShieldCheck className="shrink-0" size={17} /> <span className="truncate">Pay Online Securely</span>
                       </span>
                       <span className="mt-0.5 block truncate text-xs text-charcoal/50">Cards, UPI, Netbanking & Wallets</span>
                     </div>
@@ -341,7 +404,7 @@ const CheckoutPage = () => {
                         <FaWhatsapp className="shrink-0" size={17} /> <span className="truncate">Order via WhatsApp</span>
                       </span>
                       <span className="mt-0.5 block truncate text-xs text-charcoal/50">
-                        Confirm your order over chat (+₹{whatsappCharge})
+                        Personal assistance via chat (+₹{whatsappCharge})
                       </span>
                     </div>
                   </div>
@@ -396,19 +459,19 @@ const CheckoutPage = () => {
                 <span>-₹{discount.toFixed(2)}</span>
               </div>
             )}
-            {promotionDiscount > 0 && appliedPromotion && (
-              <div className="flex justify-between text-green-600">
-                <span>Promotion ({appliedPromotion.promotionName})</span>
-                <span>-₹{promotionDiscount.toFixed(2)}</span>
-              </div>
-            )}
+             {promotionDiscount > 0 && appliedPromotion && (
+               <div className="flex justify-between text-green-600">
+                 <span>{renderProductCardBenefit(appliedPromotion)}</span>
+                 <span>-₹{promotionDiscount.toFixed(2)}</span>
+               </div>
+             )}
             <div className="flex justify-between text-charcoal/70">
               <span>Shipping</span>
               <span>{shipping === 0 ? 'Free' : `₹${shipping}`}</span>
             </div>
             {surcharge > 0 && (
               <div className="flex justify-between text-charcoal/70">
-                <span>WhatsApp Order Charge</span>
+                <span>Concierge assistance</span>
                 <span>₹{surcharge}</span>
               </div>
             )}
@@ -418,8 +481,8 @@ const CheckoutPage = () => {
             </div>
           </div>
 
-          <Button onClick={placeOrder} isLoading={isPlacingOrder} className="mt-6 w-full">
-            {paymentMethod === 'whatsapp' ? 'Place Order via WhatsApp' : `Pay ₹${total}`}
+          <Button onClick={handleReviewClick} isLoading={isPlacingOrder} className="mt-6 w-full">
+            {paymentMethod === 'whatsapp' ? 'Review & Place via WhatsApp' : `Review & Pay ₹${total}`}
           </Button>
 
           {(commerce?.returnPolicy || commerce?.replacementPolicy) && (
@@ -438,6 +501,21 @@ const CheckoutPage = () => {
         address={editingAddress}
         onClose={() => setIsAddressModalOpen(false)}
         onSaved={handleAddressSaved}
+      />
+
+      <OrderReviewModal
+        isOpen={isReviewModalOpen}
+        onClose={() => setIsReviewModalOpen(false)}
+        onConfirm={confirmAndPlaceOrder}
+        addresses={addresses}
+        selectedAddressId={selectedAddressId}
+        items={items}
+        paymentMethod={paymentMethod}
+        giftMessage={giftMessage}
+        orderNotes={orderNotes}
+        shipping={shipping}
+        total={total}
+        isPlacingOrder={isPlacingOrder}
       />
     </div>
   );

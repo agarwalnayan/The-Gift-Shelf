@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { HiChevronRight, HiOutlineMinus, HiOutlinePlus, HiOutlineCloudArrowUp } from 'react-icons/hi2';
+import { HiChevronRight, HiOutlineMinus, HiOutlinePlus, HiOutlineCloudArrowUp, HiOutlineTruck, HiOutlineGiftTop, HiOutlineArrowUturnLeft, HiOutlineHeart } from 'react-icons/hi2';
 import { getProductBySlugApi, uploadCustomizationImageApi } from '../api/productApi.js';
+import { toggleWishlistApi } from '../api/authApi.js';
 import { useCart } from '../context/CartContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import Loader from '../components/common/Loader.jsx';
@@ -10,6 +11,10 @@ import Button from '../components/common/Button.jsx';
 import Accordion from '../components/common/Accordion.jsx';
 import PromotionCard from '../components/product/PromotionCard.jsx';
 import BadgeChip from '../components/product/BadgeChip.jsx';
+import CrossSellProducts from '../components/cart/CrossSellProducts.jsx';
+import PersonalizationPreview from '../components/product/PersonalizationPreview.jsx';
+import { renderProductCardBenefit } from '../utils/promotionRenderer.js';
+import { trackEcommerceEvent } from '../services/analytics.js';
 
 const hasValue = (value) => {
   if (value === undefined || value === null) return false;
@@ -21,7 +26,7 @@ const hasValue = (value) => {
 const ProductDetailPage = () => {
   const { slug } = useParams();
   const { user } = useAuth();
-  const { addItem } = useCart();
+  const { addItem, cart } = useCart();
   const [product, setProduct] = useState(null);
   const [activeImage, setActiveImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -31,6 +36,20 @@ const ProductDetailPage = () => {
   const [uploadingOptions, setUploadingOptions] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
+  const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
+
+  const cartQuantity = useMemo(() => {
+    if (!cart?.items) return 0;
+    return cart.items.reduce((sum, item) => {
+      if (item.product?._id === product?._id) return sum + item.quantity;
+      return sum;
+    }, 0);
+  }, [cart, product]);
+
+  const totalCartQuantity = useMemo(() => {
+    if (!cart?.items) return 0;
+    return cart.items.reduce((sum, item) => sum + item.quantity, 0);
+  }, [cart]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -47,6 +66,19 @@ const ProductDetailPage = () => {
 
         const firstActiveVariant = (productData.variants || []).find((variant) => variant.isActive !== false);
         setSelectedVariantSku(firstActiveVariant?.sku || '');
+
+        trackEcommerceEvent('view_item', {
+          currency: 'INR',
+          value: productData.finalPrice ?? productData.price ?? 0,
+          items: [{
+            item_id: productData._id,
+            item_name: productData.name,
+            item_category: productData.category?.name,
+            item_variant: firstActiveVariant?.sku,
+            price: productData.finalPrice ?? productData.price ?? 0,
+            quantity: 1
+          }]
+        });
       })
       .finally(() => setIsLoading(false));
   }, [slug]);
@@ -62,9 +94,10 @@ const ProductDetailPage = () => {
     return variants.find((variant) => variant.sku === selectedVariantSku) || null;
   }, [selectedVariantSku, variants]);
 
-  const basePrice = product?.discountPrice > 0 ? product?.discountPrice : product?.price;
+  const basePrice = product?.finalPrice ?? product?.price ?? 0;
   const displayPrice = activeVariant?.price ?? basePrice;
-  const hasDiscount = product?.discountPrice > 0 && product?.discountPrice < product?.price && !activeVariant?.price;
+  const hasDiscount = (product?.discountPrice > 0 && product?.discountPrice < (product?.price ?? Infinity) && !activeVariant?.price);
+  const effectiveStock = activeVariant?.stock ?? product?.stock ?? 0;
 
   // Get highest priority promotion and badge
   const topPromotion = (product?.promotions || [])
@@ -177,6 +210,19 @@ const ProductDetailPage = () => {
         customizations,
         product,
       });
+
+      trackEcommerceEvent('add_to_cart', {
+        currency: 'INR',
+        value: estimatedUnitPrice * quantity,
+        items: [{
+          item_id: product._id,
+          item_name: product.name,
+          item_category: product.category?.name,
+          item_variant: selectedVariantSku || undefined,
+          price: estimatedUnitPrice,
+          quantity: quantity
+        }]
+      });
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to add item to cart');
     } finally {
@@ -211,16 +257,39 @@ const ProductDetailPage = () => {
     }
   };
 
+  const isWishlisted = (user?.wishlist || []).some(
+    (id) => (typeof id === 'string' ? id : id?.toString()) === product._id
+  );
+
+  const handleWishlist = async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!user) {
+      toast.error('Please sign in to save items');
+      return;
+    }
+    if (isTogglingWishlist) return;
+
+    setIsTogglingWishlist(true);
+    try {
+      const { data } = await toggleWishlistApi(product._id);
+      setUser((prev) => ({ ...prev, wishlist: data.data.wishlist }));
+      toast.success(isWishlisted ? 'Removed from wishlist' : 'Added to wishlist');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to update wishlist');
+    } finally {
+      setIsTogglingWishlist(false);
+    }
+  };
+
   if (isLoading) return <Loader fullScreen />;
   if (!product) return null;
 
   // Structured description sections built only from data already present on the product.
   const specRows = [
     product.category?.name && { label: 'Category', value: product.category.name },
-    activeVariant?.sku && { label: 'SKU', value: activeVariant.sku },
-    !activeVariant?.sku && product.sku && { label: 'SKU', value: product.sku },
-    { label: 'Availability', value: product.stock > 0 ? 'In stock' : 'Out of stock' },
-    variants.length > 0 && { label: 'Variants available', value: `${variants.length}` },
+    { label: 'Availability', value: (product?.stock ?? 0) > 0 ? 'In stock' : 'Out of stock' },
+    variants.length > 0 && { label: 'Options available', value: `${variants.length}` },
   ].filter(Boolean);
 
   const variantAttributeRows = (activeVariant?.attributes || []).map((attribute) => ({
@@ -344,6 +413,14 @@ const ProductDetailPage = () => {
             <h1 className="font-display text-2xl font-semibold leading-tight text-charcoal sm:text-3xl lg:text-4xl">
               {product.name}
             </h1>
+            <button
+              onClick={handleWishlist}
+              disabled={isTogglingWishlist}
+              className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-charcoal/60 transition-colors hover:text-primary-600 disabled:opacity-50"
+            >
+              <HiOutlineHeart size={18} className={isWishlisted ? 'text-primary-600' : ''} />
+              {isWishlisted ? 'Saved to wishlist' : 'Save to wishlist'}
+            </button>
 
             {/* Badge Chip - shown if no promotion */}
             {topBadge && !topPromotion && <BadgeChip badge={topBadge} />}
@@ -354,7 +431,7 @@ const ProductDetailPage = () => {
                   ₹{estimatedUnitPrice.toFixed(2)}
                 </span>
                 {hasDiscount && (
-                  <span className="text-base text-charcoal/40 line-through sm:text-lg">₹{product.price}</span>
+                   <span className="text-base text-charcoal/40 line-through sm:text-lg">₹{product?.price ?? 0}</span>
                 )}
                 {customizationSurcharge > 0 && (
                   <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700">
@@ -366,16 +443,16 @@ const ProductDetailPage = () => {
             </div>
 
             {/* Promotion Card */}
-            {topPromotion && <PromotionCard promotion={topPromotion} />}
+            {topPromotion && <PromotionCard promotion={topPromotion} cartQuantity={totalCartQuantity} />}
           </div>
 
-          {product.stock === 0 ? (
+          {effectiveStock === 0 ? (
             <span className="inline-flex w-fit items-center rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-600">
               Out of stock
             </span>
-          ) : product.stock <= 5 ? (
+          ) : effectiveStock <= 5 ? (
             <span className="inline-flex w-fit items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
-              Only {product.stock} left in stock
+              Only {effectiveStock} left in stock
             </span>
           ) : null}
 
@@ -580,8 +657,33 @@ const ProductDetailPage = () => {
             </div>
           )}
 
+          {customizationOptions.length > 0 && (
+            <PersonalizationPreview
+              customizationOptions={customizationOptions}
+              customizationValues={customizationValues}
+              productImage={product.images?.[activeImage] || product.images?.[0]}
+              productName={product.name}
+            />
+          )}
+
           {/* Quantity + Add to cart */}
-          <div className="sticky bottom-0 left-0 right-0 z-20 -mx-4 mt-auto flex flex-row items-center gap-4 border-t border-charcoal/10 bg-white/90 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.15)] backdrop-blur-md sm:static sm:mx-0 sm:mt-0 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-none">
+          <div className="rounded-2xl border border-charcoal/10 bg-white p-4 shadow-sm">
+            <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-charcoal/60">
+              <span className="inline-flex items-center gap-1.5">
+                <HiOutlineTruck size={15} className="shrink-0 text-primary-600" />
+                Delivers in 4–7 days
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <HiOutlineGiftTop size={15} className="shrink-0 text-primary-600" />
+                Premium gift packaging
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <HiOutlineArrowUturnLeft size={15} className="shrink-0 text-primary-600" />
+                {customizationOptions.length > 0 ? 'Made to order · quality guaranteed' : 'Easy 7-day returns'}
+              </span>
+            </div>
+
+          <div className="sticky bottom-0 left-0 right-0 z-20 -mx-4 mt-4 flex flex-row items-center gap-4 border-t border-charcoal/10 bg-white/90 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.15)] backdrop-blur-md sm:static sm:mx-0 sm:mt-4 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-none">
             <div className="flex h-12 items-center gap-2 rounded-full border border-charcoal/20 bg-white px-1 shadow-sm">
               <button
                 type="button"
@@ -602,22 +704,17 @@ const ProductDetailPage = () => {
               </button>
             </div>
 
-            <Button onClick={handleAddToCart} isLoading={isAdding} disabled={product.stock === 0} className="h-12 flex-1 sm:flex-none">
-              {product.stock === 0 ? 'Out of Stock' : `Add to Cart · ₹${(estimatedUnitPrice * quantity).toFixed(2)}`}
+            <Button onClick={handleAddToCart} isLoading={isAdding} disabled={effectiveStock === 0} className="h-12 flex-1 sm:flex-none">
+              {effectiveStock === 0 ? 'Out of Stock' : `Add to Cart · ₹${(estimatedUnitPrice * quantity).toFixed(2)}`}
             </Button>
 
             {/* Promotion text below Add to Cart */}
             {topPromotion && (
               <p className="mt-2 text-xs text-charcoal/60 sm:mt-0 sm:ml-auto sm:w-auto">
-                {topPromotion.type === 'buy_more_save_more' && topPromotion.buyMoreTiers?.[0] ? (
-                  `Buy ${topPromotion.buyMoreTiers[0].buyQuantity} & save ${topPromotion.buyMoreTiers[0].discountUnit === 'percentage' ? `${topPromotion.buyMoreTiers[0].discountValue}%` : `₹${topPromotion.buyMoreTiers[0].discountValue}`}`
-                ) : topPromotion.badgeText ? (
-                  topPromotion.badgeText
-                ) : (
-                  topPromotion.name || 'Special offer'
-                )}
+                {renderProductCardBenefit(topPromotion)}
               </p>
             )}
+          </div>
           </div>
         </div>
       </div>
@@ -626,6 +723,10 @@ const ProductDetailPage = () => {
       <div className="mt-16 max-w-4xl">
         <h2 className="mb-4 font-display text-xl font-semibold text-charcoal sm:text-2xl">Product Details</h2>
         <Accordion items={accordionItems} />
+      </div>
+
+      <div className="mt-16 max-w-4xl">
+        <CrossSellProducts excludeProductIds={[product._id]} limit={4} />
       </div>
     </div>
   );

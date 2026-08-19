@@ -1,12 +1,15 @@
 import { HiOutlineChatBubbleLeftRight, HiOutlineClock, HiOutlineQuestionMarkCircle, HiOutlineArrowRight } from 'react-icons/hi2';
+import { useMarketing } from '../context/MarketingContext.jsx';
 
 const HelpSupportPage = () => {
+  const { commerce } = useMarketing();
+  const whatsappNumber = commerce?.whatsappNumber || '917872030408';
   const contactMethods = [
     {
       icon: HiOutlineChatBubbleLeftRight,
       title: 'WhatsApp',
       description: 'Chat with us instantly',
-      action: 'https://wa.me/917872030408',
+      action: `https://wa.me/${whatsappNumber.replace(/\D/g, '')}`,
       label: 'Chat on WhatsApp'
     },
     {

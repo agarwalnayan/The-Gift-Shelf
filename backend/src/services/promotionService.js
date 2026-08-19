@@ -195,13 +195,15 @@ class PromotionService {
 
     return {
       promotionId: promotion._id,
-      promotionName: promotion.name,
       promotionType: promotion.type,
       discountAmount: Math.round(discountAmount * 100) / 100,
       appliedItems,
       freeGift,
       freeShipping,
       badgeText: promotion.badgeText,
+      tiers: promotion.buyMoreSaveMoreConfig?.tiers || [],
+      pricingMethod: promotion.buyMoreSaveMoreConfig?.pricingMethod || null,
+      quantityRule: promotion.buyMoreSaveMoreConfig?.quantityRule || 'mixed_products',
     };
   }
 

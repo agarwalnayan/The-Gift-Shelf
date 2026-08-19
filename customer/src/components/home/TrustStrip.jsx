@@ -1,9 +1,14 @@
+import { useMarketing } from '../../context/MarketingContext.jsx';
+
 const TrustStrip = () => {
+  const { commerce } = useMarketing();
+  const freeShippingThreshold = commerce?.freeShippingThreshold ?? 999;
+
   const features = [
     'FREE PERSONALISATION',
-    'FREE DELIVERY',
+    `FREE SHIPPING OVER ₹${freeShippingThreshold}`,
     'PREMIUM PACKAGING',
-    'SECURE PAYMENT'
+    'SECURE PAYMENT',
   ];
 
   return (

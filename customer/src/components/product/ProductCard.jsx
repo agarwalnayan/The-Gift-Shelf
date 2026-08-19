@@ -68,28 +68,27 @@ const ProductCard = ({ product, compact = false }) => {
           className="h-full w-full object-cover transition-transform duration-200 ease-out group-hover:scale-105"
         />
 
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-charcoal/40 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-charcoal/50 via-charcoal/10 to-transparent opacity-100 transition-opacity duration-200 md:opacity-0 md:group-hover:opacity-100" />
 
         <button
           onClick={handleWishlist}
           disabled={isTogglingWishlist}
-          className={`absolute flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-charcoal/70 shadow-sm transition-all duration-200 hover:scale-110 hover:text-primary-600 ${compact ? 'right-2 top-2' : 'right-3 top-3'}`}
+          className={`absolute z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-charcoal/70 shadow-sm transition-all duration-200 hover:scale-110 hover:text-primary-600 ${compact ? 'right-2 top-2' : 'right-3 top-3'}`}
           aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
         >
           {isWishlisted ? <HiHeart size={16} className="text-primary-600" /> : <HiOutlineHeart size={16} />}
         </button>
 
-        {/* Promotion Ribbon or Badge Chip - Priority: Promotion first, then Badge */}
         {showPromotion && <PromotionRibbon promotion={showPromotion} compact={compact} />}
         {showBadge && <BadgeChip badge={showBadge} compact={compact} />}
 
-        <div className="absolute inset-x-0 bottom-0 translate-y-full opacity-0 transition-all duration-200 ease-out group-hover:translate-y-0 group-hover:opacity-100">
+        <div className="absolute inset-x-0 bottom-0 z-10 translate-y-0 opacity-100 transition-all duration-200 ease-out md:translate-y-full md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100">
           <button
             onClick={handleQuickAdd}
             className={`flex w-full items-center justify-center gap-1.5 bg-charcoal/90 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-cream backdrop-blur transition-colors duration-200 hover:bg-primary-700 ${compact ? 'py-1.5 text-[10px]' : 'py-2.5 sm:text-sm'}`}
           >
             <HiOutlineShoppingBag size={14} />
-            Shop Now
+            View Gift
           </button>
         </div>
       </div>

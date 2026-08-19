@@ -3,6 +3,7 @@ import { useCart } from '../../context/CartContext.jsx';
 import { useMarketing } from '../../context/MarketingContext.jsx';
 import FreeShippingBar from './FreeShippingBar.jsx';
 import CouponInput from './CouponInput.jsx';
+import { renderPromotionBenefit } from '../../utils/promotionRenderer.js';
 
 /**
  * Order summary used on the Cart page (and, via the `sticky` prop, pinned

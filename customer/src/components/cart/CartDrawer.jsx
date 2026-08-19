@@ -7,6 +7,7 @@ import FreeShippingBar from './FreeShippingBar.jsx';
 import CouponInput from './CouponInput.jsx';
 import CrossSellProducts from './CrossSellProducts.jsx';
 import Button from '../common/Button.jsx';
+import { renderPromotionBenefit } from '../../utils/promotionRenderer.js';
 
 const CartDrawer = () => {
     const { cart, isDrawerOpen, closeDrawer, discount, appliedPromotion } = useCart();
@@ -32,7 +33,7 @@ const CartDrawer = () => {
     const getPromotionMessage = () => {
         if (!appliedPromotion) return null;
 
-        const { type, buyMoreTiers, discountValue, discountUnit } = appliedPromotion;
+        const { type, buyMoreTiers } = appliedPromotion;
 
         if (type === 'buy_more_save_more' && buyMoreTiers?.length > 0) {
             const firstTier = buyMoreTiers[0];
@@ -50,7 +51,9 @@ const CartDrawer = () => {
             }
         }
 
-        return null;
+        // For other promotion types, show the customer benefit
+        const benefit = renderPromotionBenefit(appliedPromotion);
+        return benefit ? `${benefit} applied.` : null;
     };
 
     const promotionMessage = getPromotionMessage();

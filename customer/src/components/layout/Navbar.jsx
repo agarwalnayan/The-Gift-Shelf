@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, NavLink, useNavigate, useSearchParams } from 'react-router-dom';
 import { HiOutlineShoppingBag, HiOutlineUser, HiOutlineHeart, HiBars3, HiXMark, HiOutlineMagnifyingGlass } from 'react-icons/hi2';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useCart } from '../../context/CartContext.jsx';
@@ -18,9 +18,14 @@ const Navbar = () => {
   const { user } = useAuth();
   const { itemCount, openDrawer } = useCart();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    setSearchTerm(searchParams.get('search') || '');
+  }, [searchParams]);
 
   const submitSearch = (event) => {
     event.preventDefault();

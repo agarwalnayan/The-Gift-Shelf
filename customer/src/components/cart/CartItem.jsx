@@ -7,6 +7,11 @@ const CartItem = ({ item, compact = false }) => {
   const { product, quantity, customizations, variantSku } = item;
   const unitPrice = item.priceAtAddition + (item.customizationPrice || 0);
   const lineTotal = unitPrice * quantity;
+  const variantLabel = variantSku
+    ? product.variants?.find((variant) => variant.sku === variantSku)?.attributes
+        ?.map((attribute) => attribute.value)
+        .join(' · ')
+    : null;
 
   return (
     <div className={`flex gap-4 py-4 first:pt-0 sm:gap-5 sm:py-5 md:gap-6 md:py-6 ${compact ? 'py-4' : 'border-b border-charcoal/10'}`}>
@@ -21,7 +26,7 @@ const CartItem = ({ item, compact = false }) => {
           {/* Product block */}
           <div>
             <p className="line-clamp-2 text-sm font-medium text-charcoal sm:text-base">{product.name}</p>
-            {variantSku && <p className="mt-0.5 text-xs text-charcoal/50">Variant: {variantSku}</p>}
+            {variantLabel && <p className="mt-0.5 text-xs text-charcoal/50">{variantLabel}</p>}
             <p className="mt-1 text-sm text-charcoal/60">₹{unitPrice.toFixed(2)} each</p>
           </div>
 

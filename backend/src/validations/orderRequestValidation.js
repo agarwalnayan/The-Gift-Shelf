@@ -34,7 +34,9 @@ export const completeOrderRequestSchema = Joi.object({
   phone: Joi.string().trim().pattern(/^[6-9]\d{9}$/).required().messages({
     'string.pattern.base': 'Please provide a valid 10-digit phone number',
   }),
-  email: Joi.string().trim().email().allow('', null),
+  email: Joi.string().trim().email().required().messages({
+    'string.email': 'Please provide a valid email address',
+  }),
   line1: Joi.string().trim().required(),
   line2: Joi.string().trim().allow('', null),
   city: Joi.string().trim().required(),
@@ -45,4 +47,20 @@ export const completeOrderRequestSchema = Joi.object({
   country: Joi.string().trim().default('India'),
   giftMessage: Joi.string().trim().max(300).allow('', null),
   orderNotes: Joi.string().trim().max(300).allow('', null),
+  // Optional account creation
+  createAccount: Joi.boolean().default(false),
+  password: Joi.string().trim().min(8).when('createAccount', {
+    is: true,
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  confirmPassword: Joi.string().trim().valid(Joi.ref('password')).when('createAccount', {
+    is: true,
+    then: Joi.required().messages({
+      'any.only': 'Passwords do not match',
+    }),
+    otherwise: Joi.optional(),
+  }),
+  // Updated customizations from customer editing
+  updatedCustomizations: Joi.array().items(orderItemCustomizationSchema).default([]),
 }).unknown(false);

@@ -13,6 +13,10 @@ import { createOrderRequestSchema, completeOrderRequestSchema } from '../validat
 
 const router = express.Router();
 
+// Public routes (no auth required) - must come before admin routes
+router.get('/public/:token', getPublicOrderRequest);
+router.post('/public/:token/complete', validate(completeOrderRequestSchema), completeOrderRequest);
+
 // Admin routes (protected)
 router.use(protect);
 router.use(authorizeRoles('admin', 'superadmin'));
@@ -22,9 +26,4 @@ router.get('/', getOrderRequests);
 router.get('/:id', getOrderRequestById);
 router.patch('/:id/cancel', cancelOrderRequest);
 
-// Public routes (no auth required)
-const publicRouter = express.Router();
-publicRouter.get('/public/:token', getPublicOrderRequest);
-publicRouter.post('/public/:token/complete', validate(completeOrderRequestSchema), completeOrderRequest);
-
-export { router as adminOrderRequestRoutes, publicRouter as publicOrderRequestRoutes };
+export default router;

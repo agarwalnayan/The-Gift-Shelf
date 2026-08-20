@@ -36,6 +36,7 @@ const shippingAddressSchema = new mongoose.Schema(
   {
     fullName: { type: String, required: true },
     phone: { type: String, required: true },
+    email: { type: String, required: true },
     line1: { type: String, required: true },
     line2: { type: String },
     city: { type: String, required: true },
@@ -63,7 +64,6 @@ const orderSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
     },
     orderItems: {
       type: [orderItemSchema],

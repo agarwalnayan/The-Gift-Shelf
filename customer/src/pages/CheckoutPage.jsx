@@ -125,7 +125,7 @@ const CheckoutPage = () => {
     const address = addresses.find((a) => a._id === selectedAddressId);
     if (!address) return null;
     const { fullName, phone, line1, line2, city, state, postalCode, country } = address;
-    return { fullName, phone, line1, line2, city, state, postalCode, country };
+    return { fullName, phone, email: user?.email, line1, line2, city, state, postalCode, country };
   };
 
   const handleReviewClick = () => {

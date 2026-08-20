@@ -8,6 +8,7 @@ import asyncHandler from '../utils/asyncHandler.js';
 import ApiError from '../utils/ApiError.js';
 import ApiResponse from '../utils/ApiResponse.js';
 import { env } from '../config/env.js';
+import { notifyOrderUpdate } from '../services/orderNotificationService.js';
 
 const TOKEN_EXPIRY_DAYS = 7;
 const TOKEN_EXPIRY_MS = TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
@@ -74,7 +75,7 @@ export const createOrderRequest = asyncHandler(async (req, res) => {
     createdBy: req.user._id,
   });
 
-  const completionUrl = `${env.clientUrl.replace(/\/$/, '')}/social-order/${rawToken}`;
+  const completionUrl = `${env.customerUrl.replace(/\/$/, '')}/social-order/${rawToken}`;
 
   res.status(201).json(new ApiResponse(201, {
     orderRequest,
@@ -140,7 +141,7 @@ export const getPublicOrderRequest = asyncHandler(async (req, res) => {
   const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
   const orderRequest = await OrderRequest.findOne({ token: hashedToken })
-    .populate('items.product', 'name images price discountPrice stock variants');
+    .populate('items.product', 'name images price discountPrice stock variants customizationOptions');
 
   if (!orderRequest) {
     throw new ApiError(404, 'Invalid or expired order request link');
@@ -156,13 +157,29 @@ export const getPublicOrderRequest = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'This order request has expired');
   }
 
+  // Disable caching for this endpoint to prevent 304 responses
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+
   res.status(200).json(new ApiResponse(200, { orderRequest }, 'Order request fetched successfully'));
 });
 
 // Public: Complete OrderRequest (no auth required)
 export const completeOrderRequest = asyncHandler(async (req, res) => {
   const { token } = req.params;
-  const { fullName, phone, email, line1, line2, city, state, postalCode, country, giftMessage, orderNotes } = req.body;
+  const { fullName, phone, email, line1, line2, city, state, postalCode, country, giftMessage, orderNotes, createAccount, password, updatedCustomizations } = req.body;
+
+  // Email is now required for order notifications
+  if (!email) {
+    throw new ApiError(400, 'Email is required to complete your order');
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    throw new ApiError(400, 'Please provide a valid email address');
+  }
 
   const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
@@ -216,40 +233,112 @@ export const completeOrderRequest = asyncHandler(async (req, res) => {
       }
     }
 
-    // Create or find user
-    let user;
-    if (email) {
-      user = await User.findOne({ email });
-      if (!user) {
-        // Generate a random password for social order customers
-        const tempPassword = crypto.randomBytes(16).toString('hex');
-        user = await User.create({
-          name: fullName,
-          email,
-          password: tempPassword,
-          phone,
-        });
+    // Handle user creation with optional account creation
+    let user = null;
+    let userCreated = false;
+    
+    if (createAccount) {
+      // Customer wants to create an account with their password
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        throw new ApiError(409, 'This email already has a TGS account. Please log in to your account.');
       }
-    } else {
-      // For customers without email, find or create user by phone only
-      user = await User.findOne({ phone });
-      if (!user) {
-        const tempPassword = crypto.randomBytes(16).toString('hex');
-        user = await User.create({
-          name: fullName,
-          password: tempPassword,
-          phone,
-        });
-      }
+      // Create user with customer-provided password
+      user = await User.create({
+        name: fullName,
+        email,
+        password,
+        phone,
+      });
+      userCreated = true;
     }
+    // If createAccount is false, user remains null (guest order)
 
     // Use the Admin's agreed price directly - no server recalculation
     // The Admin has already agreed on the price with the customer
     const agreedPrice = orderRequest.agreedPrice;
     const discount = orderRequest.discount || 0;
 
+    // Validate and apply customer-edited customizations if provided
+    let finalOrderItems = orderRequest.items;
+    if (updatedCustomizations && updatedCustomizations.length > 0) {
+      // Validate each submitted customization
+      for (const submittedCustomization of updatedCustomizations) {
+        const item = orderRequest.items.find(i => 
+          i.customizations && i.customizations.some(c => c.key === submittedCustomization.key)
+        );
+        
+        if (!item) {
+          throw new ApiError(400, `Invalid customization key: ${submittedCustomization.key}`);
+        }
+
+        const product = await Product.findById(item.product);
+        if (!product) {
+          throw new ApiError(400, 'Product not found');
+        }
+
+        const option = product.customizationOptions.find(o => o.key === submittedCustomization.key);
+        if (!option) {
+          throw new ApiError(400, `Customization option not found: ${submittedCustomization.key}`);
+        }
+
+        if (!option.isEnabled) {
+          throw new ApiError(400, `Customization option is disabled: ${option.label}`);
+        }
+
+        // Validate required field
+        if (option.isRequired && (!submittedCustomization.value || submittedCustomization.value === '')) {
+          throw new ApiError(400, `${option.label} is required`);
+        }
+
+        // Validate type
+        if (submittedCustomization.type !== option.type) {
+          throw new ApiError(400, `Invalid customization type for ${option.label}`);
+        }
+
+        // Validate choices
+        if (option.choices && option.choices.length > 0) {
+          const submittedValue = Array.isArray(submittedCustomization.value) 
+            ? submittedCustomization.value 
+            : [submittedCustomization.value];
+          const invalidChoices = submittedValue.filter(v => v && !option.choices.includes(v));
+          if (invalidChoices.length > 0) {
+            throw new ApiError(400, `Invalid choice for ${option.label}`);
+          }
+        }
+
+        // Validate length constraints
+        if (option.validation && typeof submittedCustomization.value === 'string') {
+          const { minLength, maxLength } = option.validation;
+          if (minLength && submittedCustomization.value.length < minLength) {
+            throw new ApiError(400, `${option.label} must be at least ${minLength} characters`);
+          }
+          if (maxLength && submittedCustomization.value.length > maxLength) {
+            throw new ApiError(400, `${option.label} must not exceed ${maxLength} characters`);
+          }
+        }
+
+        // Ensure additionalPrice matches product configuration (customer cannot change price)
+        if (submittedCustomization.additionalPrice !== (option.additionalPrice || 0)) {
+          throw new ApiError(400, 'Cannot modify customization price');
+        }
+      }
+
+      // Apply validated customizations
+      finalOrderItems = orderRequest.items.map((item, index) => {
+        const updatedCustomization = updatedCustomizations.find(c => c.key === item.customizations?.[0]?.key);
+        if (updatedCustomization) {
+          return {
+            ...item,
+            customizations: [updatedCustomization],
+          };
+        }
+        return item;
+      });
+    }
+
     // Calculate items price for record-keeping only
-    const itemsPrice = orderRequest.items.reduce(
+    const itemsPrice = finalOrderItems.reduce(
       (sum, item) => sum + (item.price + item.customizationPrice) * item.quantity,
       0
     );
@@ -263,6 +352,7 @@ export const completeOrderRequest = asyncHandler(async (req, res) => {
     const shippingAddress = {
       fullName,
       phone,
+      email,
       line1,
       line2: line2 || '',
       city,
@@ -271,37 +361,51 @@ export const completeOrderRequest = asyncHandler(async (req, res) => {
       country: country || 'India',
     };
 
-    // Create the Order using Admin's agreed price
-    const order = await Order.create({
-      user: user._id,
-      orderItems: orderRequest.items,
-      shippingAddress,
-      paymentMethod: 'gpay',
-      orderSource: orderRequest.source,
-      giftMessage: giftMessage || '',
-      orderNotes: orderNotes || '',
-      itemsPrice,
-      shippingPrice,
-      discountPrice: discount,
-      whatsappCharge: 0,
-      taxPrice: 0,
-      totalPrice: agreedPrice,
-      isPaid: true,
-      paidAt: new Date(),
-      paymentStatus: 'paid',
-      orderStatus: 'confirmed',
-    });
+    try {
+      // Create the Order using Admin's agreed price
+      const order = await Order.create({
+        user: user?._id, // null for guest orders
+        orderItems: finalOrderItems,
+        shippingAddress,
+        paymentMethod: 'gpay',
+        orderSource: orderRequest.source,
+        giftMessage: giftMessage || '',
+        orderNotes: orderNotes || '',
+        itemsPrice,
+        shippingPrice,
+        discountPrice: discount,
+        whatsappCharge: 0,
+        taxPrice: 0,
+        totalPrice: agreedPrice,
+        isPaid: true,
+        paidAt: new Date(),
+        paymentStatus: 'paid',
+        orderStatus: 'confirmed',
+      });
 
-    // Deduct stock
-    for (const item of orderRequest.items) {
-      await decrementStock(item);
+      // Deduct stock
+      for (const item of finalOrderItems) {
+        await decrementStock(item);
+      }
+
+      // Link order to orderRequest
+      orderRequest.completedOrder = order._id;
+      await orderRequest.save();
+
+      // Send order confirmation email (async, don't block response)
+      notifyOrderUpdate(order._id, 'order_created').catch(() => {});
+
+      res.status(201).json(new ApiResponse(201, { 
+        order, 
+        accountCreated: createAccount 
+      }, 'Order completed successfully'));
+    } catch (error) {
+      // Rollback user creation if order/inventory failed
+      if (userCreated && user) {
+        await User.findByIdAndDelete(user._id);
+      }
+      throw error;
     }
-
-    // Link order to orderRequest
-    orderRequest.completedOrder = order._id;
-    await orderRequest.save();
-
-    res.status(201).json(new ApiResponse(201, { order }, 'Order completed successfully'));
   } catch (error) {
     // Revert status on error
     orderRequest.status = 'pending';

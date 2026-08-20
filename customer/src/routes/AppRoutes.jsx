@@ -29,6 +29,7 @@ import LandingPage from '../pages/LandingPage.jsx';
 import FeaturedSectionPage from '../pages/FeaturedSectionPage.jsx';
 import NotFoundPage from '../pages/NotFoundPage.jsx';
 import SocialOrderCompletionPage from '../pages/SocialOrderCompletionPage.jsx';
+import OrderSuccessPage from '../pages/OrderSuccessPage.jsx';
 import { useEffect } from 'react';
 import { trackPageView } from '../services/analytics';
 
@@ -80,6 +81,7 @@ const AppRoutes = () => {
         </Route>
 
         <Route path="social-order/:token" element={<SocialOrderCompletionPage />} />
+        <Route path="order-success/:orderId" element={<OrderSuccessPage />} />
       </Routes>
     </>
   );

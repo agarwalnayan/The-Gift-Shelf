@@ -146,7 +146,7 @@ const SocialOrdersPage = () => {
         {request.status === 'pending' && (
           <>
             <button
-              onClick={() => copyCompletionLink(`${window.location.origin}/social-order/${request.token}`)}
+              onClick={() => copyCompletionLink(request.completionUrl)}
               className="flex h-8 w-8 items-center justify-center rounded-full text-ink/40 transition-colors hover:bg-primary-50 hover:text-primary-600"
               aria-label="Copy completion link"
             >
@@ -203,7 +203,7 @@ const SocialOrdersPage = () => {
       {request.status === 'pending' && (
         <div className="flex items-center gap-2 pt-2 border-t border-ink/10">
           <button
-            onClick={() => copyCompletionLink(`${window.location.origin}/social-order/${request.token}`)}
+            onClick={() => copyCompletionLink(request.completionUrl)}
             className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
           >
             <HiOutlineClipboard size={16} />

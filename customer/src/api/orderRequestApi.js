@@ -1,13 +1,11 @@
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import axiosInstance from './axiosInstance.js';
 
 export const getPublicOrderRequestApi = async (token) => {
-  const response = await axios.get(`${API_URL}/order-requests/public/${token}`);
+  const response = await axiosInstance.get(`/order-requests/public/${token}`);
   return response.data;
 };
 
 export const completeOrderRequestApi = async (token, data) => {
-  const response = await axios.post(`${API_URL}/order-requests/public/${token}/complete`, data);
+  const response = await axiosInstance.post(`/order-requests/public/${token}/complete`, data);
   return response.data;
 };

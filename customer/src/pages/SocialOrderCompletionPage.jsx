@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { HiOutlineCheck, HiOutlineShoppingBag, HiOutlineMapPin, HiOutlineUser } from 'react-icons/hi2';
+import { HiOutlineCheck, HiOutlineShoppingBag, HiOutlineMapPin, HiOutlineUser, HiOutlinePencil } from 'react-icons/hi2';
 import { getPublicOrderRequestApi, completeOrderRequestApi } from '../api/orderRequestApi.js';
 import Loader from '../components/common/Loader.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 import Input from '../components/common/Input.jsx';
 import Button from '../components/common/Button.jsx';
+import CustomizationEditModal from '../components/customization/CustomizationEditModal.jsx';
 
 const SocialOrderCompletionPage = () => {
   const { token } = useParams();
@@ -28,7 +29,13 @@ const SocialOrderCompletionPage = () => {
     country: 'India',
     giftMessage: '',
     orderNotes: '',
+    createAccount: false,
+    password: '',
+    confirmPassword: '',
   });
+
+  const [isCustomizationModalOpen, setIsCustomizationModalOpen] = useState(false);
+  const [updatedCustomizations, setUpdatedCustomizations] = useState([]);
 
   useEffect(() => {
     loadOrderRequest();
@@ -38,7 +45,7 @@ const SocialOrderCompletionPage = () => {
     setIsLoading(true);
     try {
       const { data } = await getPublicOrderRequestApi(token);
-      setOrderRequest(data.data.orderRequest);
+      setOrderRequest(data.orderRequest);
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to load order request');
     } finally {
@@ -50,18 +57,58 @@ const SocialOrderCompletionPage = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const { data } = await completeOrderRequestApi(token, formData);
+      const submissionData = {
+        ...formData,
+        updatedCustomizations,
+      };
+      
+      // Remove password fields if not creating account
+      if (!formData.createAccount) {
+        delete submissionData.password;
+        delete submissionData.confirmPassword;
+      }
+      
+      const { data } = await completeOrderRequestApi(token, submissionData);
       toast.success('Order completed successfully!');
-      navigate(`/order-success/${data.data.order._id}`);
+      
+      // Navigate to order success page with account creation status
+      const orderSuccessData = {
+        orderId: data.data.order._id,
+        accountCreated: data.data.accountCreated,
+      };
+      navigate(`/order-success/${data.data.order._id}`, { state: orderSuccessData });
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to complete order');
+      if (error.response?.status === 409) {
+        toast.error(error.response?.data?.message || 'This email already has a TGS account. Please log in to your account.');
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to complete order');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    setFormData({ ...formData, [e.target.name]: value });
+  };
+
+  const handleSaveCustomizations = (customizations) => {
+    setUpdatedCustomizations(customizations);
+    // Update orderRequest items with new customizations for display
+    setOrderRequest(prev => ({
+      ...prev,
+      items: prev.items.map(item => {
+        const updatedCustomization = customizations.find(c => c.key === item.customizations?.[0]?.key);
+        if (updatedCustomization) {
+          return {
+            ...item,
+            customizations: [updatedCustomization],
+          };
+        }
+        return item;
+      }),
+    }));
   };
 
   if (isLoading) {
@@ -94,9 +141,21 @@ const SocialOrderCompletionPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Order Summary */}
             <div className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <HiOutlineShoppingBag size={20} className="text-primary-600" />
-                <h2 className="text-lg font-semibold text-gray-900">Order Summary</h2>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <HiOutlineShoppingBag size={20} className="text-primary-600" />
+                  <h2 className="text-lg font-semibold text-gray-900">Order Summary</h2>
+                </div>
+                {orderRequest.items.some(item => item.customizations?.length > 0) && (
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomizationModalOpen(true)}
+                    className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 font-medium"
+                  >
+                    <HiOutlinePencil size={16} />
+                    Edit Customization
+                  </button>
+                )}
               </div>
 
               <div className="space-y-4">
@@ -181,13 +240,52 @@ const SocialOrderCompletionPage = () => {
                     required
                   />
                   <Input
-                    label="Email (Optional)"
+                    label="Email *"
                     name="email"
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
                     placeholder="your@email.com"
+                    required
                   />
+
+                  {/* Account Creation Option */}
+                  <div className="pt-4 border-t border-gray-200">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="createAccount"
+                        checked={formData.createAccount}
+                        onChange={handleInputChange}
+                        className="w-5 h-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                      />
+                      <span className="text-sm font-medium text-gray-900">Create a TGS account</span>
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1 ml-8">Save your details for faster checkout next time</p>
+
+                    {formData.createAccount && (
+                      <div className="mt-4 space-y-3 ml-8">
+                        <Input
+                          label="Password *"
+                          name="password"
+                          type="password"
+                          value={formData.password}
+                          onChange={handleInputChange}
+                          placeholder="Min 8 characters"
+                          required
+                        />
+                        <Input
+                          label="Confirm Password *"
+                          name="confirmPassword"
+                          type="password"
+                          value={formData.confirmPassword}
+                          onChange={handleInputChange}
+                          placeholder="Re-enter password"
+                          required
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -296,11 +394,22 @@ const SocialOrderCompletionPage = () => {
               className="w-full max-w-md"
               size="lg"
             >
-              Confirm Order
+              Confirm My Order
             </Button>
           </div>
         </form>
       </div>
+
+      {/* Customization Edit Modal */}
+      {orderRequest && orderRequest.items.some(item => item.customizations?.length > 0) && (
+        <CustomizationEditModal
+          isOpen={isCustomizationModalOpen}
+          onClose={() => setIsCustomizationModalOpen(false)}
+          customizationOptions={orderRequest.items[0]?.product?.customizationOptions || []}
+          currentCustomizations={orderRequest.items[0].customizations || []}
+          onSave={handleSaveCustomizations}
+        />
+      )}
     </div>
   );
 };

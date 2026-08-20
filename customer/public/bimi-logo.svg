@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.2" baseProfile="tiny-ps" viewBox="0 0 512 512">
+<title>The Gift Shelf</title>
+<desc>The Gift Shelf TGS brand logo</desc>
+<circle cx="256" cy="256" r="253" fill="#FAF8F2"/>
+<circle cx="256" cy="256" r="246" fill="none" stroke="#C18D3F" stroke-width="6"/>
+<circle cx="256" cy="256" r="236" fill="none" stroke="#8F6339" stroke-width="2"/>
+<path d="M224 112 C190 82 170 67 151 62 C151 91 167 119 202 135 Z" fill="#C18D3F"/>
+<path d="M288 112 C322 82 342 67 361 62 C361 91 345 119 310 135 Z" fill="#C18D3F"/>
+<text x="256" y="306" text-anchor="middle" font-family="Georgia,Times New Roman,serif" font-size="178" letter-spacing="-18" fill="#8F5E32">TGS</text>
+<text x="256" y="336" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="22" letter-spacing="7" fill="#8F5E32">THE GIFT SHELF</text>
+<text x="256" y="389" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="18" letter-spacing="2.5" fill="#9B7A57">CRAFT YOUR OWN BOX OF HAPPINESS</text>
+</svg>

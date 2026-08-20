@@ -9,29 +9,7 @@ import ApiResponse from '../utils/ApiResponse.js';
 import { createRazorpayOrder, verifyRazorpaySignature } from '../services/razorpayService.js';
 import { validateCouponForSubtotal } from './couponController.js';
 import PromotionService from '../services/promotionService.js';
-import { sendEmail } from '../services/emailService.js';
-
-const buildOrderConfirmationEmail = (order, customerName) => {
-  const orderNumber = order._id.toString().slice(-8).toUpperCase();
-  const itemRows = order.orderItems
-    .map(
-      (item) =>
-        `<tr><td style="padding:6px 0;">${item.name} &times; ${item.quantity}</td><td style="padding:6px 0; text-align:right;">₹${item.price * item.quantity}</td></tr>`
-    )
-    .join('');
-
-  return {
-    subject: `Order Confirmed — #${orderNumber}`,
-    html: `
-      <p>Hi ${customerName},</p>
-      <p>Thank you for your order! Here's a summary:</p>
-      <p><strong>Order ID:</strong> #${orderNumber}</p>
-      <table style="width:100%; border-collapse:collapse;">${itemRows}</table>
-      <p style="margin-top:12px;"><strong>Total: ₹${order.totalPrice}</strong></p>
-      <p>We'll notify you once your order ships. If you have any questions, just reply to this email.</p>
-    `,
-  };
-};
+import { notifyOrderUpdate } from '../services/orderNotificationService.js';
 
 const decrementStock = async (item) => {
   if (item.variantSku) {
@@ -283,9 +261,9 @@ export const createOrder = asyncHandler(async (req, res) => {
     ? `https://wa.me/${settings.commerce.whatsappNumber.replace(/\D/g, '')}?text=${whatsappMessage}`
     : null;
 
+  // Send order confirmation email using the new notification service
   if (req.user.email) {
-    const { subject, html } = buildOrderConfirmationEmail(order, req.user.name);
-    sendEmail({ to: req.user.email, subject, html }).catch(() => {});
+    notifyOrderUpdate(order._id, 'order_created').catch(() => {});
   }
 
   res.status(201).json(new ApiResponse(201, { order, whatsappLink }, 'Order placed successfully'));
@@ -340,16 +318,14 @@ export const verifyPayment = asyncHandler(async (req, res) => {
     }
   }
 
-  const cart = await Cart.findOne({ user: order.user });
-  if (cart) {
-    cart.items = [];
-    cart.couponCode = null;
-    await cart.save();
-  }
-
-  if (req.user.email) {
-    const { subject, html } = buildOrderConfirmationEmail(order, req.user.name);
-    sendEmail({ to: req.user.email, subject, html }).catch(() => {});
+  // Clear cart only if order has a user (guest orders don't have carts)
+  if (order.user) {
+    const cart = await Cart.findOne({ user: order.user });
+    if (cart) {
+      cart.items = [];
+      cart.couponCode = null;
+      await cart.save();
+    }
   }
 
   res.status(200).json(new ApiResponse(200, { order }, 'Payment verified successfully'));
@@ -366,7 +342,8 @@ export const getOrderById = asyncHandler(async (req, res) => {
     .populate('orderItems.product', 'name images price discountPrice stock variants');
   if (!order) throw new ApiError(404, 'Order not found');
 
-  const isOwner = order.user._id.toString() === req.user._id.toString();
+  // Guest orders (user: null) can only be accessed by admins
+  const isOwner = order.user && order.user._id.toString() === req.user._id.toString();
   const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
   if (!isOwner && !isAdmin) throw new ApiError(403, 'Not authorized to view this order');
 
@@ -418,6 +395,9 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     throw new ApiError(400, `Cannot transition from ${currentStatus} to ${orderStatus}`);
   }
 
+  // Store previous status for notification
+  const previousStatus = order.orderStatus;
+
   // Handle cancellation - restore stock
   if (orderStatus === 'cancelled' && currentStatus !== 'cancelled') {
     for (const item of order.orderItems) {
@@ -442,6 +422,9 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
 
   await order.save();
 
+  // Send order status notification (async, don't block response)
+  notifyOrderUpdate(order._id, 'order_status_changed', { orderStatus: previousStatus }).catch(() => {});
+
   res.status(200).json(new ApiResponse(200, { order }, 'Order status updated successfully'));
 });
 
@@ -454,12 +437,18 @@ export const updatePaymentStatus = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Please provide a valid payment status');
   }
 
+  // Store previous payment status for notification
+  const previousPaymentStatus = order.paymentStatus;
+
   order.paymentStatus = paymentStatus;
   // Keep the existing boolean in sync so older views relying on it stay accurate.
   order.isPaid = paymentStatus === 'paid';
   if (paymentStatus === 'paid' && !order.paidAt) order.paidAt = new Date();
 
   await order.save();
+
+  // Send payment status notification (async, don't block response)
+  notifyOrderUpdate(order._id, 'payment_status_changed', { paymentStatus: previousPaymentStatus }).catch(() => {});
 
   res.status(200).json(new ApiResponse(200, { order }, 'Payment status updated successfully'));
 });
@@ -470,6 +459,13 @@ export const updateOrderTracking = asyncHandler(async (req, res) => {
 
   const { courierName, trackingId, trackingUrl, internalNotes } = req.body;
 
+  // Store previous courier data for notification
+  const previousCourierData = {
+    name: order.courier?.name || '',
+    trackingId: order.courier?.trackingId || '',
+    trackingUrl: order.courier?.trackingUrl || '',
+  };
+
   order.courier = {
     name: courierName !== undefined ? courierName : order.courier?.name || '',
     trackingId: trackingId !== undefined ? trackingId : order.courier?.trackingId || '',
@@ -478,6 +474,9 @@ export const updateOrderTracking = asyncHandler(async (req, res) => {
   if (internalNotes !== undefined) order.internalNotes = internalNotes;
 
   await order.save();
+
+  // Send tracking notification (async, don't block response)
+  notifyOrderUpdate(order._id, 'tracking_updated', { courier: previousCourierData }).catch(() => {});
 
   res.status(200).json(new ApiResponse(200, { order }, 'Order tracking updated successfully'));
 });

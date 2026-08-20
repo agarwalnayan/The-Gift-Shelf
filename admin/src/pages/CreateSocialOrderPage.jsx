@@ -24,6 +24,8 @@ const CreateSocialOrderPage = () => {
   const [agreedPrice, setAgreedPrice] = useState('');
   const [discount, setDiscount] = useState('');
   const [internalNotes, setInternalNotes] = useState('');
+  const [createdOrder, setCreatedOrder] = useState(null);
+  const [completionUrl, setCompletionUrl] = useState('');
 
   const searchProducts = async (query) => {
     if (!query || query.length < 2) {
@@ -123,8 +125,9 @@ const CreateSocialOrderPage = () => {
         internalNotes,
       });
 
+      setCreatedOrder(data.data.orderRequest);
+      setCompletionUrl(data.data.completionUrl);
       toast.success('Order request created successfully');
-      navigate('/social-orders');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to create order request');
     } finally {
@@ -132,14 +135,97 @@ const CreateSocialOrderPage = () => {
     }
   };
 
+  const copyCompletionLink = () => {
+    navigator.clipboard.writeText(completionUrl);
+    toast.success('Link copied to clipboard');
+  };
+
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Create Social Order"
-        description="Create an order request for Instagram or WhatsApp customers"
-      />
+      {createdOrder ? (
+        <div className="space-y-6">
+          <PageHeader
+            title="Order Request Created"
+            description="Social order request has been created successfully"
+          />
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="bg-white border border-ink/20 rounded-lg p-6">
+            <div className="mb-4">
+              <h3 className="text-lg font-medium text-ink mb-2">Customer Completion Link</h3>
+              <p className="text-sm text-ink/60 mb-4">
+                Share this link with the customer to complete their order
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={completionUrl}
+                readOnly
+                className="flex-1 px-4 py-3 border border-ink/20 rounded-lg bg-ink/5 text-sm font-mono"
+              />
+              <button
+                type="button"
+                onClick={copyCompletionLink}
+                className="px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
+              >
+                Copy Link
+              </button>
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-ink/10">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-ink/50">Order ID:</span>
+                  <p className="font-mono text-ink">{createdOrder._id.slice(-8).toUpperCase()}</p>
+                </div>
+                <div>
+                  <span className="text-ink/50">Source:</span>
+                  <p className="text-ink capitalize">{createdOrder.source}</p>
+                </div>
+                <div>
+                  <span className="text-ink/50">Items:</span>
+                  <p className="text-ink">{createdOrder.items.length}</p>
+                </div>
+                <div>
+                  <span className="text-ink/50">Amount:</span>
+                  <p className="font-medium text-ink">₹{createdOrder.agreedPrice}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate('/social-orders')}
+            >
+              Back to Social Orders
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                setCreatedOrder(null);
+                setCompletionUrl('');
+                setOrderItems([]);
+                setAgreedPrice('');
+                setDiscount('');
+                setInternalNotes('');
+              }}
+            >
+              Create Another Order
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <PageHeader
+            title="Create Social Order"
+            description="Create an order request for Instagram or WhatsApp customers"
+          />
+
+          <form onSubmit={handleSubmit} className="space-y-6">
         {/* Source Selection */}
         <div>
           <label className="block text-sm font-medium text-ink mb-2">Source</label>
@@ -400,6 +486,8 @@ const CreateSocialOrderPage = () => {
           </Button>
         </div>
       </form>
+        </>
+      )}
     </div>
   );
 };

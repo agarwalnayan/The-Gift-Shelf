@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate, useSearchParams } from 'react-router-dom';
-import { HiOutlineShoppingBag, HiOutlineUser, HiOutlineHeart, HiBars3, HiXMark, HiOutlineMagnifyingGlass } from 'react-icons/hi2';
+import { HiOutlineShoppingBag, HiOutlineUser, HiOutlineHeart, HiBars3, HiXMark, HiOutlineMagnifyingGlass, HiOutlineBell } from 'react-icons/hi2';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useCart } from '../../context/CartContext.jsx';
+import { getUnreadCountApi } from '../../api/notificationApi.js';
 
 const navLinks = [
   { label: 'Home', to: '/', end: true },
@@ -22,10 +23,51 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [unreadCount, setUnreadCount] = useState(0);
+  
+  // Safe user check
+  const safeUser = user && typeof user === 'object' ? user : null;
 
   useEffect(() => {
     setSearchTerm(searchParams.get('search') || '');
   }, [searchParams]);
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchUnreadCount = async () => {
+      try {
+        // Temporarily disable to isolate crash
+        if (!safeUser || !isMounted) {
+          if (isMounted) setUnreadCount(0);
+          return;
+        }
+        
+        // Commented out temporarily to test if this is causing the crash
+        // const response = await getUnreadCountApi();
+        // if (!isMounted) return;
+        // if (response && response.data && response.data.data !== undefined) {
+        //   const count = response.data.data.unreadCount;
+        //   setUnreadCount(typeof count === 'number' ? count : 0);
+        // } else {
+        //   setUnreadCount(0);
+        // }
+        
+        if (isMounted) setUnreadCount(0);
+      } catch (error) {
+        console.error('Failed to fetch unread count:', error);
+        if (isMounted) {
+          setUnreadCount(0);
+        }
+      }
+    };
+
+    fetchUnreadCount();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [safeUser]);
 
   const submitSearch = (event) => {
     event.preventDefault();
@@ -82,6 +124,21 @@ const Navbar = () => {
             <HiOutlineHeart size={22} />
           </Link>
 
+          {safeUser && safeUser._id && (
+            <Link
+              to="/notifications"
+              className="relative text-charcoal/70 transition-colors hover:text-primary-600"
+              aria-label="Notifications"
+            >
+              <HiOutlineBell size={22} />
+              {typeof unreadCount === 'number' && unreadCount > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary-600 text-[10px] font-semibold text-cream">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </Link>
+          )}
+
           <button
             type="button"
             onClick={openDrawer}
@@ -97,7 +154,7 @@ const Navbar = () => {
           </button>
 
           <Link
-            to={user ? '/account' : '/login'}
+            to={safeUser ? '/account' : '/login'}
             className="hidden text-charcoal/70 transition-colors hover:text-primary-600 md:block"
             aria-label="Account"
           >

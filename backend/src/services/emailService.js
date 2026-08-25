@@ -23,7 +23,7 @@ const getTransporter = () => {
 // business flow that triggered it (registration, checkout, password reset).
 // Callers that need to know whether the email actually went out can inspect
 // the resolved boolean.
-export const sendEmail = async ({ to, subject, html }) => {
+export const sendEmail = async ({ to, subject, html, attachments = [] }) => {
   const transport = getTransporter();
 
   if (!transport) {
@@ -37,6 +37,7 @@ export const sendEmail = async ({ to, subject, html }) => {
       to,
       subject,
       html,
+      attachments,
     });
     return true;
   } catch (err) {

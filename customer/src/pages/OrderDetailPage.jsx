@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { getOrderByIdApi } from '../api/orderApi.js';
+import { getOrderByIdApi, downloadInvoiceApi } from '../api/orderApi.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
 import Loader from '../components/common/Loader.jsx';
@@ -59,8 +59,21 @@ const OrderDetailPage = () => {
     { icon: HiOutlineCheckCircle, label: 'Delivered' }
   ];
 
-  const handleDownloadInvoice = () => {
-    window.print();
+  const handleDownloadInvoice = async () => {
+    try {
+      const response = await downloadInvoiceApi(id);
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `TGS-Invoice-${order._id.slice(-8).toUpperCase()}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('Invoice downloaded successfully');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to download invoice');
+    }
   };
 
   const handleReorder = async () => {

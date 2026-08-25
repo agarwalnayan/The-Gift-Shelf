@@ -21,6 +21,7 @@ const orderItemSchema = new mongoose.Schema(
     name: { type: String, required: true },
     image: { type: String, required: true },
     variantSku: { type: String, default: null },
+    variantName: { type: String, default: null },
     quantity: { type: Number, required: true, min: 1 },
     price: { type: Number, required: true },
     customizations: {
@@ -83,7 +84,7 @@ const orderSchema = new mongoose.Schema(
     },
     orderSource: {
       type: String,
-      enum: ['website', 'instagram', 'whatsapp'],
+      enum: ['website', 'instagram', 'whatsapp', 'manual'],
       default: 'website',
     },
     paymentResult: {
@@ -99,6 +100,7 @@ const orderSchema = new mongoose.Schema(
     giftMessage: { type: String, trim: true, maxlength: 300, default: '' },
     orderNotes: { type: String, trim: true, maxlength: 300, default: '' },
     itemsPrice: { type: Number, required: true, default: 0 },
+    cataloguePrice: { type: Number, required: true, default: 0 },
     shippingPrice: { type: Number, required: true, default: 0 },
     discountPrice: { type: Number, required: true, default: 0 },
     whatsappCharge: { type: Number, required: true, default: 0 },
@@ -128,6 +130,11 @@ const orderSchema = new mongoose.Schema(
     deliveredAt: { type: Date },
     cancelledAt: { type: Date },
     cancelReason: { type: String },
+    statusHistory: [{
+      status: { type: String, required: true },
+      changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      changedAt: { type: Date, default: Date.now },
+    }],
   },
   { timestamps: true }
 );

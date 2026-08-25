@@ -8,6 +8,7 @@ const orderItemCustomizationSchema = Joi.object({
   type: Joi.string().trim().required(),
   value: Joi.any().required(),
   additionalPrice: Joi.number().min(0).default(0),
+  itemIndex: Joi.number().integer().min(0).required(),
 });
 
 const orderItemSchema = Joi.object({

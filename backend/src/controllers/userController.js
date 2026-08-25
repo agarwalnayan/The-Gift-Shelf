@@ -125,6 +125,27 @@ export const getAllUsers = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, { users, count: users.length }, 'Users fetched successfully'));
 });
 
+export const searchUsers = asyncHandler(async (req, res) => {
+  const { q } = req.query;
+  if (!q) {
+    return res.status(200).json(new ApiResponse(200, { users: [] }, 'Search query required'));
+  }
+
+  const searchRegex = new RegExp(q, 'i');
+  
+  const users = await User.find({
+    $or: [
+      { name: searchRegex },
+      { email: searchRegex },
+      { phone: searchRegex }
+    ]
+  })
+  .select('_id name email phone')
+  .limit(20);
+
+  res.status(200).json(new ApiResponse(200, { users }, 'Users found'));
+});
+
 export const getCustomers = asyncHandler(async (req, res) => {
   const Order = mongoose.model('Order');
   

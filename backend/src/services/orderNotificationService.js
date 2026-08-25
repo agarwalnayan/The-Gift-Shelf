@@ -1,11 +1,13 @@
 /**
  * Order Notification Service
- * Handles email notifications for order events
+ * Handles email notifications and in-app notifications for order events
  */
 
 import Order from '../models/Order.js';
 import User from '../models/User.js';
+import Notification from '../models/Notification.js';
 import { sendEmail } from './emailService.js';
+import { generateInvoice } from './invoiceService.js';
 import {
   buildOrderConfirmationEmail,
   buildPaymentReceivedEmail,
@@ -35,6 +37,68 @@ const shouldSendEmail = (previousData, currentData, fieldsToCheck) => {
 };
 
 /**
+ * Create in-app notification for user
+ */
+const createInAppNotification = async (userId, type, title, message, orderId = null, metadata = {}) => {
+  try {
+    if (!userId) {
+      console.log('[orderNotification] No userId provided, skipping in-app notification');
+      return null;
+    }
+
+    const notification = await Notification.create({
+      user: userId,
+      type,
+      title,
+      message,
+      order: orderId,
+      read: false,
+      metadata,
+    });
+
+    console.log(`[orderNotification] In-app notification created for user ${userId}`);
+    return notification;
+  } catch (error) {
+    console.error('[orderNotification] Failed to create in-app notification:', error.message);
+    return null;
+  }
+};
+
+/**
+ * Get status message for notifications
+ */
+const getStatusMessage = (status) => {
+  const messages = {
+    confirmed: 'Your order has been confirmed and is being prepared.',
+    preparing: 'Your order is currently being prepared.',
+    packed: 'Your order has been packed and is ready for shipping.',
+    shipped: 'Your order has been shipped!',
+    out_for_delivery: 'Your order is out for delivery and will reach you soon.',
+    delivered: 'Your order has been delivered. We hope you love it! We\'d also love your feedback.',
+    cancelled: 'Your order has been cancelled as requested.',
+    returned: 'Your return has been processed.',
+  };
+  return messages[status] || `Your order status is now ${status}.`;
+};
+
+/**
+ * Get status label for notifications
+ */
+const getStatusLabel = (status) => {
+  const labels = {
+    confirmed: 'Confirmed',
+    preparing: 'Preparing',
+    packed: 'Packed',
+    shipped: 'Shipped',
+    out_for_delivery: 'Out for Delivery',
+    delivered: 'Delivered',
+    cancelled: 'Cancelled',
+    returned: 'Returned',
+  };
+  return labels[status] || status;
+};
+
+/**
  * Send order confirmation email
  */
 export const sendOrderConfirmation = async (orderId) => {
@@ -55,7 +119,24 @@ export const sendOrderConfirmation = async (orderId) => {
     }
 
     const { subject, html } = buildOrderConfirmationEmail(order, recipientName);
-    const sent = await sendEmail({ to: recipientEmail, subject, html });
+
+    // Generate invoice PDF attachment
+    let attachments = [];
+    try {
+      const invoiceBuffer = await generateInvoice(order);
+      const orderNumber = order._id.toString().slice(-8).toUpperCase();
+      attachments.push({
+        filename: `TGS-Invoice-${orderNumber}.pdf`,
+        content: invoiceBuffer,
+        contentType: 'application/pdf',
+      });
+      console.log(`[orderNotification] Invoice PDF generated for order #${orderNumber}`);
+    } catch (invoiceError) {
+      console.error(`[orderNotification] Failed to generate invoice PDF:`, invoiceError.message);
+      // Continue without invoice - don't fail the email
+    }
+
+    const sent = await sendEmail({ to: recipientEmail, subject, html, attachments });
     
     if (sent) {
       console.log(`[orderNotification] Order confirmation email sent to ${recipientEmail} for order #${order._id.toString().slice(-8).toUpperCase()}`);
@@ -116,19 +197,19 @@ export const sendPaymentStatusNotification = async (orderId, previousPaymentStat
 };
 
 /**
- * Send order status change email
+ * Send order status change email and create in-app notification
  */
 export const sendOrderStatusNotification = async (orderId, previousOrderStatus) => {
   try {
     const order = await Order.findById(orderId).populate('user', 'name email');
-    if (!order || !order.user?.email) {
-      console.log(`[orderNotification] No order or user email found for order ${orderId}`);
+    if (!order) {
+      console.log(`[orderNotification] No order found for order ${orderId}`);
       return false;
     }
 
     // Only send if order status actually changed
     if (previousOrderStatus === order.orderStatus) {
-      console.log(`[orderNotification] Order status unchanged for order ${orderId}, skipping email`);
+      console.log(`[orderNotification] Order status unchanged for order ${orderId}, skipping notification`);
       return false;
     }
 
@@ -138,16 +219,49 @@ export const sendOrderStatusNotification = async (orderId, previousOrderStatus) 
       return false;
     }
 
-    const { subject, html } = buildOrderStatusEmail(order, order.user.name, previousOrderStatus);
-    const sent = await sendEmail({ to: order.user.email, subject, html });
-    
-    if (sent) {
-      console.log(`[orderNotification] Order status email sent to ${order.user.email} for order #${order._id.toString().slice(-8).toUpperCase()}`);
+    const orderNumber = order._id.toString().slice(-8).toUpperCase();
+    const statusLabel = getStatusLabel(order.orderStatus);
+    const statusMessage = getStatusMessage(order.orderStatus);
+
+    // Send email if user has email
+    if (order.user?.email) {
+      const { subject, html } = buildOrderStatusEmail(order, order.user.name, previousOrderStatus);
+      const sent = await sendEmail({ to: order.user.email, subject, html });
+      
+      if (sent) {
+        console.log(`[orderNotification] Order status email sent to ${order.user.email} for order #${orderNumber}`);
+      }
+    }
+
+    // Create in-app notification if user exists
+    if (order.user?._id) {
+      const notificationMetadata = {
+        orderNumber,
+        previousStatus: previousOrderStatus,
+        newStatus: order.orderStatus
+      };
+
+      // Add review CTAs for delivered status
+      if (order.orderStatus === 'delivered') {
+        notificationMetadata.googleReviewUrl = 'https://g.page/r/CSv_GIDZaJlyECk/review';
+        notificationMetadata.whatsappUrl = 'https://wa.me/917872030408';
+        notificationMetadata.whatsappNumber = '7872030408';
+        notificationMetadata.cashbackOffer = 'Get up to ₹100 cashback on your next order';
+      }
+
+      await createInAppNotification(
+        order.user._id,
+        'order_status_changed',
+        `Order ${statusLabel}`,
+        `Your TGS order #${orderNumber} ${statusMessage}`,
+        order._id,
+        notificationMetadata
+      );
     }
     
-    return sent;
+    return true;
   } catch (error) {
-    console.error(`[orderNotification] Failed to send order status email:`, error.message);
+    console.error(`[orderNotification] Failed to send order status notification:`, error.message);
     return false;
   }
 };

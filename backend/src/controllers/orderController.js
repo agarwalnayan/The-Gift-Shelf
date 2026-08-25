@@ -10,17 +10,11 @@ import { createRazorpayOrder, verifyRazorpaySignature } from '../services/razorp
 import { validateCouponForSubtotal } from './couponController.js';
 import PromotionService from '../services/promotionService.js';
 import { notifyOrderUpdate } from '../services/orderNotificationService.js';
+import { decrementStock } from '../utils/inventoryUtils.js';
+import { validateCustomization } from '../utils/customizationValidation.js';
+import User from '../models/User.js';
+import { generateInvoice } from '../services/invoiceService.js';
 
-const decrementStock = async (item) => {
-  if (item.variantSku) {
-    await Product.updateOne(
-      { _id: item.product, 'variants.sku': item.variantSku },
-      { $inc: { 'variants.$.stock': -item.quantity } }
-    );
-  } else {
-    await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity } });
-  }
-};
 
 export const createOrder = asyncHandler(async (req, res) => {
   const { shippingAddress, paymentMethod, giftMessage = '', orderNotes = '', promotionId } = req.body;
@@ -61,16 +55,27 @@ export const createOrder = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Online payment is currently unavailable');
   }
 
-  const orderItems = cart.items.map((item) => ({
-    product: item.product._id,
-    name: item.product.name,
-    image: item.product.images[0]?.url,
-    variantSku: item.variantSku || null,
-    quantity: item.quantity,
-    price: item.priceAtAddition,
-    customizations: item.customizations,
-    customizationPrice: item.customizationPrice,
-  }));
+  const orderItems = cart.items.map((item) => {
+    let variantName = null;
+    if (item.variantSku && item.product.variants) {
+      const variant = item.product.variants.find(v => v.sku === item.variantSku);
+      if (variant && variant.attributes && variant.attributes.length > 0) {
+        variantName = variant.attributes.map(attr => attr.value).join(' / ');
+      }
+    }
+    
+    return {
+      product: item.product._id,
+      name: item.product.name,
+      image: item.product.images?.[0]?.url || '',
+      variantSku: item.variantSku || null,
+      variantName,
+      quantity: item.quantity,
+      price: item.priceAtAddition,
+      customizations: item.customizations,
+      customizationPrice: item.customizationPrice,
+    };
+  });
 
   const itemsPrice = orderItems.reduce(
     (sum, item) => sum + (item.price + item.customizationPrice) * item.quantity,
@@ -170,6 +175,7 @@ export const createOrder = asyncHandler(async (req, res) => {
     promotionName: appliedPromotion ? appliedPromotion.promotionName : null,
     promotionDiscount,
     itemsPrice,
+    cataloguePrice: itemsPrice, // For regular orders, catalogue equals items price
     shippingPrice,
     discountPrice: totalDiscount,
     whatsappCharge: whatsappSurcharge,
@@ -377,29 +383,16 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Invalid order status');
   }
 
-  // Validate status transitions
-  const currentStatus = order.orderStatus;
-  const validTransitions = {
-    pending: ['confirmed', 'cancelled'],
-    confirmed: ['preparing', 'cancelled'],
-    preparing: ['packed', 'cancelled'],
-    packed: ['shipped', 'cancelled'],
-    shipped: ['out_for_delivery', 'cancelled'],
-    out_for_delivery: ['delivered', 'cancelled'],
-    delivered: ['returned'],
-    cancelled: [],
-    returned: [],
-  };
-
-  if (!validTransitions[currentStatus]?.includes(orderStatus)) {
-    throw new ApiError(400, `Cannot transition from ${currentStatus} to ${orderStatus}`);
-  }
-
-  // Store previous status for notification
+  // Store previous status for notification and history
   const previousStatus = order.orderStatus;
 
+  // Only proceed if status actually changed
+  if (previousStatus === orderStatus) {
+    return res.status(200).json(new ApiResponse(200, { order }, 'Order status unchanged'));
+  }
+
   // Handle cancellation - restore stock
-  if (orderStatus === 'cancelled' && currentStatus !== 'cancelled') {
+  if (orderStatus === 'cancelled' && previousStatus !== 'cancelled') {
     for (const item of order.orderItems) {
       if (item.variantSku) {
         await Product.updateOne(
@@ -412,7 +405,13 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     }
   }
 
+  // Update status and add to history
   order.orderStatus = orderStatus;
+  order.statusHistory.push({
+    status: orderStatus,
+    changedBy: req.user._id,
+    changedAt: new Date(),
+  });
 
   if (orderStatus === 'delivered') order.deliveredAt = new Date();
   if (orderStatus === 'cancelled') {
@@ -488,4 +487,229 @@ export const deleteOrder = asyncHandler(async (req, res) => {
   await order.deleteOne();
 
   res.status(200).json(new ApiResponse(200, null, 'Order deleted successfully'));
+});
+
+// Admin: Create Manual Order
+export const createManualOrder = asyncHandler(async (req, res) => {
+  const { 
+    userId, newCustomer, shippingAddress, 
+    paymentMethod, paymentStatus, orderItems, 
+    agreedPrice, shippingPrice, couponCode, 
+    giftMessage = '', orderNotes = '', internalNotes = '', 
+    sendEmail = false 
+  } = req.body;
+
+  if (!['razorpay', 'whatsapp', 'cod', 'gpay'].includes(paymentMethod)) {
+    throw new ApiError(400, 'Please select a valid payment method');
+  }
+
+  if (!['pending', 'paid', 'failed', 'refunded'].includes(paymentStatus)) {
+    throw new ApiError(400, 'Please select a valid payment status');
+  }
+
+  // Validate shipping address
+  if (!shippingAddress || !shippingAddress.fullName || !shippingAddress.phone || 
+      !shippingAddress.line1 || !shippingAddress.city || !shippingAddress.state || 
+      !shippingAddress.postalCode || !shippingAddress.country) {
+    throw new ApiError(400, 'Please provide complete shipping address');
+  }
+
+  if (!orderItems || orderItems.length === 0) {
+    throw new ApiError(400, 'Order must contain at least one item');
+  }
+
+  // Verify stock and validate customizations
+  const finalOrderItems = [];
+  const stockRequirements = {};
+
+  for (const item of orderItems) {
+    const product = await Product.findById(item.product);
+    if (!product || !product.isActive || product.isDeleted) {
+      throw new ApiError(400, `Product ${item.name || item.product} is no longer available`);
+    }
+
+    let availableStock = product.stock;
+    if (item.variantSku) {
+      const variant = product.variants.find(v => v.sku === item.variantSku && v.isActive);
+      if (!variant) throw new ApiError(400, `Variant for ${product.name} is no longer available`);
+      availableStock = variant.stock;
+    }
+
+    const key = `${item.product}_${item.variantSku || 'base'}`;
+    if (!stockRequirements[key]) {
+      stockRequirements[key] = { name: product.name, quantity: 0, availableStock };
+    }
+    stockRequirements[key].quantity += item.quantity;
+    
+    if (stockRequirements[key].quantity > stockRequirements[key].availableStock) {
+      throw new ApiError(400, `Insufficient Stock: ${product.name} does not have enough quantity.`);
+    }
+
+    const validatedCustomizations = [];
+    if (item.customizations && Array.isArray(item.customizations)) {
+      for (const custom of item.customizations) {
+        validatedCustomizations.push(validateCustomization(product, custom));
+      }
+    }
+
+    // Determine catalogue price from DB (used for itemsPrice record-keeping).
+    // For variant products: use the matched variant's price.
+    // For base products: use product.price.
+    // Falls back to 0 only if the product data has no price (shouldn't happen, but prevents a Mongoose required error).
+    let basePrice;
+    if (item.variantSku) {
+      const matchedVariant = product.variants.find(v => v.sku === item.variantSku);
+      basePrice = matchedVariant?.price ?? product.price ?? 0;
+    } else {
+      basePrice = product.price ?? 0;
+    }
+
+    const customizationPrice = validatedCustomizations.reduce((acc, curr) => acc + (curr.additionalPrice || 0), 0);
+
+    // image is required by the Order schema — use the first product image if available, otherwise empty string.
+    const itemImage = product.images?.[0]?.url || '';
+    
+    // Generate variant name from attributes if variant is selected
+    let variantName = null;
+    if (item.variantSku && product.variants) {
+      const variant = product.variants.find(v => v.sku === item.variantSku);
+      if (variant && variant.attributes && variant.attributes.length > 0) {
+        variantName = variant.attributes.map(attr => attr.value).join(' / ');
+      }
+    }
+
+    finalOrderItems.push({
+      product: product._id,
+      name: product.name,
+      image: itemImage,
+      variantSku: item.variantSku || null,
+      variantName,
+      quantity: item.quantity,
+      price: basePrice,
+      customizations: validatedCustomizations,
+      customizationPrice,
+    });
+  }
+
+  let finalUser = null;
+  let userCreated = false;
+
+  if (newCustomer) {
+    const existingUser = await User.findOne({ email: newCustomer.email });
+    if (existingUser) {
+      throw new ApiError(409, 'A customer with this email already exists.');
+    }
+    finalUser = await User.create({
+      name: newCustomer.name,
+      email: newCustomer.email,
+      phone: newCustomer.phone,
+      password: newCustomer.password,
+    });
+    userCreated = true;
+  } else if (userId) {
+    const existingUser = await User.findById(userId);
+    if (!existingUser) throw new ApiError(404, 'Selected customer not found');
+    finalUser = existingUser;
+  }
+
+  const itemsPrice = finalOrderItems.reduce(
+    (sum, item) => sum + (item.price + item.customizationPrice) * item.quantity,
+    0
+  );
+
+  // Validate coupon if provided - uses existing TGS coupon validation logic
+  let couponDiscount = 0;
+  let appliedCoupon = null;
+  
+  if (couponCode) {
+    try {
+      const result = await validateCouponForSubtotal(couponCode, itemsPrice);
+      couponDiscount = result.discount;
+      appliedCoupon = result.coupon;
+    } catch (error) {
+      // Coupon validation failed - throw error to prevent order creation
+      throw new ApiError(400, error.message || 'Invalid coupon code');
+    }
+  }
+
+  // Calculate final amount: manual selling price - coupon discount + shipping
+  // Following existing TGS business rule where coupon applies to catalogue but discount applies to manual price
+  const finalAmount = agreedPrice - couponDiscount + (shippingPrice || 0);
+  
+  // Ensure final amount is never negative
+  if (finalAmount < 0) {
+    throw new ApiError(400, 'Coupon discount cannot exceed order total');
+  }
+
+  try {
+    const order = await Order.create({
+      user: finalUser ? finalUser._id : null,
+      orderItems: finalOrderItems,
+      shippingAddress,
+      paymentMethod,
+      orderSource: 'manual',
+      giftMessage,
+      orderNotes,
+      internalNotes,
+      itemsPrice,
+      cataloguePrice: itemsPrice, // Store original catalogue value for manual orders
+      shippingPrice: shippingPrice || 0,
+      discountPrice: couponDiscount, // Store coupon discount as discountPrice
+      couponCode: appliedCoupon ? appliedCoupon.code : null,
+      whatsappCharge: 0,
+      taxPrice: 0,
+      totalPrice: finalAmount, // Use calculated final amount
+      isPaid: paymentStatus === 'paid',
+      paidAt: paymentStatus === 'paid' ? new Date() : undefined,
+      paymentStatus,
+      orderStatus: 'confirmed',
+    });
+
+    for (const item of finalOrderItems) {
+      await decrementStock(item);
+    }
+
+    if (sendEmail && shippingAddress.email) {
+      notifyOrderUpdate(order._id, 'order_created').catch(() => {});
+    }
+
+    res.status(201).json(new ApiResponse(201, { order, accountCreated: userCreated }, 'Manual order created successfully'));
+  } catch (error) {
+    if (userCreated && finalUser) {
+      await User.findByIdAndDelete(finalUser._id);
+    }
+    throw error;
+  }
+});
+
+/**
+ * Download invoice for an order
+ * Customers can only download their own orders
+ * Admins can download any order
+ */
+export const downloadOrderInvoice = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id);
+  if (!order) {
+    throw new ApiError(404, 'Order not found');
+  }
+
+  // Security check: customers can only access their own orders
+  const isAdmin = req.user.role === 'admin' || req.user.role === 'superadmin';
+  const isOwnOrder = order.user && order.user.toString() === req.user._id.toString();
+
+  if (!isAdmin && !isOwnOrder) {
+    throw new ApiError(403, 'You do not have permission to access this invoice');
+  }
+
+  try {
+    const invoiceBuffer = await generateInvoice(order);
+    const orderNumber = order._id.toString().slice(-8).toUpperCase();
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="TGS-Invoice-${orderNumber}.pdf"`);
+    res.send(invoiceBuffer);
+  } catch (error) {
+    console.error('[orderController] Failed to generate invoice:', error.message);
+    throw new ApiError(500, 'Failed to generate invoice');
+  }
 });

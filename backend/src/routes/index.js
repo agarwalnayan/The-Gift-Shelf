@@ -13,6 +13,8 @@ import badgeRoutes from './badgeRoutes.js';
 import festivalRoutes from './festivalRoutes.js';
 import statsRoutes from './statsRoutes.js';
 import orderRequestRoutes from './orderRequestRoutes.js';
+import addressRoutes from './addressRoutes.js';
+import notificationRoutes from './notificationRoutes.js';
 
 const router = express.Router();
 
@@ -30,5 +32,7 @@ router.use('/promotions', promotionRoutes);
 router.use('/badges', badgeRoutes);
 router.use('/festivals', festivalRoutes);
 router.use('/stats', statsRoutes);
+router.use('/address', addressRoutes);
+router.use('/notifications', notificationRoutes);
 
 export default router;

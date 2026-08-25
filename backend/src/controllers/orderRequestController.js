@@ -9,6 +9,8 @@ import ApiError from '../utils/ApiError.js';
 import ApiResponse from '../utils/ApiResponse.js';
 import { env } from '../config/env.js';
 import { notifyOrderUpdate } from '../services/orderNotificationService.js';
+import { decrementStock } from '../utils/inventoryUtils.js';
+import { validateCustomization } from '../utils/customizationValidation.js';
 
 const TOKEN_EXPIRY_DAYS = 7;
 const TOKEN_EXPIRY_MS = TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
@@ -21,28 +23,23 @@ const generateSecureToken = () => {
   };
 };
 
-const decrementStock = async (item) => {
-  if (item.variantSku) {
-    await Product.updateOne(
-      { _id: item.product, 'variants.sku': item.variantSku },
-      { $inc: { 'variants.$.stock': -item.quantity } }
-    );
-  } else {
-    await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity } });
-  }
-};
 
 // Admin: Create OrderRequest
 export const createOrderRequest = asyncHandler(async (req, res) => {
   const { source, items, agreedPrice, discount, internalNotes } = req.body;
 
   // Validate products and variants exist and have sufficient stock
+  // Also validate prices server-side to prevent frontend manipulation
+  const validatedItems = [];
   for (const item of items) {
     const product = await Product.findById(item.product);
     if (!product || !product.isActive || product.isDeleted) {
       throw new ApiError(400, `Product ${item.name} is no longer available`);
     }
 
+    let availableStock = product.stock;
+    let cataloguePrice = product.price;
+    
     if (item.variantSku) {
       const variant = product.variants.find(v => v.sku === item.variantSku && v.isActive);
       if (!variant) {
@@ -51,11 +48,25 @@ export const createOrderRequest = asyncHandler(async (req, res) => {
       if (variant.stock < item.quantity) {
         throw new ApiError(400, `Insufficient stock for ${item.name} variant`);
       }
+      availableStock = variant.stock;
+      cataloguePrice = variant.price ?? product.price;
     } else {
       if (product.stock < item.quantity) {
         throw new ApiError(400, `Insufficient stock for ${item.name}`);
       }
     }
+
+    // Server-side price validation: ensure the price matches catalogue price
+    // Admin can still set different agreedPrice at order level, but item prices must be accurate
+    if (item.price !== cataloguePrice) {
+      console.warn(`[Social Order] Price mismatch for ${product.name}: frontend sent ${item.price}, catalogue price is ${cataloguePrice}`);
+    }
+
+    validatedItems.push({
+      ...item,
+      price: cataloguePrice, // Use server-authoritative price
+      image: product.images?.[0]?.url || '', // Ensure image is set
+    });
   }
 
   const { rawToken, hashedToken } = generateSecureToken();
@@ -65,7 +76,7 @@ export const createOrderRequest = asyncHandler(async (req, res) => {
     token: hashedToken,
     status: 'pending',
     source,
-    items,
+    items: validatedItems,
     agreedPrice,
     discount: discount || 0,
     paymentMethod: 'gpay',
@@ -264,12 +275,16 @@ export const completeOrderRequest = asyncHandler(async (req, res) => {
     if (updatedCustomizations && updatedCustomizations.length > 0) {
       // Validate each submitted customization
       for (const submittedCustomization of updatedCustomizations) {
-        const item = orderRequest.items.find(i => 
-          i.customizations && i.customizations.some(c => c.key === submittedCustomization.key)
-        );
+        // Validate itemIndex is within bounds
+        const { itemIndex } = submittedCustomization;
+        if (typeof itemIndex !== 'number' || itemIndex < 0 || itemIndex >= orderRequest.items.length) {
+          throw new ApiError(400, `Invalid item index: ${itemIndex}`);
+        }
+
+        const item = orderRequest.items[itemIndex];
         
         if (!item) {
-          throw new ApiError(400, `Invalid customization key: ${submittedCustomization.key}`);
+          throw new ApiError(400, `Item not found at index ${itemIndex}`);
         }
 
         const product = await Product.findById(item.product);
@@ -277,60 +292,19 @@ export const completeOrderRequest = asyncHandler(async (req, res) => {
           throw new ApiError(400, 'Product not found');
         }
 
-        const option = product.customizationOptions.find(o => o.key === submittedCustomization.key);
-        if (!option) {
-          throw new ApiError(400, `Customization option not found: ${submittedCustomization.key}`);
-        }
-
-        if (!option.isEnabled) {
-          throw new ApiError(400, `Customization option is disabled: ${option.label}`);
-        }
-
-        // Validate required field
-        if (option.isRequired && (!submittedCustomization.value || submittedCustomization.value === '')) {
-          throw new ApiError(400, `${option.label} is required`);
-        }
-
-        // Validate type
-        if (submittedCustomization.type !== option.type) {
-          throw new ApiError(400, `Invalid customization type for ${option.label}`);
-        }
-
-        // Validate choices
-        if (option.choices && option.choices.length > 0) {
-          const submittedValue = Array.isArray(submittedCustomization.value) 
-            ? submittedCustomization.value 
-            : [submittedCustomization.value];
-          const invalidChoices = submittedValue.filter(v => v && !option.choices.includes(v));
-          if (invalidChoices.length > 0) {
-            throw new ApiError(400, `Invalid choice for ${option.label}`);
-          }
-        }
-
-        // Validate length constraints
-        if (option.validation && typeof submittedCustomization.value === 'string') {
-          const { minLength, maxLength } = option.validation;
-          if (minLength && submittedCustomization.value.length < minLength) {
-            throw new ApiError(400, `${option.label} must be at least ${minLength} characters`);
-          }
-          if (maxLength && submittedCustomization.value.length > maxLength) {
-            throw new ApiError(400, `${option.label} must not exceed ${maxLength} characters`);
-          }
-        }
-
-        // Ensure additionalPrice matches product configuration (customer cannot change price)
-        if (submittedCustomization.additionalPrice !== (option.additionalPrice || 0)) {
-          throw new ApiError(400, 'Cannot modify customization price');
-        }
+        // Validate using utility
+        const validatedCustomization = validateCustomization(product, submittedCustomization);
+        // Ensure we store the properly validated one by modifying the array element
+        Object.assign(submittedCustomization, validatedCustomization);
       }
 
-      // Apply validated customizations
+      // Apply validated customizations by itemIndex
       finalOrderItems = orderRequest.items.map((item, index) => {
-        const updatedCustomization = updatedCustomizations.find(c => c.key === item.customizations?.[0]?.key);
-        if (updatedCustomization) {
+        const itemCustomizations = updatedCustomizations.filter(c => c.itemIndex === index);
+        if (itemCustomizations.length > 0) {
           return {
             ...item,
-            customizations: [updatedCustomization],
+            customizations: itemCustomizations,
           };
         }
         return item;

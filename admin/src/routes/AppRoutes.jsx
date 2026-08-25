@@ -26,6 +26,7 @@ import BadgesPage from "../pages/BadgesPage";
 import BadgeFormPage from "../pages/BadgeFormPage";
 import SocialOrdersPage from '../pages/SocialOrdersPage.jsx';
 import CreateSocialOrderPage from '../pages/CreateSocialOrderPage.jsx';
+import CreateManualOrderPage from '../pages/CreateManualOrderPage.jsx';
 
 const AppRoutes = () => {
   return (
@@ -54,6 +55,7 @@ const AppRoutes = () => {
           <Route path="/catalog-masters/new" element={<CatalogMasterFormPage />} />
           <Route path="/catalog-masters/:id/edit" element={<CatalogMasterFormPage />} />
           <Route path="orders" element={<OrdersPage />} />
+          <Route path="orders/create" element={<CreateManualOrderPage />} />
           <Route path="orders/:id" element={<OrderDetailPage />} />
           <Route path="social-orders" element={<SocialOrdersPage />} />
           <Route path="social-orders/create" element={<CreateSocialOrderPage />} />

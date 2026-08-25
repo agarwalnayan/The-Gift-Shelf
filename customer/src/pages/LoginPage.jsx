@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -11,6 +11,16 @@ const LoginPage = () => {
   const location = useLocation();
   const [form, setForm] = useState({ email: '', password: '' });
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Handle Social Order account creation state
+  const accountCreated = location.state?.accountCreated;
+  const prefillEmail = location.state?.email;
+  
+  useEffect(() => {
+    if (prefillEmail) {
+      setForm(prev => ({ ...prev, email: prefillEmail }));
+    }
+  }, [prefillEmail]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -41,6 +51,14 @@ const LoginPage = () => {
   return (
     <div className="container-tgs flex min-h-[70vh] items-center justify-center py-16">
       <div className="w-full max-w-sm">
+        {accountCreated && (
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+            <p className="text-sm text-green-800">
+              Your TGS account has been created. Please log in using the password you just created.
+            </p>
+          </div>
+        )}
+        
         <h1 className="font-display text-3xl font-semibold text-charcoal">
           {isCheckoutFlow ? 'Almost there' : 'Welcome back'}
         </h1>

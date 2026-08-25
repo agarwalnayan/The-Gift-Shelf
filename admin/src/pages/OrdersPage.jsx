@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { HiOutlineTrash, HiOutlineMagnifyingGlass } from 'react-icons/hi2';
+import { HiOutlineTrash, HiOutlineMagnifyingGlass, HiOutlinePlus } from 'react-icons/hi2';
 import { getAllOrdersApi, updateOrderStatusApi, deleteOrderApi } from '../api/orderApi.js';
 import Loader from '../components/common/Loader.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
@@ -235,10 +235,19 @@ const OrdersPage = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Orders"
-        description="Manage customer orders"
-      />
+      <div className="flex items-center justify-between">
+        <PageHeader
+          title="Orders"
+          description="Manage customer orders"
+        />
+        <Link
+          to="/orders/create"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-700"
+        >
+          <HiOutlinePlus size={18} />
+          Create Manual Order
+        </Link>
+      </div>
 
       <div>
         <Input

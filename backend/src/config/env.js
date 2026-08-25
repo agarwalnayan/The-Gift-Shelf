@@ -7,7 +7,7 @@ export const env = {
   port: process.env.PORT || 5000,
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
   adminUrl: process.env.ADMIN_URL || 'http://localhost:5174',
-  customerUrl: process.env.CUSTOMER_URL || 'http://localhost:5178',
+  customerUrl: process.env.CUSTOMER_URL || 'http://localhost:5173',
   siteUrl: process.env.SITE_URL,
 
   mongoUri: process.env.MONGO_URI,

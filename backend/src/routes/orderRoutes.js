@@ -9,6 +9,8 @@ import {
   updatePaymentStatus,
   updateOrderTracking,
   deleteOrder,
+  createManualOrder,
+  downloadOrderInvoice,
 } from '../controllers/orderController.js';
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 
@@ -17,9 +19,11 @@ const router = express.Router();
 router.use(protect);
 
 router.post('/', createOrder);
+router.post('/manual', authorizeRoles('admin', 'superadmin'), createManualOrder);
 router.post('/verify-payment', verifyPayment);
 router.get('/my-orders', getMyOrders);
 router.get('/:id', getOrderById);
+router.get('/:id/invoice', downloadOrderInvoice);
 
 router.get('/', authorizeRoles('admin', 'superadmin'), getAllOrders);
 router.patch('/:id/status', authorizeRoles('admin', 'superadmin'), updateOrderStatus);

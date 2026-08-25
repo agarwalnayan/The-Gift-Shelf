@@ -8,38 +8,46 @@ const getOrderNumber = (order) => order._id.toString().slice(-8).toUpperCase();
 const buildOrderItemsTable = (orderItems) => {
   return orderItems
     .map(
-      (item) => {
-        let customizationText = '';
-        if (item.customizations && item.customizations.length > 0) {
-          const customizations = item.customizations.map(c => {
-            const label = c.label || c.key;
-            const value = c.value;
-            return `<div style="font-size: 12px; color: #666; margin-top: 4px;">${label}: ${value}</div>`;
-          }).join('');
-          customizationText = customizations;
-        }
-        return `
-        <tr>
-          <td style="padding: 12px 0; border-bottom: 1px solid #eee;">
-            <div style="font-weight: 500;">${item.name} ${item.variantSku ? `(${item.variantSku})` : ''} × ${item.quantity}</div>
-            ${customizationText}
+      (item) => `
+        <tr style="border-bottom: 1px solid #e9ecef;">
+          <td style="padding: 12px 8px; font-size: 14px; color: #495057;">
+            ${item.name}${item.variantName ? `<br><span style="font-size: 12px; color: #6c757d;">Variant: ${item.variantName}</span>` : ''}
+            ${item.customizations && item.customizations.length > 0 ? '<br><span style="font-size: 12px; color: #6c757d;">Personalized</span>' : ''}
           </td>
-          <td style="padding: 12px 0; border-bottom: 1px solid #eee; text-align: right; vertical-align: top;">
+          <td style="padding: 12px 8px; text-align: right; font-size: 14px; color: #495057;">
             ₹${(item.price + item.customizationPrice) * item.quantity}
           </td>
         </tr>
-      `;
-      }
+      `
     )
     .join('');
 };
 
 const buildOrderSummary = (order) => {
-  const rows = [
-    { label: 'Subtotal', value: `₹${order.itemsPrice}` },
-    { label: 'Shipping', value: order.shippingPrice > 0 ? `₹${order.shippingPrice}` : 'Free' },
-    { label: 'Discount', value: order.discountPrice > 0 ? `-₹${order.discountPrice}` : '₹0' },
-  ];
+  const rows = [];
+  
+  // For manual orders, show catalogue price and special price adjustment
+  if (order.orderSource === 'manual' && order.cataloguePrice !== order.itemsPrice) {
+    rows.push({ label: 'Catalogue Price', value: `₹${order.cataloguePrice}` });
+    const specialPriceAdjustment = order.cataloguePrice - order.itemsPrice;
+    if (specialPriceAdjustment > 0) {
+      rows.push({ label: 'Special Price Adjustment', value: `-₹${specialPriceAdjustment}` });
+    }
+  } else {
+    rows.push({ label: 'Subtotal', value: `₹${order.itemsPrice}` });
+  }
+  
+  // Coupon discount (separate from manual adjustment)
+  if (order.discountPrice > 0) {
+    rows.push({ label: 'Coupon Discount', value: `-₹${order.discountPrice}` });
+  }
+  
+  // Promotion discount
+  if (order.promotionDiscount > 0) {
+    rows.push({ label: `Promotion${order.promotionName ? ` (${order.promotionName})` : ''}`, value: `-₹${order.promotionDiscount}` });
+  }
+  
+  rows.push({ label: 'Shipping', value: order.shippingPrice > 0 ? `₹${order.shippingPrice}` : 'Free' });
 
   if (order.whatsappCharge > 0) {
     rows.push({ label: 'WhatsApp Charge', value: `₹${order.whatsappCharge}` });
@@ -76,6 +84,20 @@ const getSignOff = () => `
   <p style="margin-top: 8px;">Best regards,<br>The Gift Shelf Team</p>
 `;
 
+const getWebsiteCTA = (label = 'Explore The Gift Shelf') => `
+  <div style="text-align: center; margin: 32px 0;">
+    <a href="https://www.thegiftshelf.in" style="display: inline-block; background-color: #333; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: 500;">${label}</a>
+  </div>
+`;
+
+const getFooter = () => `
+  <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e9ecef; text-align: center; font-size: 12px; color: #666;">
+    <p style="margin: 0 0 8px 0; font-weight: 500;">The Gift Shelf</p>
+    <p style="margin: 0 0 8px 0;">Thoughtful gifts. Made more personal.</p>
+    <p style="margin: 0;"><a href="https://www.thegiftshelf.in" style="color: #666; text-decoration: underline;">Visit The Gift Shelf</a></p>
+  </div>
+`;
+
 const getEmailBase = (subject, content) => `
   <!DOCTYPE html>
   <html>
@@ -87,9 +109,12 @@ const getEmailBase = (subject, content) => `
   <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
     <div style="background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
       <div style="text-align: center; margin-bottom: 30px;">
-        <img src="https://thegiftshelf.in/logo.png" alt="The Gift Shelf" style="width: 150px; height: auto; max-width: 100%;">
+        <a href="https://www.thegiftshelf.in">
+          <img src="https://thegiftshelf.in/logo.png" alt="The Gift Shelf" style="width: 150px; height: auto; max-width: 100%; border: none;">
+        </a>
       </div>
       ${content}
+      ${getFooter()}
     </div>
   </body>
   </html>
@@ -162,6 +187,7 @@ export const buildOrderConfirmationEmail = (order, customerName) => {
     
     <p style="margin-top: 24px; color: #666;">We'll notify you when your order is shipped.</p>
     ${getSignOff()}
+    ${getWebsiteCTA('Explore More Gifts')}
   `;
 
   return { subject, html: getEmailBase(subject, content) };
@@ -251,22 +277,107 @@ export const buildOrderStatusEmail = (order, customerName, previousStatus) => {
   const subject = `Order ${currentStatusLabel} — #${orderNumber}`;
   
   let statusMessage = '';
+  let websiteCTALabel = 'Explore The Gift Shelf';
+  
   if (order.orderStatus === 'confirmed') {
     statusMessage = 'Your order has been confirmed and is being prepared.';
+    websiteCTALabel = 'Discover More Thoughtful Gifts';
   } else if (order.orderStatus === 'preparing') {
-    statusMessage = 'Your order is currently being prepared.';
+    statusMessage = 'We\'ve started preparing your order.';
+    websiteCTALabel = 'Discover More Thoughtful Gifts';
   } else if (order.orderStatus === 'packed') {
-    statusMessage = 'Your order has been packed and is ready for shipping.';
+    statusMessage = 'Your order has been packed and is ready to leave us.';
+    websiteCTALabel = 'Explore The Gift Shelf';
   } else if (order.orderStatus === 'shipped') {
-    statusMessage = 'Your order has been shipped!';
+    statusMessage = 'Your order is on its way!';
+    websiteCTALabel = 'Explore More Gifts';
+    
+    // Add tracking details for shipped status
+    const trackingDetails = order.courier && (order.courier.name || order.courier.trackingId || order.courier.trackingUrl)
+      ? `
+        <h2 style="color: #333; font-size: 18px; margin: 24px 0 12px 0; border-bottom: 2px solid #e9ecef; padding-bottom: 8px;">SHIPPING DETAILS</h2>
+        ${order.courier.name ? `<p style="margin: 8px 0; font-size: 14px;"><strong>Courier:</strong> ${order.courier.name}</p>` : ''}
+        ${order.courier.trackingId ? `<p style="margin: 8px 0; font-size: 14px;"><strong>Tracking ID:</strong> ${order.courier.trackingId}</p>` : ''}
+        ${order.courier.trackingUrl ? `
+          <div style="text-align: center; margin: 16px 0;">
+            <a href="${order.courier.trackingUrl}" style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: 500;">Track Your Order</a>
+          </div>
+        ` : ''}
+      `
+      : '<p style="color: #666; margin: 16px 0;">Your order has been shipped. Tracking details will be updated shortly.</p>';
+    
+    const content = `
+      <h1 style="color: #333; font-size: 24px; margin-bottom: 8px;">Your Order Is On Its Way</h1>
+      
+      ${getGreeting(customerName)}
+      <p style="color: #666;">Your order has been shipped and is now on its way to you.</p>
+      
+      <div style="margin: 24px 0; padding: 16px; background-color: #f0f8ff; border-left: 4px solid #007bff; border-radius: 4px;">
+        <p style="margin: 0; font-size: 14px;"><strong>Order ID:</strong> #${orderNumber}</p>
+      </div>
+      
+      ${trackingDetails}
+      
+      ${getSignOff()}
+      ${getWebsiteCTA(websiteCTALabel)}
+    `;
+
+    return { subject, html: getEmailBase(subject, content) };
   } else if (order.orderStatus === 'out_for_delivery') {
-    statusMessage = 'Your order is out for delivery and will reach you soon.';
+    statusMessage = 'Your order is out for delivery.';
+    websiteCTALabel = 'Discover More at TGS';
   } else if (order.orderStatus === 'delivered') {
-    statusMessage = 'Your order has been delivered. Thank you for shopping with us!';
+    statusMessage = 'Your order has arrived.';
+    websiteCTALabel = 'Explore The Gift Shelf';
   } else if (order.orderStatus === 'cancelled') {
     statusMessage = 'Your order has been cancelled as requested.';
+    websiteCTALabel = 'Explore Other Gifts';
   } else if (order.orderStatus === 'returned') {
     statusMessage = 'Your return has been processed.';
+    websiteCTALabel = 'Explore The Gift Shelf';
+  }
+
+  // Special handling for delivered email with review request
+  if (order.orderStatus === 'delivered') {
+    const content = `
+      <h1 style="color: #333; font-size: 24px; margin-bottom: 8px;">Your order has arrived 💛</h1>
+      
+      ${getGreeting(customerName)}
+      <p style="color: #666;">Your TGS order #${orderNumber} has been delivered.</p>
+      <p style="color: #666;">We hope you loved your TGS experience.</p>
+      
+      <div style="margin: 24px 0; padding: 16px; background-color: #f0f8ff; border-left: 4px solid #007bff; border-radius: 4px;">
+        <p style="margin: 0; font-size: 14px;"><strong>Order ID:</strong> #${orderNumber}</p>
+      </div>
+      
+      <h2 style="color: #333; font-size: 18px; margin: 24px 0 12px 0; border-bottom: 2px solid #e9ecef; padding-bottom: 8px;">DELIVERED TO</h2>
+      <p style="margin: 8px 0; font-size: 14px;">${order.shippingAddress?.fullName || 'N/A'}</p>
+      <p style="margin: 8px 0; font-size: 14px;">${order.shippingAddress?.line1 || ''}${order.shippingAddress?.line2 ? ', ' + order.shippingAddress.line2 : ''}</p>
+      <p style="margin: 8px 0; font-size: 14px;">${order.shippingAddress?.city || ''}, ${order.shippingAddress?.state || ''} ${order.shippingAddress?.postalCode || ''}</p>
+      
+      <div style="margin: 32px 0; padding: 24px; background-color: #fff9e6; border-radius: 8px; border: 1px solid #ffd54f;">
+        <h2 style="color: #333; font-size: 18px; margin: 0 0 12px 0;">We'd love to hear from you</h2>
+        <p style="color: #666; margin: 0 0 16px 0;">Your experience matters to us.</p>
+        
+        <div style="text-align: center; margin: 20px 0;">
+          <a href="https://g.page/r/CSv_GIDZaJlyECk/review" style="display: inline-block; background-color: #4285f4; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: 500;">⭐ Review The Gift Shelf on Google</a>
+        </div>
+        
+        <p style="color: #666; margin: 16px 0 8px 0; font-weight: 500;">Get up to ₹100 cashback on your next order</p>
+        <p style="color: #666; margin: 0 0 16px 0; font-size: 14px;">Leave a genuine review on Google, take a screenshot, and send it to us on WhatsApp:</p>
+        
+        <div style="text-align: center; margin: 16px 0;">
+          <a href="https://wa.me/917872030408" style="display: inline-block; background-color: #25d366; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: 500;">💬 WhatsApp Us</a>
+          <p style="color: #666; margin: 8px 0 0 0; font-size: 14px;">7872030408</p>
+        </div>
+        
+        <p style="color: #999; margin: 16px 0 0 0; font-size: 12px;">Cashback offer subject to verification and TGS offer terms.</p>
+      </div>
+      
+      ${getSignOff()}
+      ${getWebsiteCTA('Explore The Gift Shelf')}
+    `;
+    return { subject, html: getEmailBase(subject, content) };
   }
 
   const content = `
@@ -283,6 +394,7 @@ export const buildOrderStatusEmail = (order, customerName, previousStatus) => {
     ` : ''}
     
     ${getSignOff()}
+    ${getWebsiteCTA(websiteCTALabel)}
   `;
 
   return { subject, html: getEmailBase(subject, content) };

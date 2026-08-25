@@ -7,3 +7,5 @@ export const verifyPaymentApi = (payload) => axiosInstance.post('/orders/verify-
 export const getMyOrdersApi = () => axiosInstance.get('/orders/my-orders');
 
 export const getOrderByIdApi = (id) => axiosInstance.get(`/orders/${id}`);
+
+export const downloadInvoiceApi = (id) => axiosInstance.get(`/orders/${id}/invoice`, { responseType: 'blob' });

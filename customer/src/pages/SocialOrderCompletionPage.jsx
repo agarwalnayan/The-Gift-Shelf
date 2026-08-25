@@ -35,6 +35,7 @@ const SocialOrderCompletionPage = () => {
   });
 
   const [isCustomizationModalOpen, setIsCustomizationModalOpen] = useState(false);
+  const [editingItemIndex, setEditingItemIndex] = useState(null);
   const [updatedCustomizations, setUpdatedCustomizations] = useState([]);
 
   useEffect(() => {
@@ -47,7 +48,14 @@ const SocialOrderCompletionPage = () => {
       const { data } = await getPublicOrderRequestApi(token);
       setOrderRequest(data.orderRequest);
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to load order request');
+      const errorMessage = error.response?.data?.message || '';
+      if (errorMessage.includes('expired') || errorMessage.includes('invalid')) {
+        setError('This order link is invalid or has expired. Please contact The Gift Shelf.');
+      } else if (errorMessage.includes('completed')) {
+        setError('This order has already been confirmed.');
+      } else {
+        setError('We couldn\'t load your order right now. Please try again or contact The Gift Shelf.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -55,6 +63,12 @@ const SocialOrderCompletionPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Prevent duplicate submission
+    if (isSubmitting) {
+      return;
+    }
+    
     setIsSubmitting(true);
     try {
       const submissionData = {
@@ -71,17 +85,28 @@ const SocialOrderCompletionPage = () => {
       const { data } = await completeOrderRequestApi(token, submissionData);
       toast.success('Order completed successfully!');
       
-      // Navigate to order success page with account creation status
-      const orderSuccessData = {
-        orderId: data.data.order._id,
-        accountCreated: data.data.accountCreated,
-      };
-      navigate(`/order-success/${data.data.order._id}`, { state: orderSuccessData });
-    } catch (error) {
-      if (error.response?.status === 409) {
-        toast.error(error.response?.data?.message || 'This email already has a TGS account. Please log in to your account.');
+      // Redirect based on account creation
+      if (data.data.accountCreated) {
+        // Redirect to login with email pre-filled
+        navigate('/login', { state: { email: formData.email, accountCreated: true } });
       } else {
-        toast.error(error.response?.data?.message || 'Failed to complete order');
+        // Redirect to order success page for guest orders
+        navigate(`/order-success/${data.data.order._id}`, { state: { accountCreated: false } });
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || '';
+      if (error.response?.status === 409) {
+        toast.error('An account already exists with this email. Please log in or use another email.');
+      } else if (errorMessage.includes('completed')) {
+        toast.error('This order has already been confirmed.');
+      } else if (errorMessage.includes('expired') || errorMessage.includes('invalid')) {
+        toast.error('This order link is invalid or has expired. Please contact The Gift Shelf.');
+      } else if (errorMessage.includes('customization') || errorMessage.includes('validation')) {
+        toast.error('Please check your customization details.');
+      } else if (errorMessage.includes('stock') || errorMessage.includes('available')) {
+        toast.error('This item is currently out of stock. Please contact The Gift Shelf.');
+      } else {
+        toast.error('We couldn\'t complete your order right now. Please try again.');
       }
     } finally {
       setIsSubmitting(false);
@@ -94,16 +119,26 @@ const SocialOrderCompletionPage = () => {
   };
 
   const handleSaveCustomizations = (customizations) => {
-    setUpdatedCustomizations(customizations);
+    // Store customizations with item index
+    setUpdatedCustomizations(prev => {
+      const newCustomizations = [...prev];
+      // Remove any existing customization for this item
+      const filtered = newCustomizations.filter(c => c.itemIndex !== editingItemIndex);
+      // Add new customizations with item index
+      customizations.forEach(c => {
+        filtered.push({ ...c, itemIndex: editingItemIndex });
+      });
+      return filtered;
+    });
+    
     // Update orderRequest items with new customizations for display
     setOrderRequest(prev => ({
       ...prev,
-      items: prev.items.map(item => {
-        const updatedCustomization = customizations.find(c => c.key === item.customizations?.[0]?.key);
-        if (updatedCustomization) {
+      items: prev.items.map((item, index) => {
+        if (index === editingItemIndex) {
           return {
             ...item,
-            customizations: [updatedCustomization],
+            customizations: customizations,
           };
         }
         return item;
@@ -129,42 +164,39 @@ const SocialOrderCompletionPage = () => {
   const totalItems = orderRequest.items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Complete Your Order</h1>
-          <p className="text-gray-600">Please provide your shipping details to complete this order</p>
+          <div className="mb-4">
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">The Gift Shelf</h1>
+            <p className="text-sm text-gray-500 mt-1">Personalized gifting, made easy.</p>
+          </div>
+          <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 max-w-2xl mx-auto">
+            <p className="text-sm text-blue-800">
+              Your order has already been arranged with our team. Please confirm your details below.
+            </p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
             {/* Order Summary */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="bg-white rounded-xl shadow-sm p-6 lg:order-first">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <HiOutlineShoppingBag size={20} className="text-primary-600" />
                   <h2 className="text-lg font-semibold text-gray-900">Order Summary</h2>
                 </div>
-                {orderRequest.items.some(item => item.customizations?.length > 0) && (
-                  <button
-                    type="button"
-                    onClick={() => setIsCustomizationModalOpen(true)}
-                    className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 font-medium"
-                  >
-                    <HiOutlinePencil size={16} />
-                    Edit Customization
-                  </button>
-                )}
               </div>
 
               <div className="space-y-4">
                 {orderRequest.items.map((item, index) => (
-                  <div key={index} className="flex gap-4 pb-4 border-b border-gray-100 last:border-0 last:pb-0">
+                  <div key={index} className="flex gap-3 sm:gap-4 pb-4 border-b border-gray-100 last:border-0 last:pb-0">
                     <img
                       src={item.image}
                       alt={item.name}
-                      className="w-20 h-20 object-cover rounded-lg"
+                      className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg flex-shrink-0"
                     />
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900">{item.name}</h3>
@@ -178,7 +210,22 @@ const SocialOrderCompletionPage = () => {
                       )}
                       <div className="flex justify-between mt-2">
                         <span className="text-sm text-gray-600">Qty: {item.quantity}</span>
-                        <span className="font-medium text-gray-900">₹{item.price * item.quantity}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-gray-900">₹{item.price * item.quantity}</span>
+                          {item.customizations?.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingItemIndex(index);
+                                setIsCustomizationModalOpen(true);
+                              }}
+                              className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 font-medium"
+                            >
+                              <HiOutlinePencil size={14} />
+                              Edit
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -251,20 +298,22 @@ const SocialOrderCompletionPage = () => {
 
                   {/* Account Creation Option */}
                   <div className="pt-4 border-t border-gray-200">
-                    <label className="flex items-center gap-3 cursor-pointer">
+                    <label className="flex items-start gap-3 cursor-pointer">
                       <input
                         type="checkbox"
                         name="createAccount"
                         checked={formData.createAccount}
                         onChange={handleInputChange}
-                        className="w-5 h-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                        className="w-5 h-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500 mt-0.5"
                       />
-                      <span className="text-sm font-medium text-gray-900">Create a TGS account</span>
+                      <div>
+                        <span className="text-sm font-medium text-gray-900">Create a TGS account</span>
+                        <p className="text-xs text-gray-500 mt-1">Save your details and track your future orders with TGS</p>
+                      </div>
                     </label>
-                    <p className="text-xs text-gray-500 mt-1 ml-8">Save your details for faster checkout next time</p>
 
                     {formData.createAccount && (
-                      <div className="mt-4 space-y-3 ml-8">
+                      <div className="mt-4 space-y-3">
                         <Input
                           label="Password *"
                           name="password"
@@ -387,10 +436,11 @@ const SocialOrderCompletionPage = () => {
           </div>
 
           {/* Submit Button */}
-          <div className="flex justify-center">
+          <div className="flex justify-center sticky bottom-0 bg-white py-4 border-t border-gray-200 -mx-4 px-4 sm:static sm:bg-transparent sm:border-0 sm:py-0 sm:px-0 sm:mt-6">
             <Button
               type="submit"
               isLoading={isSubmitting}
+              disabled={isSubmitting}
               className="w-full max-w-md"
               size="lg"
             >
@@ -401,12 +451,15 @@ const SocialOrderCompletionPage = () => {
       </div>
 
       {/* Customization Edit Modal */}
-      {orderRequest && orderRequest.items.some(item => item.customizations?.length > 0) && (
+      {orderRequest && editingItemIndex !== null && (
         <CustomizationEditModal
           isOpen={isCustomizationModalOpen}
-          onClose={() => setIsCustomizationModalOpen(false)}
-          customizationOptions={orderRequest.items[0]?.product?.customizationOptions || []}
-          currentCustomizations={orderRequest.items[0].customizations || []}
+          onClose={() => {
+            setIsCustomizationModalOpen(false);
+            setEditingItemIndex(null);
+          }}
+          customizationOptions={orderRequest.items[editingItemIndex]?.product?.customizationOptions || []}
+          currentCustomizations={orderRequest.items[editingItemIndex].customizations || []}
           onSave={handleSaveCustomizations}
         />
       )}

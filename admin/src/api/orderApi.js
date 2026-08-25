@@ -12,3 +12,5 @@ export const updatePaymentStatusApi = (id, paymentStatus) =>
 export const updateOrderTrackingApi = (id, payload) => axiosInstance.patch(`/orders/${id}/tracking`, payload);
 
 export const deleteOrderApi = (id) => axiosInstance.delete(`/orders/${id}`);
+
+export const createManualOrderApi = (payload) => axiosInstance.post('/orders/manual', payload);

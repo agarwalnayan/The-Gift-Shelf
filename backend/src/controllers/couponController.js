@@ -44,7 +44,21 @@ export const createCoupon = asyncHandler(async (req, res) => {
 });
 
 export const getCoupons = asyncHandler(async (req, res) => {
-    const coupons = await Coupon.find().sort({ createdAt: -1 });
+    const { active } = req.query;
+    let query = {};
+    
+    // Filter for active and valid coupons if requested
+    if (active === 'true') {
+        query = {
+            isActive: true,
+            $or: [
+                { expiresAt: null },
+                { expiresAt: { $gte: new Date() } }
+            ]
+        };
+    }
+    
+    const coupons = await Coupon.find(query).sort({ createdAt: -1 });
     res.status(200).json(new ApiResponse(200, { coupons, count: coupons.length }, 'Coupons fetched successfully'));
 });
 
@@ -73,4 +87,25 @@ export const deleteCoupon = asyncHandler(async (req, res) => {
     await coupon.deleteOne();
 
     res.status(200).json(new ApiResponse(200, null, 'Coupon deleted successfully'));
+});
+
+export const validateCoupon = asyncHandler(async (req, res) => {
+    const { code, subtotal } = req.body;
+    
+    if (!code) {
+        throw new ApiError(400, 'Coupon code is required');
+    }
+    
+    if (!subtotal || subtotal < 0) {
+        throw new ApiError(400, 'Valid subtotal is required');
+    }
+
+    const result = await validateCouponForSubtotal(code, subtotal);
+    
+    res.status(200).json(new ApiResponse(200, {
+        coupon: result.coupon,
+        discount: result.discount,
+        subtotal: subtotal,
+        finalAmount: subtotal - result.discount
+    }, 'Coupon validated successfully'));
 });

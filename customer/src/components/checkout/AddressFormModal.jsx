@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { HiXMark } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 import Input from '../common/Input.jsx';
+import PincodeInput from '../common/PincodeInput.jsx';
 import Button from '../common/Button.jsx';
 import { addAddressApi, updateAddressApi } from '../../api/authApi.js';
 
@@ -73,7 +74,22 @@ const AddressFormModal = ({ isOpen, address, onClose, onSaved }) => {
                     <div className="grid gap-4 sm:grid-cols-3">
                         <Input label="City" value={form.city} onChange={handleChange('city')} required />
                         <Input label="State" value={form.state} onChange={handleChange('state')} required />
-                        <Input label="Postal Code" value={form.postalCode} onChange={handleChange('postalCode')} required />
+                        <div>
+                            <label className="mb-1.5 block text-sm font-medium text-charcoal/80">Postal Code</label>
+                            <PincodeInput
+                                value={form.postalCode}
+                                onChange={(value) => setForm(prev => ({ ...prev, postalCode: value }))}
+                                onCityStateFound={(locationData) => {
+                                    if (locationData) {
+                                        setForm(prev => ({
+                                            ...prev,
+                                            city: locationData.city || prev.city,
+                                            state: locationData.state || prev.state
+                                        }));
+                                    }
+                                }}
+                            />
+                        </div>
                     </div>
                     <Input label="Country" value={form.country} onChange={handleChange('country')} required />
 

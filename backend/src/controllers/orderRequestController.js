@@ -366,13 +366,15 @@ export const completeOrderRequest = asyncHandler(async (req, res) => {
       orderRequest.completedOrder = order._id;
       await orderRequest.save();
 
-      // Send order confirmation email (async, don't block response)
-      notifyOrderUpdate(order._id, 'order_created').catch(() => {});
+      const emailSent = await notifyOrderUpdate(order._id, 'order_created');
 
       res.status(201).json(new ApiResponse(201, { 
         order, 
-        accountCreated: createAccount 
-      }, 'Order completed successfully'));
+        accountCreated: createAccount,
+        emailSent,
+      }, emailSent
+        ? 'Order completed successfully'
+        : 'Order completed, but the confirmation email could not be sent'));
     } catch (error) {
       // Rollback user creation if order/inventory failed
       if (userCreated && user) {

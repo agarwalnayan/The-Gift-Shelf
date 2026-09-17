@@ -130,7 +130,11 @@ const OrderDetailPage = () => {
     try {
       const { data } = await updateOrderStatusApi(order._id, orderStatus);
       setOrder(data.data.order);
-      toast.success('Order status updated');
+      if (data.data?.emailSent === false) {
+        toast.error('Status updated, but the notification email could not be sent');
+      } else {
+        toast.success('Order status updated');
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update order status');
     } finally {
@@ -143,7 +147,11 @@ const OrderDetailPage = () => {
     try {
       const { data } = await updatePaymentStatusApi(order._id, paymentStatus);
       setOrder(data.data.order);
-      toast.success('Payment status updated');
+      if (data.data?.emailSent === false) {
+        toast.error('Payment status updated, but the notification email could not be sent');
+      } else {
+        toast.success('Payment status updated');
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update payment status');
     } finally {
@@ -161,7 +169,11 @@ const OrderDetailPage = () => {
         internalNotes,
       });
       setOrder(data.data.order);
-      toast.success('Tracking details saved');
+      if (data.data?.emailSent === false) {
+        toast.error('Tracking updated, but the notification email could not be sent');
+      } else {
+        toast.success('Tracking details saved');
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to save tracking details');
     } finally {

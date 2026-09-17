@@ -267,12 +267,15 @@ export const createOrder = asyncHandler(async (req, res) => {
     ? `https://wa.me/${settings.commerce.whatsappNumber.replace(/\D/g, '')}?text=${whatsappMessage}`
     : null;
 
-  // Send order confirmation email using the new notification service
-  if (req.user.email) {
-    notifyOrderUpdate(order._id, 'order_created').catch(() => {});
-  }
+  const emailSent = await notifyOrderUpdate(order._id, 'order_created');
 
-  res.status(201).json(new ApiResponse(201, { order, whatsappLink }, 'Order placed successfully'));
+  res.status(201).json(new ApiResponse(
+    201,
+    { order, whatsappLink, emailSent },
+    emailSent
+      ? 'Order placed successfully'
+      : 'Order placed, but the confirmation email could not be sent'
+  ));
 });
 
 export const verifyPayment = asyncHandler(async (req, res) => {
@@ -421,10 +424,17 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
 
   await order.save();
 
-  // Send order status notification (async, don't block response)
-  notifyOrderUpdate(order._id, 'order_status_changed', { orderStatus: previousStatus }).catch(() => {});
+  const emailSent = orderStatus === 'pending'
+    ? null
+    : await notifyOrderUpdate(order._id, 'order_status_changed', { orderStatus: previousStatus });
 
-  res.status(200).json(new ApiResponse(200, { order }, 'Order status updated successfully'));
+  res.status(200).json(new ApiResponse(
+    200,
+    { order, emailSent },
+    emailSent !== false
+      ? 'Order status updated successfully'
+      : 'Order status updated, but the notification email could not be sent'
+  ));
 });
 
 export const updatePaymentStatus = asyncHandler(async (req, res) => {
@@ -446,10 +456,17 @@ export const updatePaymentStatus = asyncHandler(async (req, res) => {
 
   await order.save();
 
-  // Send payment status notification (async, don't block response)
-  notifyOrderUpdate(order._id, 'payment_status_changed', { paymentStatus: previousPaymentStatus }).catch(() => {});
+  const emailSent = await notifyOrderUpdate(
+    order._id,
+    'payment_status_changed',
+    { paymentStatus: previousPaymentStatus }
+  );
 
-  res.status(200).json(new ApiResponse(200, { order }, 'Payment status updated successfully'));
+  res.status(200).json(new ApiResponse(
+    200,
+    { order, emailSent },
+    emailSent ? 'Payment status updated successfully' : 'Payment status updated, but the notification email could not be sent'
+  ));
 });
 
 export const updateOrderTracking = asyncHandler(async (req, res) => {
@@ -474,10 +491,17 @@ export const updateOrderTracking = asyncHandler(async (req, res) => {
 
   await order.save();
 
-  // Send tracking notification (async, don't block response)
-  notifyOrderUpdate(order._id, 'tracking_updated', { courier: previousCourierData }).catch(() => {});
+  const emailSent = await notifyOrderUpdate(
+    order._id,
+    'tracking_updated',
+    { courier: previousCourierData }
+  );
 
-  res.status(200).json(new ApiResponse(200, { order }, 'Order tracking updated successfully'));
+  res.status(200).json(new ApiResponse(
+    200,
+    { order, emailSent },
+    emailSent ? 'Order tracking updated successfully' : 'Order tracking updated, but the notification email could not be sent'
+  ));
 });
 
 export const deleteOrder = asyncHandler(async (req, res) => {

@@ -100,8 +100,12 @@ const OrdersPage = () => {
 
   const handleStatusChange = async (orderId, orderStatus) => {
     try {
-      await updateOrderStatusApi(orderId, orderStatus);
-      toast.success('Order status updated');
+      const { data } = await updateOrderStatusApi(orderId, orderStatus);
+      if (data.data?.emailSent === false) {
+        toast.error('Status updated, but the notification email could not be sent');
+      } else {
+        toast.success('Order status updated');
+      }
       loadOrders();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update order');

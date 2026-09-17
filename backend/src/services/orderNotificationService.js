@@ -155,8 +155,10 @@ export const sendOrderConfirmation = async (orderId) => {
 export const sendPaymentStatusNotification = async (orderId, previousPaymentStatus) => {
   try {
     const order = await Order.findById(orderId).populate('user', 'name email');
-    if (!order || !order.user?.email) {
-      console.log(`[orderNotification] No order or user email found for order ${orderId}`);
+    const recipientEmail = order?.user?.email || order?.shippingAddress?.email;
+    const recipientName = order?.user?.name || order?.shippingAddress?.fullName;
+    if (!order || !recipientEmail) {
+      console.log(`[orderNotification] No order or recipient email found for order ${orderId}`);
       return false;
     }
 
@@ -182,11 +184,11 @@ export const sendPaymentStatusNotification = async (orderId, previousPaymentStat
         return false;
     }
 
-    const { subject, html } = emailBuilder(order, order.user.name);
-    const sent = await sendEmail({ to: order.user.email, subject, html });
+    const { subject, html } = emailBuilder(order, recipientName);
+    const sent = await sendEmail({ to: recipientEmail, subject, html });
     
     if (sent) {
-      console.log(`[orderNotification] Payment status email sent to ${order.user.email} for order #${order._id.toString().slice(-8).toUpperCase()}`);
+      console.log(`[orderNotification] Payment status email sent to ${recipientEmail} for order #${order._id.toString().slice(-8).toUpperCase()}`);
     }
     
     return sent;
@@ -222,14 +224,17 @@ export const sendOrderStatusNotification = async (orderId, previousOrderStatus) 
     const orderNumber = order._id.toString().slice(-8).toUpperCase();
     const statusLabel = getStatusLabel(order.orderStatus);
     const statusMessage = getStatusMessage(order.orderStatus);
+    let emailSent = false;
 
-    // Send email if user has email
-    if (order.user?.email) {
-      const { subject, html } = buildOrderStatusEmail(order, order.user.name, previousOrderStatus);
-      const sent = await sendEmail({ to: order.user.email, subject, html });
+    const recipientEmail = order.user?.email || order.shippingAddress?.email;
+    const recipientName = order.user?.name || order.shippingAddress?.fullName;
+
+    if (recipientEmail) {
+      const { subject, html } = buildOrderStatusEmail(order, recipientName, previousOrderStatus);
+      emailSent = await sendEmail({ to: recipientEmail, subject, html });
       
-      if (sent) {
-        console.log(`[orderNotification] Order status email sent to ${order.user.email} for order #${orderNumber}`);
+      if (emailSent) {
+        console.log(`[orderNotification] Order status email sent to ${recipientEmail} for order #${orderNumber}`);
       }
     }
 
@@ -259,7 +264,7 @@ export const sendOrderStatusNotification = async (orderId, previousOrderStatus) 
       );
     }
     
-    return true;
+    return emailSent;
   } catch (error) {
     console.error(`[orderNotification] Failed to send order status notification:`, error.message);
     return false;
@@ -272,8 +277,10 @@ export const sendOrderStatusNotification = async (orderId, previousOrderStatus) 
 export const sendTrackingNotification = async (orderId, previousCourierData) => {
   try {
     const order = await Order.findById(orderId).populate('user', 'name email');
-    if (!order || !order.user?.email) {
-      console.log(`[orderNotification] No order or user email found for order ${orderId}`);
+    const recipientEmail = order?.user?.email || order?.shippingAddress?.email;
+    const recipientName = order?.user?.name || order?.shippingAddress?.fullName;
+    if (!order || !recipientEmail) {
+      console.log(`[orderNotification] No order or recipient email found for order ${orderId}`);
       return false;
     }
 
@@ -296,11 +303,11 @@ export const sendTrackingNotification = async (orderId, previousCourierData) => 
       return false;
     }
 
-    const { subject, html } = buildTrackingUpdateEmail(order, order.user.name);
-    const sent = await sendEmail({ to: order.user.email, subject, html });
+    const { subject, html } = buildTrackingUpdateEmail(order, recipientName);
+    const sent = await sendEmail({ to: recipientEmail, subject, html });
     
     if (sent) {
-      console.log(`[orderNotification] Tracking update email sent to ${order.user.email} for order #${order._id.toString().slice(-8).toUpperCase()}`);
+      console.log(`[orderNotification] Tracking update email sent to ${recipientEmail} for order #${order._id.toString().slice(-8).toUpperCase()}`);
     }
     
     return sent;

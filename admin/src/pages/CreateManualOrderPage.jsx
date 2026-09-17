@@ -244,8 +244,12 @@ const CreateManualOrderPage = () => {
         sendEmail,
       };
 
-      await createManualOrderApi(payload);
-      toast.success('Order created successfully');
+      const { data } = await createManualOrderApi(payload);
+      if (data.data?.emailSent === false && sendEmail) {
+        toast.error('Order created, but the confirmation email could not be sent');
+      } else {
+        toast.success('Order created successfully');
+      }
       navigate('/orders');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to create order');

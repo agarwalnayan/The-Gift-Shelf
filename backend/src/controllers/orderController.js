@@ -669,11 +669,17 @@ export const createManualOrder = asyncHandler(async (req, res) => {
       await decrementStock(item);
     }
 
-    if (sendEmail && shippingAddress.email) {
-      notifyOrderUpdate(order._id, 'order_created').catch(() => {});
-    }
+    const emailSent = sendEmail && shippingAddress.email
+      ? await notifyOrderUpdate(order._id, 'order_created')
+      : false;
 
-    res.status(201).json(new ApiResponse(201, { order, accountCreated: userCreated }, 'Manual order created successfully'));
+    res.status(201).json(new ApiResponse(
+      201,
+      { order, accountCreated: userCreated, emailSent },
+      emailSent || !sendEmail
+        ? 'Manual order created successfully'
+        : 'Manual order created, but the confirmation email could not be sent'
+    ));
   } catch (error) {
     if (userCreated && finalUser) {
       await User.findByIdAndDelete(finalUser._id);
